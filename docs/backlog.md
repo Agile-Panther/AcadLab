@@ -1,5 +1,21 @@
+# Backlog do Sistema — Ajustado para Completude de Funcionalidades
+
+> **Nota de ajuste:** Este documento é uma versão revisada do backlog original. Todas as funcionalidades foram analisadas quanto à completude do ponto de vista do usuário. User Stories e Regras de Negócio adicionadas estão marcadas com o selo .
 
 ---
+
+| Pessoa   | Features sorteadas |
+| -------- | ------------------ |
+| Julia    | F-06<br>F-01       |
+| Matheus  | F-11 <br>F-10      |
+| Vinicius | F-12 <br>F-04      |
+| Bernado  | F-07 <br>F-08      |
+| Clara    | F-14 <br>F-03      |
+| Neto     | F-02 <br>F-05      |
+| Jera     | F-09 <br>F-13      |
+
+---
+
 ## Funcionalidade 1 — F-01 · Gestão Curricular do Curso
 
 | | |
@@ -79,6 +95,43 @@
 | Consultas | Verificar o status atual da matriz curricular a ser excluída. |
 | Complexidade | Baixa |
 
+---
+
+#### US04 — Consultar matrizes curriculares
+*Como Coordenador Acadêmico, quero consultar e visualizar as matrizes curriculares de um curso com suas disciplinas, pré-requisitos e configurações, para acompanhar as versões existentes e apoiar decisões de atualização curricular.*
+
+**RN 7 — Consulta disponível para perfis acadêmicos autorizados**
+
+| | |
+|---|---|
+| Título | Consulta disponível para perfis acadêmicos autorizados |
+| Descrição | Coordenadores Acadêmicos e Secretaria podem visualizar matrizes curriculares de qualquer curso; estudantes podem visualizar apenas a matriz vigente do seu próprio curso. |
+| Consultas | Verificar o perfil do usuário logado e, se estudante, filtrar pela matriz ativa do seu curso. |
+| Complexidade | Baixa |
+
+---
+
+#### US05 — Gerenciar disciplinas da matriz curricular
+*Como Coordenador Acadêmico, quero adicionar, editar e remover disciplinas de uma matriz curricular inativa, para manter atualizada a configuração curricular do curso antes de sua ativação.*
+
+**RN 8 — Disciplinas não podem ser adicionadas ou removidas de matrizes ativas**
+
+| | |
+|---|---|
+| Título | Disciplinas não podem ser adicionadas ou removidas de matrizes ativas |
+| Descrição | A estrutura de disciplinas de uma matriz curricular ativa não pode ser alterada; para realizar mudanças, a matriz deve estar inativa. |
+| Consultas | Verificar o status atual da matriz curricular antes de permitir adição, edição ou remoção de disciplinas. |
+| Complexidade | Baixa |
+
+**RN 9 — Disciplina vinculada a turmas existentes não pode ser removida**
+
+| | |
+|---|---|
+| Título | Disciplina vinculada a turmas existentes não pode ser removida |
+| Descrição | Uma disciplina que possui turmas associadas em qualquer período letivo não pode ser removida da matriz curricular. |
+| Consultas | Verificar se existem turmas vinculadas à disciplina a ser removida antes de concluir a operação. |
+| Complexidade | Média |
+
 ### Protótipos da Interface com o Usuário
 
 *(A preencher)*
@@ -136,6 +189,39 @@
 | Descrição | Um período letivo só pode ser encerrado se não houver pendências abertas de notas, frequência ou matrícula em nenhuma de suas turmas. |
 | Consultas | Verificar se existem turmas do período letivo com notas não lançadas, frequências não registradas ou matrículas em situação pendente. |
 | Complexidade | Alta |
+
+---
+
+#### US04 — Consultar períodos letivos
+*Como Secretaria Acadêmica, quero consultar os períodos letivos cadastrados com suas janelas acadêmicas e status, para acompanhar o calendário e identificar períodos em aberto ou encerrados.*
+
+---
+
+#### US05 — Editar período letivo não iniciado
+*Como Secretaria Acadêmica, quero editar as configurações de um período letivo que ainda não teve início, para corrigir informações antes do início das atividades acadêmicas.*
+
+**RN 4 — Edição restrita a períodos letivos não iniciados**
+
+| | |
+|---|---|
+| Título | Edição restrita a períodos letivos não iniciados |
+| Descrição | Um período letivo só pode ser editado enquanto sua data de início ainda não tiver sido atingida. |
+| Consultas | Verificar se a data atual é anterior à data de início do período letivo informado. |
+| Complexidade | Baixa |
+
+---
+
+#### US06 — Cancelar período letivo
+*Como Secretaria Acadêmica, quero cancelar um período letivo que ainda não foi iniciado, para desfazer configurações lançadas incorretamente antes do início das atividades.*
+
+**RN 5 — Cancelamento restrito a períodos não iniciados e sem matrículas confirmadas**
+
+| | |
+|---|---|
+| Título | Cancelamento restrito a períodos não iniciados e sem matrículas confirmadas |
+| Descrição | Um período letivo só pode ser cancelado se ainda não tiver sido iniciado e não possuir nenhuma matrícula confirmada. |
+| Consultas | Verificar se a data de início do período ainda não foi atingida e se não existem matrículas confirmadas vinculadas ao período. |
+| Complexidade | Média |
 
 ### Protótipos da Interface com o Usuário
 
@@ -256,6 +342,34 @@
 | Descrição | Alterações em turmas com estudantes já matriculados não podem gerar conflito de horário para esses estudantes. |
 | Consultas | Verificar a grade de horários de todos os estudantes matriculados na turma e comparar com o novo horário proposto. |
 | Complexidade | Alta |
+
+---
+
+#### US06 — Consultar turmas ofertadas
+*Como Coordenador Acadêmico, quero consultar a lista de turmas ofertadas em um período letivo com filtros por disciplina, professor e sala, para ter visão completa da grade e identificar conflitos ou lacunas na oferta.*
+
+---
+
+#### US07 — Cancelar turma ofertada
+*Como Coordenador Acadêmico, quero cancelar uma turma ofertada, para encerrar a oferta em casos de impossibilidade de realização antes do início do período letivo.*
+
+**RN 10 — Turma com matrículas confirmadas exige remanejamento antes do cancelamento**
+
+| | |
+|---|---|
+| Título | Turma com matrículas confirmadas exige remanejamento antes do cancelamento |
+| Descrição | Uma turma que já possui estudantes com matrículas confirmadas não pode ser cancelada sem que todos os estudantes afetados sejam remanejados ou tenham suas matrículas canceladas. |
+| Consultas | Verificar se existem matrículas com status confirmado na turma antes de permitir o cancelamento. |
+| Complexidade | Alta |
+
+**RN 11 — Cancelamento de turma registra notificação para estudantes afetados**
+
+| | |
+|---|---|
+| Título | Cancelamento de turma registra notificação para estudantes afetados |
+| Descrição | O cancelamento de uma turma que possui estudantes matriculados ou em lista de espera deve registrar notificação no sistema para todos os estudantes afetados. |
+| Consultas | Consultar todos os estudantes com matrícula ou lista de espera na turma cancelada para gerar as notificações. |
+| Complexidade | Média |
 
 ### Protótipos da Interface com o Usuário
 
@@ -386,6 +500,34 @@
 | Consultas | Verificar o status da solicitação de exceção para garantir que foi deferida antes de efetivar a operação bloqueada. |
 | Complexidade | Média |
 
+---
+
+#### US06 — Visualizar matrícula confirmada
+*Como Estudante, quero visualizar minha matrícula confirmada com a grade de horários e as turmas em que estou matriculado, para acompanhar minha situação acadêmica no período letivo vigente.*
+
+---
+
+#### US07 — Solicitar trancamento do período letivo
+*Como Estudante, quero solicitar o trancamento do período letivo completo, para interromper temporariamente minhas atividades acadêmicas sem ser reprovado nas disciplinas cursadas.*
+
+**RN 11 — Trancamento do período dentro da janela de trancamento**
+
+| | |
+|---|---|
+| Título | Trancamento do período dentro da janela de trancamento |
+| Descrição | O trancamento do período letivo completo só pode ser solicitado durante a janela de trancamento definida no calendário acadêmico. |
+| Consultas | Verificar se a data atual está dentro da janela de trancamento do período letivo. |
+| Complexidade | Média |
+
+**RN 12 — Trancamento sujeito ao limite de trancamentos permitidos pela matriz**
+
+| | |
+|---|---|
+| Título | Trancamento sujeito ao limite de trancamentos permitidos pela matriz |
+| Descrição | O sistema deve verificar se o estudante já atingiu o limite de trancamentos de período consecutivos ou totais permitidos pela matriz curricular antes de deferir a solicitação. |
+| Consultas | Consultar o histórico de trancamentos de período do estudante e comparar com o limite definido na matriz curricular do curso. |
+| Complexidade | Média |
+
 ### Protótipos da Interface com o Usuário
 
 *(A preencher)*
@@ -506,6 +648,57 @@
 | Consultas | Verificar se a data atual está dentro da janela de revisão de notas do período letivo. |
 | Complexidade | Média |
 
+---
+
+#### US06 — Corrigir registro de aula
+*Como Professor, quero corrigir dados de um registro de aula já lançado, para garantir que o diário da turma reflita fielmente as aulas ministradas sem necessidade de exclusão e re-lançamento.*
+
+**RN 10 — Correção de aula restrita ao período letivo em aberto**
+
+| | |
+|---|---|
+| Título | Correção de aula restrita ao período letivo em aberto |
+| Descrição | Um registro de aula só pode ser corrigido enquanto o período letivo estiver em aberto. |
+| Consultas | Verificar o status do período letivo ao qual a turma pertence antes de permitir a correção. |
+| Complexidade | Baixa |
+
+**RN 11 — Apenas o professor responsável pode corrigir registros de aula**
+
+| | |
+|---|---|
+| Título | Apenas o professor responsável pode corrigir registros de aula |
+| Descrição | Apenas o professor responsável pela turma pode corrigir registros de aula previamente lançados. |
+| Consultas | Verificar se o usuário logado é o professor responsável pela turma informada. |
+| Complexidade | Baixa |
+
+---
+
+#### US07 — Registrar nota de recuperação
+*Como Professor, quero registrar a nota de recuperação de estudantes classificados nessa situação, para que o resultado final seja recalculado conforme as regras configuradas na turma.*
+
+**RN 12 — Recuperação disponível apenas para estudantes em situação de recuperação**
+
+| | |
+|---|---|
+| Título | Recuperação disponível apenas para estudantes em situação de recuperação |
+| Descrição | A nota de recuperação só pode ser lançada para estudantes cujo resultado parcial os classifique em situação de recuperação conforme os critérios configurados na turma. |
+| Consultas | Verificar a situação parcial do estudante na turma antes de permitir o lançamento da nota de recuperação. |
+| Complexidade | Média |
+
+**RN 13 — Prazo de lançamento da nota de recuperação dentro do período letivo**
+
+| | |
+|---|---|
+| Título | Prazo de lançamento da nota de recuperação dentro do período letivo |
+| Descrição | A nota de recuperação deve ser lançada dentro do intervalo de datas do período letivo. |
+| Consultas | Verificar se a data atual está contida no intervalo do período letivo ao qual a turma pertence. |
+| Complexidade | Baixa |
+
+---
+
+#### US08 — Visualizar notas e frequência
+*Como Estudante, quero visualizar minhas notas e meu percentual de frequência em cada turma do período letivo vigente, para acompanhar meu desempenho e identificar riscos de reprovação em tempo hábil.*
+
 ### Protótipos da Interface com o Usuário
 
 *(A preencher)*
@@ -622,6 +815,34 @@
 | Consultas | Verificar se o usuário logado possui perfil autorizado para retificar; consultar o resultado anterior antes de sobrescrever. |
 | Complexidade | Média |
 
+---
+
+#### US07 — Consultar histórico acadêmico
+*Como Estudante, quero consultar meu histórico acadêmico com as disciplinas cursadas, notas obtidas, situação em cada período e progresso na integralização curricular, para acompanhar minha trajetória acadêmica de forma completa.*
+
+**RN 9 — Consulta restrita ao próprio histórico para o perfil de estudante**
+
+| | |
+|---|---|
+| Título | Consulta restrita ao próprio histórico para o perfil de estudante |
+| Descrição | O estudante só pode consultar seu próprio histórico acadêmico. Secretaria Acadêmica e Coordenação podem consultar o histórico de qualquer estudante do curso. |
+| Consultas | Verificar o perfil do usuário logado; se for estudante, filtrar o histórico pelo seu próprio cadastro. |
+| Complexidade | Baixa |
+
+---
+
+#### US08 — Emitir histórico acadêmico oficial
+*Como Estudante, quero emitir meu histórico acadêmico em formato oficial, para utilizá-lo em processos seletivos, transferências ou outros fins institucionais.*
+
+**RN 10 — Emissão restrita a períodos letivos encerrados e consolidados**
+
+| | |
+|---|---|
+| Título | Emissão restrita a períodos letivos encerrados e consolidados |
+| Descrição | O histórico oficial emitido deve conter apenas registros de períodos letivos encerrados e com resultados consolidados; períodos em andamento não são incluídos no documento oficial. |
+| Consultas | Verificar se todos os resultados incluídos na emissão pertencem a períodos letivos com status encerrado e consolidados no histórico. |
+| Complexidade | Baixa |
+
 ### Protótipos da Interface com o Usuário
 
 *(A preencher)*
@@ -696,6 +917,25 @@
 | Título | Complementação não permitida em solicitações encerradas ou indeferidas |
 | Descrição | Solicitações em status concluída ou indeferida não podem receber complementação. |
 | Consultas | Verificar o status atual da solicitação antes de permitir a complementação. |
+| Complexidade | Baixa |
+
+---
+
+#### US04 — Acompanhar status das solicitações
+*Como Estudante, quero acompanhar o status e o histórico de movimentações das minhas solicitações acadêmicas, para saber em que etapa do processo cada solicitação se encontra e se há pendências a resolver da minha parte.*
+
+---
+
+#### US05 — Cancelar solicitação acadêmica aberta
+*Como Estudante, quero cancelar uma solicitação acadêmica ainda não analisada, para desistir formalmente de uma demanda antes que ela seja processada pela secretaria.*
+
+**RN 6 — Cancelamento permitido apenas para solicitações com status pendente de análise**
+
+| | |
+|---|---|
+| Título | Cancelamento permitido apenas para solicitações com status pendente de análise |
+| Descrição | O estudante só pode cancelar uma solicitação enquanto ela estiver com status pendente de análise pela secretaria. |
+| Consultas | Verificar o status atual da solicitação antes de permitir o cancelamento pelo estudante. |
 | Complexidade | Baixa |
 
 ### Protótipos da Interface com o Usuário
@@ -783,6 +1023,29 @@
 | Consultas | Verificar no histórico consolidado o cumprimento de todas as disciplinas obrigatórias; somar a carga horária optativa aprovada; somar as horas complementares deferidas e comparar com os requisitos da matriz curricular. |
 | Complexidade | Alta |
 
+---
+
+#### US04 — Registrar cerimônia de colação de grau
+*Como Secretaria Acadêmica, quero registrar a data e os dados da cerimônia de colação de grau de um estudante com aptidão aprovada, para formalizar a conclusão do curso no sistema e atualizar o histórico acadêmico oficialmente.*
+
+**RN 7 — Registro da colação restrito a estudante com aptidão aprovada**
+
+| | |
+|---|---|
+| Título | Registro da colação restrito a estudante com aptidão aprovada |
+| Descrição | A colação de grau só pode ser registrada para estudante com aptidão formalmente aprovada pelo Coordenador Acadêmico. |
+| Consultas | Verificar se a análise de integralização do estudante possui status de aptidão aprovada antes de registrar a colação. |
+| Complexidade | Baixa |
+
+**RN 8 — Data da colação igual ou posterior à data de aprovação da aptidão**
+
+| | |
+|---|---|
+| Título | Data da colação igual ou posterior à data de aprovação da aptidão |
+| Descrição | A data registrada para a cerimônia de colação de grau deve ser igual ou posterior à data de aprovação formal da aptidão do estudante. |
+| Consultas | Consultar a data de aprovação da aptidão e comparar com a data da cerimônia informada. |
+| Complexidade | Baixa |
+
 ### Protótipos da Interface com o Usuário
 
 *(A preencher)*
@@ -855,6 +1118,34 @@
 | Título | Horas contabilizadas somente após deferimento formal |
 | Descrição | As horas deferidas só são contabilizadas na integralização curricular após o deferimento formal. |
 | Consultas | Verificar o status de deferimento da atividade complementar antes de contabilizar as horas. |
+| Complexidade | Baixa |
+
+---
+
+#### US04 — Visualizar saldo de horas complementares
+*Como Estudante, quero visualizar meu saldo de horas complementares por categoria, para acompanhar meu progresso em relação à carga exigida pela matriz curricular e planejar as atividades restantes.*
+
+**RN 6 — Saldo exibe apenas horas de atividades com deferimento formal**
+
+| | |
+|---|---|
+| Título | Saldo exibe apenas horas de atividades com deferimento formal |
+| Descrição | O saldo de horas apresentado ao estudante deve considerar apenas atividades complementares com status de deferimento formal, excluindo atividades pendentes de análise ou indeferidas. |
+| Consultas | Consultar todas as atividades complementares do estudante com status deferido e somar as horas por categoria. |
+| Complexidade | Baixa |
+
+---
+
+#### US05 — Cancelar submissão de atividade complementar
+*Como Estudante, quero cancelar a submissão de uma atividade complementar ainda não analisada, para corrigir envios incorretos antes que a coordenação inicie a análise.*
+
+**RN 7 — Cancelamento permitido apenas para atividades com status pendente de análise**
+
+| | |
+|---|---|
+| Título | Cancelamento permitido apenas para atividades com status pendente de análise |
+| Descrição | A submissão de uma atividade complementar só pode ser cancelada pelo estudante enquanto ela ainda não tiver sido analisada pela coordenação. |
+| Consultas | Verificar o status atual da atividade complementar antes de permitir o cancelamento. |
 | Complexidade | Baixa |
 
 ### Protótipos da Interface com o Usuário
@@ -968,6 +1259,57 @@
 | Consultas | Verificar se o estudante continua atendendo os critérios mínimos de manutenção definidos para o benefício. |
 | Complexidade | Alta |
 
+---
+
+#### US06 — Interpor recurso contra indeferimento de inscrição
+*Como Estudante, quero interpor recurso contra o indeferimento da minha inscrição em um programa de permanência, para solicitar revisão da decisão com justificativa e documentação complementar.*
+
+**RN 9 — Recurso interposto dentro do prazo definido no edital**
+
+| | |
+|---|---|
+| Título | Recurso interposto dentro do prazo definido no edital |
+| Descrição | O recurso só pode ser interposto dentro do prazo estabelecido no edital para esse fim. |
+| Consultas | Verificar se a data atual está dentro do prazo de recurso definido no edital. |
+| Complexidade | Baixa |
+
+**RN 10 — Apenas uma interposição de recurso por inscrição**
+
+| | |
+|---|---|
+| Título | Apenas uma interposição de recurso por inscrição |
+| Descrição | O estudante pode interpor apenas um recurso por inscrição indeferida. |
+| Consultas | Verificar se já existe recurso registrado para a inscrição informada antes de permitir uma nova interposição. |
+| Complexidade | Baixa |
+
+---
+
+#### US07 — Publicar resultado final do processo seletivo
+*Como Assistência Estudantil, quero publicar o resultado final do processo seletivo após o encerramento do prazo de recursos, para oficializar os beneficiários selecionados e concluir o edital.*
+
+**RN 11 — Resultado final publicado somente após encerramento do prazo de recursos**
+
+| | |
+|---|---|
+| Título | Resultado final publicado somente após encerramento do prazo de recursos |
+| Descrição | O resultado final do processo seletivo só pode ser publicado após o término do prazo estabelecido para interposição de recursos. |
+| Consultas | Verificar se a data atual é posterior ao prazo de recurso definido no edital. |
+| Complexidade | Baixa |
+
+---
+
+#### US08 — Encerrar edital
+*Como Secretaria Acadêmica, quero encerrar formalmente um edital após a publicação do resultado final, para registrar o término do processo seletivo e impedir novas inscrições ou recursos.*
+
+**RN 12 — Encerramento restrito a editais com resultado final publicado**
+
+| | |
+|---|---|
+| Título | Encerramento restrito a editais com resultado final publicado |
+| Descrição | Um edital só pode ser encerrado após a publicação do resultado final do processo seletivo. |
+| Consultas | Verificar se o resultado final do edital já foi publicado antes de permitir o encerramento. |
+| Complexidade | Baixa |
+
 ### Protótipos da Interface com o Usuário
 
 *(A preencher)*
@@ -1056,6 +1398,34 @@
 | Consultas | Verificar o perfil do usuário logado antes de permitir o registro da ação de permanência. |
 | Complexidade | Baixa |
 
+---
+
+#### US05 — Encerrar caso psicopedagógico
+*Como Psicopedagogo, quero registrar o encerramento formal de um caso de acompanhamento psicopedagógico, para documentar a conclusão do processo e liberar o estudante do acompanhamento ativo.*
+
+**RN 7 — Encerramento exige registro de conclusão ou encaminhamento final**
+
+| | |
+|---|---|
+| Título | Encerramento exige registro de conclusão ou encaminhamento final |
+| Descrição | Um caso só pode ser encerrado formalmente após o registro de uma conclusão ou encaminhamento final pelo psicopedagogo responsável. |
+| Consultas | Verificar se o caso possui ao menos um registro de atendimento com encaminhamento ou conclusão antes de permitir o encerramento. |
+| Complexidade | Baixa |
+
+---
+
+#### US06 — Consultar histórico de casos acompanhados
+*Como Psicopedagogo, quero consultar o histórico de casos que estou acompanhando ou que acompanhei, para ter uma visão consolidada das demandas atendidas e apoiar a continuidade e qualidade dos atendimentos.*
+
+**RN 8 — Consulta restrita ao profissional responsável pelo caso**
+
+| | |
+|---|---|
+| Título | Consulta restrita ao profissional responsável pelo caso |
+| Descrição | O psicopedagogo só pode consultar casos nos quais figure como profissional responsável, preservando o sigilo dos casos de outros profissionais. |
+| Consultas | Verificar se o usuário logado é o profissional responsável pelo caso antes de exibi-lo na consulta. |
+| Complexidade | Baixa |
+
 ### Protótipos da Interface com o Usuário
 
 *(A preencher)*
@@ -1139,6 +1509,34 @@
 | Título | Resultado registrado apenas para disciplinas com comprovantes e plano autorizado |
 | Descrição | Apenas disciplinas com comprovantes anexados e plano previamente autorizado podem ter resultado registrado no histórico. |
 | Consultas | Verificar se a disciplina possui comprovante anexado e se está no plano de estudos com status autorizado. |
+| Complexidade | Média |
+
+---
+
+#### US04 — Acompanhar status da mobilidade acadêmica
+*Como Estudante, quero acompanhar o status da minha solicitação de mobilidade acadêmica e o andamento do plano de estudos, para saber se a autorização foi concedida e em que etapa o processo se encontra.*
+
+---
+
+#### US05 — Cancelar mobilidade autorizada
+*Como Estudante, quero solicitar o cancelamento de uma mobilidade autorizada ainda não iniciada, para desistir formalmente do período externo antes do seu início.*
+
+**RN 7 — Cancelamento restrito a mobilidades ainda não iniciadas**
+
+| | |
+|---|---|
+| Título | Cancelamento restrito a mobilidades ainda não iniciadas |
+| Descrição | O cancelamento de uma mobilidade só pode ser solicitado enquanto o período externo ainda não tiver sido iniciado. |
+| Consultas | Verificar se a data de início do período externo ainda não foi atingida antes de permitir o cancelamento. |
+| Complexidade | Baixa |
+
+**RN 8 — Cancelamento registrado com justificativa e confirmado pela coordenação**
+
+| | |
+|---|---|
+| Título | Cancelamento registrado com justificativa e confirmado pela coordenação |
+| Descrição | O cancelamento da mobilidade deve ser registrado com justificativa pelo estudante e confirmado formalmente pela coordenação. |
+| Consultas | Verificar se o cancelamento foi registrado com justificativa antes de encaminhar para análise da coordenação. |
 | Complexidade | Média |
 
 ### Protótipos da Interface com o Usuário
@@ -1236,6 +1634,57 @@
 | Título | Mensalidade em atraso pode gerar restrições em operações acadêmicas |
 | Descrição | Estudante com mensalidade em atraso pode ter restrições aplicadas em operações acadêmicas, conforme regra institucional vigente. |
 | Consultas | Verificar se o estudante possui cobranças com data de vencimento ultrapassada e sem pagamento registrado. |
+| Complexidade | Média |
+
+---
+
+#### US05 — Visualizar extrato financeiro
+*Como Estudante, quero visualizar meu extrato financeiro com todas as cobranças, pagamentos, descontos e bolsas aplicados ao meu contrato, para acompanhar minha situação financeira perante a instituição.*
+
+**RN 8 — Consulta do extrato restrita ao próprio contrato**
+
+| | |
+|---|---|
+| Título | Consulta do extrato restrita ao próprio contrato |
+| Descrição | O estudante só pode visualizar cobranças e pagamentos vinculados ao seu próprio contrato acadêmico. O Setor Financeiro pode consultar o extrato de qualquer estudante. |
+| Consultas | Verificar o perfil do usuário logado; se for estudante, filtrar o extrato pelo seu próprio contrato acadêmico. |
+| Complexidade | Baixa |
+
+---
+
+#### US06 — Emitir comprovante de pagamento
+*Como Estudante, quero emitir o comprovante de um pagamento já registrado, para comprovar minha quitação junto à instituição ou a terceiros.*
+
+**RN 9 — Emissão restrita a pagamentos com status confirmado**
+
+| | |
+|---|---|
+| Título | Emissão restrita a pagamentos com status confirmado |
+| Descrição | O comprovante de pagamento só pode ser emitido para registros com status de pagamento confirmado no sistema. |
+| Consultas | Verificar o status do pagamento informado antes de permitir a emissão do comprovante. |
+| Complexidade | Baixa |
+
+---
+
+#### US07 — Cancelar ou estornar pagamento registrado incorretamente
+*Como Setor Financeiro, quero cancelar ou estornar um pagamento registrado com informações incorretas, para corrigir o extrato financeiro do estudante com rastreabilidade completa.*
+
+**RN 10 — Cancelamento de pagamento registrado com justificativa e responsável**
+
+| | |
+|---|---|
+| Título | Cancelamento de pagamento registrado com justificativa e responsável |
+| Descrição | O cancelamento ou estorno de um pagamento deve registrar a justificativa, o responsável pela operação e a data, garantindo rastreabilidade da correção. |
+| Consultas | Verificar se o usuário logado possui perfil de Setor Financeiro antes de permitir o cancelamento ou estorno. |
+| Complexidade | Média |
+
+**RN 11 — Estorno reativa a cobrança vinculada com status em aberto**
+
+| | |
+|---|---|
+| Título | Estorno reativa a cobrança vinculada com status em aberto |
+| Descrição | O estorno de um pagamento deve automaticamente reativar a cobrança vinculada, retornando-a ao status em aberto para que um novo pagamento possa ser registrado. |
+| Consultas | Consultar a cobrança vinculada ao pagamento estornado e atualizar seu status para em aberto. |
 | Complexidade | Média |
 
 ### Protótipos da Interface com o Usuário
@@ -1350,6 +1799,39 @@
 | Descrição | O encaminhamento só pode ser registrado para estudante com candidatura deferida na oportunidade informada. |
 | Consultas | Verificar se o estudante possui candidatura com status deferido para a oportunidade informada. |
 | Complexidade | Média |
+
+---
+
+#### US06 — Acompanhar status da candidatura
+*Como Estudante, quero acompanhar o status da minha candidatura a uma oportunidade, para saber se fui deferido, indeferido ou encaminhado à empresa parceira sem precisar contatar o setor de estágios.*
+
+---
+
+#### US07 — Cancelar candidatura
+*Como Estudante, quero cancelar minha candidatura a uma oportunidade que ainda está em análise, para desistir formalmente antes de receber uma decisão.*
+
+**RN 9 — Cancelamento permitido apenas para candidaturas ainda em análise**
+
+| | |
+|---|---|
+| Título | Cancelamento permitido apenas para candidaturas ainda em análise |
+| Descrição | O estudante só pode cancelar candidaturas com status em análise ou pendente. Candidaturas já deferidas ou encaminhadas não podem ser canceladas pelo estudante. |
+| Consultas | Verificar o status atual da candidatura antes de permitir o cancelamento pelo estudante. |
+| Complexidade | Baixa |
+
+---
+
+#### US08 — Encerrar oportunidade
+*Como Setor de Estágios/Carreiras, quero encerrar formalmente uma oportunidade publicada, para registrar o término do processo e impedir novas candidaturas após o preenchimento das vagas ou vencimento do prazo.*
+
+**RN 10 — Encerramento registrado com motivo**
+
+| | |
+|---|---|
+| Título | Encerramento registrado com motivo |
+| Descrição | O encerramento de uma oportunidade deve registrar o motivo: encerramento por vencimento de prazo, por preenchimento de vagas ou por decisão administrativa. |
+| Consultas | Verificar se o usuário logado possui perfil de Setor de Estágios/Carreiras antes de permitir o encerramento. |
+| Complexidade | Baixa |
 
 ### Protótipos da Interface com o Usuário
 
