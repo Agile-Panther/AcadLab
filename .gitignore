@@ -71,3 +71,4 @@ docker-compose.override.yml
 # ─── Claude Code / Superpowers ──────────────────────────────────────────────
 .claude/
 docs/superpowers/
+contexto
