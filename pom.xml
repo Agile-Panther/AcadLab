@@ -26,6 +26,7 @@
         <module>dominio-gestao-pedagogica</module>
         <module>dominio-historico-academico</module>
         <module>dominio-secretaria-virtual</module>
+        <module>dominio-integralizacao-curricular</module>
         <module>dominio-atividades-complementares</module>
         <module>dominio-permanencia-academica</module>
         <module>dominio-mobilidade-academica</module>
