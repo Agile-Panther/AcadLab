@@ -16,6 +16,24 @@
 
 ---
 
+## Padrões de Projeto por Integrante
+
+Cada integrante deve implementar o padrão de projeto designado em ao menos uma das suas features, integrando-o à lógica de domínio — não como exercício isolado.
+
+| Integrante | Features | Padrão de Projeto | Contexto de Aplicação |
+|------------|----------|-------------------|-----------------------|
+| Julia | F-01, F-06 | **Iterator** | Percorrer disciplinas da matriz curricular (incluindo grafo de pré-requisitos) e registros do histórico acadêmico sem expor a estrutura interna das coleções |
+| Neto | F-02, F-05 | **Template Method** | Definir o esqueleto do fluxo de gestão pedagógica (abertura de período → registro de aulas → frequência → avaliações → resultado final), permitindo que subclasses especializem etapas específicas |
+| Vinicius | F-04, F-12 | **Strategy** | Trocar estratégias de validação de elegibilidade para matrícula (regular, por exceção, por mobilidade externa) sem alterar o código do serviço principal |
+| Bernardo | F-07, F-08 | **Proxy** | Controlar o acesso às operações de solicitação acadêmica e de integralização curricular, delegando a execução somente após validar permissões e pré-condições do estado atual |
+| Clara | F-03, F-14 | **Decorator** | Adicionar comportamentos dinâmicos à oferta de turmas (ex.: `TurmaComListaEspera`, `TurmaOnline`) e a oportunidades de estágio sem modificar a classe base |
+| Matheus | F-10, F-11 | **Observer** | Notificar automaticamente estudantes e coordenação quando o status de um benefício de permanência acadêmica ou de um caso psicopedagógico é alterado |
+| Jera | F-09, F-13 | **Observer** | Reagir a eventos de domínio financeiros (pagamento confirmado, cobrança vencida) e de atividades complementares (deferimento de horas) para acionar notificações e atualizar saldos |
+
+> **Nota:** Os padrões Iterator, Decorator, Proxy, Strategy e Template Method são adotados uma vez cada. O padrão Observer aparece em dois contextos distintos (Matheus e Jera), totalizando **6 padrões distintos** — todos do rol definido — com **7 implementações** ao longo do projeto, satisfazendo o requisito de 6 ou mais (1 por integrante).
+
+---
+
 ## Funcionalidade 1 — F-01 · Gestão Curricular do Curso
 
 | | |
