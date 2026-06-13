@@ -43,6 +43,9 @@ public class PeriodoLetivo {
     // US02 - RN2: operações vinculadas a janelas acadêmicas ativas
     public JanelaDefinidaEvento definirJanela(TipoJanela tipo, LocalDate inicio, LocalDate fim) {
         notNull(tipo, "O tipo de janela não pode ser nulo");
+        if (status != StatusPeriodoLetivo.NAO_INICIADO) {
+            throw new IllegalStateException("Janelas só podem ser definidas em períodos não iniciados");
+        }
         var janela = new JanelaAcademica(tipo, inicio, fim);
         janelas.removeIf(j -> j.getTipo() == tipo);
         janelas.add(janela);
@@ -74,6 +77,15 @@ public class PeriodoLetivo {
         return new PeriodoLetivoEditadoEvento(this);
     }
 
+    // US-iniciar: transição NAO_INICIADO → EM_ANDAMENTO
+    public PeriodoLetivoIniciadoEvento iniciar() {
+        if (status != StatusPeriodoLetivo.NAO_INICIADO) {
+            throw new IllegalStateException("Apenas períodos não iniciados podem ser iniciados");
+        }
+        this.status = StatusPeriodoLetivo.EM_ANDAMENTO;
+        return new PeriodoLetivoIniciadoEvento(this);
+    }
+
     // US06 - RN5: cancelamento restrito a períodos não iniciados sem matrículas (verificação externa)
     public PeriodoLetivoCanceladoEvento cancelar() {
         if (status != StatusPeriodoLetivo.NAO_INICIADO) {
@@ -90,6 +102,15 @@ public class PeriodoLetivo {
         }
         this.status = StatusPeriodoLetivo.ENCERRADO;
         return new PeriodoLetivoEncerradoEvento(this);
+    }
+
+    public static PeriodoLetivo reconstituir(PeriodoLetivoId id, CursoId cursoId, int ano, int semestre,
+                                             LocalDate dataInicio, LocalDate dataFim,
+                                             StatusPeriodoLetivo status, List<JanelaAcademica> janelas) {
+        var periodo = new PeriodoLetivo(id, cursoId, ano, semestre, dataInicio, dataFim);
+        periodo.status = status;
+        periodo.janelas.addAll(janelas);
+        return periodo;
     }
 
     public PeriodoLetivoId getId() { return id; }
@@ -118,6 +139,10 @@ public class PeriodoLetivo {
 
     public static class PeriodoLetivoEncerradoEvento extends PeriodoLetivoEvento {
         private PeriodoLetivoEncerradoEvento(PeriodoLetivo periodo) { super(periodo); }
+    }
+
+    public static class PeriodoLetivoIniciadoEvento extends PeriodoLetivoEvento {
+        private PeriodoLetivoIniciadoEvento(PeriodoLetivo periodo) { super(periodo); }
     }
 
     public static class PeriodoLetivoCanceladoEvento extends PeriodoLetivoEvento {
