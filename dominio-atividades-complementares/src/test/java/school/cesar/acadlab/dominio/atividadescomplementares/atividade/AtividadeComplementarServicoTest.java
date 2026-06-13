@@ -3,6 +3,7 @@ package school.cesar.acadlab.dominio.atividadescomplementares.atividade;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import school.cesar.acadlab.dominio.atividadescomplementares.*;
+import school.cesar.acadlab.dominio.evento.EventoBarramento;
 import java.time.LocalDate;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -14,6 +15,7 @@ class AtividadeComplementarServicoTest {
     private VerificadorCertificadoDuplicado verificadorCertificado;
     private VerificadorLimiteCategoria verificadorLimite;
     private VerificadorContabilizacaoIntegralizacao verificadorContabilizacao;
+    private EventoBarramento barramento;
     private AtividadeComplementarServico servico;
 
     @BeforeEach
@@ -23,8 +25,9 @@ class AtividadeComplementarServicoTest {
         verificadorCertificado = mock(VerificadorCertificadoDuplicado.class);
         verificadorLimite = mock(VerificadorLimiteCategoria.class);
         verificadorContabilizacao = mock(VerificadorContabilizacaoIntegralizacao.class);
+        barramento = mock(EventoBarramento.class);
         servico = new AtividadeComplementarServico(repositorio, verificadorVinculo,
-                verificadorCertificado, verificadorLimite, verificadorContabilizacao);
+                verificadorCertificado, verificadorLimite, verificadorContabilizacao, barramento);
         when(repositorio.proximoId()).thenReturn(new AtividadeComplementarId(1));
     }
 
@@ -65,7 +68,7 @@ class AtividadeComplementarServicoTest {
     }
 
     @Test
-    void deferir_dentroDoLimite_deveSalvar() {
+    void deferir_dentroDoLimite_deveSalvarEPublicarEvento() {
         var atividade = criarAtividadePendente();
         when(repositorio.obter(atividade.getId())).thenReturn(atividade);
         when(verificadorLimite.excedeLimite(any(), any(), anyInt())).thenReturn(false);
@@ -74,6 +77,7 @@ class AtividadeComplementarServicoTest {
 
         verify(repositorio).salvar(atividade);
         assertEquals(StatusAtividade.DEFERIDA, atividade.getStatus());
+        verify(barramento).postar(any(AtividadeComplementar.DeferidaEvento.class));
     }
 
     @Test
@@ -84,10 +88,21 @@ class AtividadeComplementarServicoTest {
 
         assertThrows(IllegalStateException.class, () -> servico.deferir(atividade.getId(), 30));
         verify(repositorio, never()).salvar(any());
+        verify(barramento, never()).postar(any());
     }
 
     @Test
-    void solicitarRevisao_semContabilizacao_deveSalvar() {
+    void indeferir_devePublicarEvento() {
+        var atividade = criarAtividadePendente();
+        when(repositorio.obter(atividade.getId())).thenReturn(atividade);
+
+        servico.indeferir(atividade.getId(), "Certificado inválido");
+
+        verify(barramento).postar(any(AtividadeComplementar.IndeferidaEvento.class));
+    }
+
+    @Test
+    void solicitarRevisao_semContabilizacao_deveSalvarEPublicarEvento() {
         var atividade = criarAtividadeIndeferida();
         when(verificadorContabilizacao.foiContabilizada(atividade.getId())).thenReturn(false);
         when(repositorio.obter(atividade.getId())).thenReturn(atividade);
@@ -96,6 +111,7 @@ class AtividadeComplementarServicoTest {
 
         verify(repositorio).salvar(atividade);
         assertEquals(StatusAtividade.REVISAO_SOLICITADA, atividade.getStatus());
+        verify(barramento).postar(any(AtividadeComplementar.RevisaoSolicitadaEvento.class));
     }
 
     @Test
@@ -105,6 +121,17 @@ class AtividadeComplementarServicoTest {
 
         assertThrows(IllegalStateException.class, () -> servico.solicitarRevisao(id, "justificativa"));
         verify(repositorio, never()).obter(any());
+        verify(barramento, never()).postar(any());
+    }
+
+    @Test
+    void cancelar_devePublicarEvento() {
+        var atividade = criarAtividadePendente();
+        when(repositorio.obter(atividade.getId())).thenReturn(atividade);
+
+        servico.cancelar(atividade.getId());
+
+        verify(barramento).postar(any(AtividadeComplementar.CanceladaEvento.class));
     }
 
     private AtividadeComplementar criarAtividadePendente() {

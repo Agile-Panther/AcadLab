@@ -1,5 +1,7 @@
 package school.cesar.acadlab.dominio.atividadescomplementares;
 
+import school.cesar.acadlab.dominio.evento.EventoBarramento;
+import school.cesar.acadlab.dominio.evento.EventoObservador;
 import java.time.LocalDate;
 import java.util.HashSet;
 import java.util.Set;
@@ -10,6 +12,7 @@ public class AtividadesComplementaresFuncionalidade {
     protected VerificadorCertificadoDuplicadoStub verificadorCertificado;
     protected VerificadorLimiteCategoriaStub verificadorLimite;
     protected VerificadorContabilizacaoIntegralizacaoStub verificadorContabilizacao;
+    protected EventoBarramentoStub barramento;
     protected AtividadeComplementarServico servico;
 
     public AtividadesComplementaresFuncionalidade() {
@@ -18,8 +21,16 @@ public class AtividadesComplementaresFuncionalidade {
         verificadorCertificado = new VerificadorCertificadoDuplicadoStub();
         verificadorLimite = new VerificadorLimiteCategoriaStub();
         verificadorContabilizacao = new VerificadorContabilizacaoIntegralizacaoStub();
+        barramento = new EventoBarramentoStub();
         servico = new AtividadeComplementarServico(repositorio, verificadorVinculo,
-                verificadorCertificado, verificadorLimite, verificadorContabilizacao);
+                verificadorCertificado, verificadorLimite, verificadorContabilizacao, barramento);
+    }
+
+    protected static class EventoBarramentoStub implements EventoBarramento {
+        @Override
+        public <E> void adicionar(EventoObservador<E> observador) {}
+        @Override
+        public <E> void postar(E evento) {}
     }
 
     protected static class VerificadorVinculoEstudanteStub implements VerificadorVinculoEstudante {
