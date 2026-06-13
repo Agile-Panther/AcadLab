@@ -34,6 +34,15 @@ public class CancelarPeriodoLetivoFuncionalidade extends PeriodoLetivoFuncionali
         periodoLetivoServico.encerrar(periodoId);
     }
 
+    @Dado("um período letivo em andamento para tentativa de cancelamento")
+    public void periodo_em_andamento_para_cancelamento() {
+        var periodo = periodoLetivoServico.cadastrar(
+                cursoId, 2025, 1,
+                LocalDate.of(2025, 3, 1), LocalDate.of(2025, 6, 30));
+        periodoId = periodo.getId();
+        periodoLetivoServico.iniciar(periodoId);
+    }
+
     @Dado("sem matrículas confirmadas no período")
     public void sem_matriculas_confirmadas() {
         verificadorMatriculas.setMatriculas(false);

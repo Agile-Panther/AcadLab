@@ -54,6 +54,11 @@ class PeriodoLetivoControlador {
                 request.fim());
     }
 
+    @RequestMapping(method = POST, path = "{id}/iniciar")
+    void iniciar(@PathVariable int id) {
+        servico.iniciar(new PeriodoLetivoId(id));
+    }
+
     @RequestMapping(method = POST, path = "{id}/encerrar")
     void encerrar(@PathVariable int id) {
         servico.encerrar(new PeriodoLetivoId(id));

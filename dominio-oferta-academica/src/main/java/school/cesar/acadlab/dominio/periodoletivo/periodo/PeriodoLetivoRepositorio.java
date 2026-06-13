@@ -14,4 +14,5 @@ public interface PeriodoLetivoRepositorio {
     List<PeriodoLetivo> pesquisarPorCurso(CursoId cursoId);
     Optional<PeriodoLetivo> pesquisarPorCursoEStatus(CursoId cursoId, StatusPeriodoLetivo status);
     boolean existeSobreposicao(CursoId cursoId, LocalDate inicio, LocalDate fim);
+    boolean existeSobreposicaoExcluindo(CursoId cursoId, LocalDate inicio, LocalDate fim, PeriodoLetivoId excluindo);
 }

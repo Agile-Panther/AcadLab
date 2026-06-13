@@ -19,9 +19,9 @@ public class EditarPeriodoLetivoFuncionalidade extends PeriodoLetivoFuncionalida
 
     @Dado("um período letivo cadastrado editável")
     public void periodo_editavel() {
-        var periodo = periodoLetivoServico.cadastrar(
-                cursoId, 2025, 1,
-                LocalDate.of(2025, 3, 1), LocalDate.of(2025, 6, 30));
+        var inicio = LocalDate.now().plusYears(1);
+        var fim = inicio.plusMonths(6);
+        var periodo = periodoLetivoServico.cadastrar(cursoId, 2028, 1, inicio, fim);
         periodoId = periodo.getId();
     }
 
@@ -33,6 +33,15 @@ public class EditarPeriodoLetivoFuncionalidade extends PeriodoLetivoFuncionalida
         periodoId = periodo.getId();
         verificadorPendencias.setPendencias(false);
         periodoLetivoServico.encerrar(periodoId);
+    }
+
+    @Dado("um período letivo em andamento para tentativa de edição")
+    public void periodo_em_andamento_para_edicao() {
+        var periodo = periodoLetivoServico.cadastrar(
+                cursoId, 2025, 1,
+                LocalDate.of(2025, 3, 1), LocalDate.of(2025, 6, 30));
+        periodoId = periodo.getId();
+        periodoLetivoServico.iniciar(periodoId);
     }
 
     @Quando("a secretaria edita o período letivo para as datas de {string} a {string}")

@@ -47,7 +47,16 @@ public class Repositorio implements PeriodoLetivoRepositorio {
     public boolean existeSobreposicao(CursoId cursoId, LocalDate inicio, LocalDate fim) {
         return periodos.values().stream()
                 .filter(p -> p.getCursoId().equals(cursoId))
-                .filter(p -> p.getStatus() != StatusPeriodoLetivo.CANCELADO)
+                .filter(p -> p.getStatus() != StatusPeriodoLetivo.CANCELADO && p.getStatus() != StatusPeriodoLetivo.ENCERRADO)
+                .anyMatch(p -> !p.getDataFim().isBefore(inicio) && !p.getDataInicio().isAfter(fim));
+    }
+
+    @Override
+    public boolean existeSobreposicaoExcluindo(CursoId cursoId, LocalDate inicio, LocalDate fim, PeriodoLetivoId excluindo) {
+        return periodos.values().stream()
+                .filter(p -> p.getCursoId().equals(cursoId))
+                .filter(p -> !p.getId().equals(excluindo))
+                .filter(p -> p.getStatus() != StatusPeriodoLetivo.CANCELADO && p.getStatus() != StatusPeriodoLetivo.ENCERRADO)
                 .anyMatch(p -> !p.getDataFim().isBefore(inicio) && !p.getDataInicio().isAfter(fim));
     }
 }
