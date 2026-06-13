@@ -1,0 +1,48 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: acadlab
+      POSTGRES_USER: acadlab
+      POSTGRES_PASSWORD: acadlab
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U acadlab -d acadlab"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: .
+      dockerfile: apresentacao-backend/Dockerfile.dev
+    volumes:
+      - .:/app
+      - maven_repo:/root/.m2
+    ports:
+      - "8080:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/acadlab
+      SPRING_DATASOURCE_USERNAME: acadlab
+      SPRING_DATASOURCE_PASSWORD: acadlab
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+
+  frontend:
+    build:
+      context: ./apresentacao-frontend/react
+      dockerfile: Dockerfile.dev
+    volumes:
+      - ./apresentacao-frontend/react:/app
+      - /app/node_modules
+    ports:
+      - "5173:5173"
+
+volumes:
+  postgres_data:
+  maven_repo:

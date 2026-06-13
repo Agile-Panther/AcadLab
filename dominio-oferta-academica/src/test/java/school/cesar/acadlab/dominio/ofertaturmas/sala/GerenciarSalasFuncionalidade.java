@@ -13,16 +13,16 @@ public class GerenciarSalasFuncionalidade extends OfertaTurmasFuncionalidade {
 
     @Dado("uma sala ativa cadastrada com capacidade para trinta pessoas")
     public void sala_ativa_cadastrada() {
-        salaId = repositorio.proximoId();
-        repositorio.salvar(new Sala(salaId, "Sala 101", 30));
+        salaId = salaRepositorio.proximoId();
+        salaRepositorio.salvar(new Sala(salaId, "Sala 101", 30));
     }
 
     @Quando("a secretaria inativa a sala")
     public void secretaria_inativa_sala() {
         try {
-            var sala = repositorio.obter(salaId);
+            var sala = salaRepositorio.obter(salaId);
             sala.inativar();
-            repositorio.salvar(sala);
+            salaRepositorio.salvar(sala);
         } catch (RuntimeException e) {
             excecao = e;
         }
@@ -31,16 +31,16 @@ public class GerenciarSalasFuncionalidade extends OfertaTurmasFuncionalidade {
     @Entao("a sala passa a ter status inativo")
     public void sala_inativa() {
         assertNull(excecao, "Não deveria ter lançado exceção");
-        var sala = repositorio.obter(salaId);
+        var sala = salaRepositorio.obter(salaId);
         assertFalse(sala.isAtiva());
     }
 
     @Quando("a secretaria tenta reduzir a capacidade da sala para vinte pessoas havendo turma com trinta vagas")
     public void reduzir_capacidade_abaixo_turma() {
         try {
-            var sala = repositorio.obter(salaId);
+            var sala = salaRepositorio.obter(salaId);
             sala.alterarCapacidade(20, 30);
-            repositorio.salvar(sala);
+            salaRepositorio.salvar(sala);
         } catch (RuntimeException e) {
             excecao = e;
         }

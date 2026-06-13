@@ -16,16 +16,16 @@ public class GerenciarProfessoresFuncionalidade extends OfertaTurmasFuncionalida
 
     @Dado("um professor ativo cadastrado")
     public void professor_ativo_cadastrado() {
-        professorId = repositorio.proximoId();
-        repositorio.salvar(new Professor(professorId, "Prof. Santos"));
+        professorId = professorRepositorio.proximoId();
+        professorRepositorio.salvar(new Professor(professorId, "Prof. Santos"));
     }
 
     @Quando("a secretaria inativa o professor")
     public void secretaria_inativa_professor() {
         try {
-            var professor = repositorio.obter(professorId);
+            var professor = professorRepositorio.obter(professorId);
             professor.inativar();
-            repositorio.salvar(professor);
+            professorRepositorio.salvar(professor);
         } catch (RuntimeException e) {
             excecao = e;
         }
@@ -34,16 +34,16 @@ public class GerenciarProfessoresFuncionalidade extends OfertaTurmasFuncionalida
     @Entao("o professor passa a ter status inativo")
     public void professor_inativo() {
         assertNull(excecao, "Não deveria ter lançado exceção");
-        var professor = repositorio.obter(professorId);
+        var professor = professorRepositorio.obter(professorId);
         assertFalse(professor.isAtivo());
     }
 
     @Quando("a coordenação tenta vincular o professor inativo a uma turma")
     public void vincular_professor_inativo() {
         try {
-            var professor = repositorio.obter(professorId);
+            var professor = professorRepositorio.obter(professorId);
             professor.inativar();
-            repositorio.salvar(professor);
+            professorRepositorio.salvar(professor);
             var turma = ofertaTurmaServico.ofertar(
                     new PeriodoLetivoId(1), new DisciplinaId(1), ModalidadeTurma.PRESENCIAL, 30);
             ofertaTurmaServico.vincularProfessor(turma.getId(), professorId);
