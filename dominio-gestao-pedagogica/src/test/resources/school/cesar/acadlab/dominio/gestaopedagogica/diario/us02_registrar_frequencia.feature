@@ -9,3 +9,8 @@ Funcionalidade: Registrar frequência dos estudantes
     Dado um diário sem estudantes matriculados e com aula registrada
     Quando o professor tenta registrar frequência de estudante não matriculado
     Então o sistema rejeita a frequência informando RN-3
+
+  Cenário: Professor não responsável não pode registrar frequência
+    Dado um diário com estudante matriculado ativo e aula registrada
+    Quando outro professor tenta registrar a frequência do estudante
+    Então o sistema rejeita a frequência informando RN-4
