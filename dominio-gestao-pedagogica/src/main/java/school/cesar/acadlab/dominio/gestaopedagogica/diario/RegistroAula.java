@@ -28,6 +28,13 @@ public class RegistroAula {
     public String getConteudo() { return conteudo; }
     public boolean isCorrigido() { return corrigido; }
 
+    public static RegistroAula reconstituir(RegistroAulaId id, ProfessorId professorId,
+                                             LocalDate data, String conteudo, boolean corrigido) {
+        var aula = new RegistroAula(id, professorId, data, conteudo);
+        aula.corrigido = corrigido;
+        return aula;
+    }
+
     // RN-11: apenas o professor responsável pela aula pode corrigi-la.
     // RN-10: correção só é permitida com o diário aberto.
     public void corrigir(ProfessorId professorId, String novoConteudo, boolean diarioAberto) {
