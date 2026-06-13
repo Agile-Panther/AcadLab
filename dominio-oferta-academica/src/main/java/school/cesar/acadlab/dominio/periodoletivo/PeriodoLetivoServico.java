@@ -2,16 +2,25 @@ package school.cesar.acadlab.dominio.periodoletivo;
 
 import static org.apache.commons.lang3.Validate.notNull;
 import java.time.LocalDate;
+import java.util.List;
 import school.cesar.acadlab.dominio.periodoletivo.curso.CursoId;
 import school.cesar.acadlab.dominio.periodoletivo.periodo.PeriodoLetivo;
 import school.cesar.acadlab.dominio.periodoletivo.periodo.PeriodoLetivoRepositorio;
 
 public class PeriodoLetivoServico {
     private final PeriodoLetivoRepositorio repositorio;
+    private final VerificadorPendenciasPeriodo verificadorPendencias;
+    private final VerificadorMatriculasPeriodo verificadorMatriculas;
 
-    public PeriodoLetivoServico(PeriodoLetivoRepositorio repositorio) {
+    public PeriodoLetivoServico(PeriodoLetivoRepositorio repositorio,
+                                VerificadorPendenciasPeriodo verificadorPendencias,
+                                VerificadorMatriculasPeriodo verificadorMatriculas) {
         notNull(repositorio, "O repositório não pode ser nulo");
+        notNull(verificadorPendencias, "O verificador de pendências não pode ser nulo");
+        notNull(verificadorMatriculas, "O verificador de matrículas não pode ser nulo");
         this.repositorio = repositorio;
+        this.verificadorPendencias = verificadorPendencias;
+        this.verificadorMatriculas = verificadorMatriculas;
     }
 
     // US01 - RN1: não sobreposição de períodos letivos do mesmo curso
@@ -39,9 +48,12 @@ public class PeriodoLetivoServico {
         repositorio.salvar(periodo);
     }
 
-    // US03 - encerrar período; RN3 (ausência de pendências) verificada externamente
+    // US03 - RN3: verifica pendências externas antes de encerrar
     public void encerrar(PeriodoLetivoId periodoId) {
         notNull(periodoId, "O período não pode ser nulo");
+        if (verificadorPendencias.possuiPendencias(periodoId)) {
+            throw new IllegalStateException("RN3: Não é possível encerrar período com pendências abertas");
+        }
         var periodo = repositorio.obter(periodoId);
         periodo.encerrar();
         repositorio.salvar(periodo);
@@ -55,11 +67,20 @@ public class PeriodoLetivoServico {
         repositorio.salvar(periodo);
     }
 
-    // US06 - RN5: cancelamento restrito; matrículas confirmadas verificadas externamente
+    // US06 - RN5: verifica matrículas externas antes de cancelar
     public void cancelar(PeriodoLetivoId periodoId) {
         notNull(periodoId, "O período não pode ser nulo");
+        if (verificadorMatriculas.possuiMatriculasConfirmadas(periodoId)) {
+            throw new IllegalStateException("RN5: Não é possível cancelar período com matrículas confirmadas");
+        }
         var periodo = repositorio.obter(periodoId);
         periodo.cancelar();
         repositorio.salvar(periodo);
+    }
+
+    // US04 - consultar
+    public List<PeriodoLetivo> pesquisarPorCurso(CursoId cursoId) {
+        notNull(cursoId, "O curso não pode ser nulo");
+        return repositorio.pesquisarPorCurso(cursoId);
     }
 }

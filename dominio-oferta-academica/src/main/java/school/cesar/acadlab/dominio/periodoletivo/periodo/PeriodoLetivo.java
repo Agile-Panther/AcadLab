@@ -43,6 +43,9 @@ public class PeriodoLetivo {
     // US02 - RN2: operações vinculadas a janelas acadêmicas ativas
     public JanelaDefinidaEvento definirJanela(TipoJanela tipo, LocalDate inicio, LocalDate fim) {
         notNull(tipo, "O tipo de janela não pode ser nulo");
+        if (status != StatusPeriodoLetivo.NAO_INICIADO) {
+            throw new IllegalStateException("Janelas só podem ser definidas em períodos não iniciados");
+        }
         var janela = new JanelaAcademica(tipo, inicio, fim);
         janelas.removeIf(j -> j.getTipo() == tipo);
         janelas.add(janela);
