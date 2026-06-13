@@ -1,0 +1,208 @@
+package school.cesar.acadlab.dominio.gestaopedagogica.diario;
+
+import static org.apache.commons.lang3.Validate.notNull;
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
+public class DiarioTurma {
+    private final DiarioTurmaId id;
+    private final TurmaId turmaId;
+    private final PeriodoLetivoId periodoLetivoId;
+    private final ProfessorId professorResponsavel;
+    private final LocalDate dataInicioPeriodo;
+    private final LocalDate dataFimPeriodo;
+    private final double mediaMinima;
+    private final double frequenciaMinima;
+    private StatusDiario status;
+    private final List<RegistroAula> aulas;
+    private final List<Avaliacao> avaliacoes;
+    private final List<LancamentoFrequencia> frequencias;
+    private final List<ResultadoEstudante> resultados;
+    private final Set<EstudanteId> estudantesAtivos;
+
+    public DiarioTurma(DiarioTurmaId id, TurmaId turmaId, PeriodoLetivoId periodoLetivoId,
+                       ProfessorId professorResponsavel, LocalDate dataInicioPeriodo, LocalDate dataFimPeriodo,
+                       double mediaMinima, double frequenciaMinima) {
+        notNull(id, "O id do diário não pode ser nulo");
+        notNull(turmaId, "O id da turma não pode ser nulo");
+        notNull(periodoLetivoId, "O id do período letivo não pode ser nulo");
+        notNull(professorResponsavel, "O professor responsável não pode ser nulo");
+        notNull(dataInicioPeriodo, "A data de início do período não pode ser nula");
+        notNull(dataFimPeriodo, "A data de fim do período não pode ser nula");
+        this.id = id;
+        this.turmaId = turmaId;
+        this.periodoLetivoId = periodoLetivoId;
+        this.professorResponsavel = professorResponsavel;
+        this.dataInicioPeriodo = dataInicioPeriodo;
+        this.dataFimPeriodo = dataFimPeriodo;
+        this.mediaMinima = mediaMinima;
+        this.frequenciaMinima = frequenciaMinima;
+        this.status = StatusDiario.ABERTO;
+        this.aulas = new ArrayList<>();
+        this.avaliacoes = new ArrayList<>();
+        this.frequencias = new ArrayList<>();
+        this.resultados = new ArrayList<>();
+        this.estudantesAtivos = new HashSet<>();
+    }
+
+    public DiarioTurmaId getId() { return id; }
+    public TurmaId getTurmaId() { return turmaId; }
+    public PeriodoLetivoId getPeriodoLetivoId() { return periodoLetivoId; }
+    public ProfessorId getProfessorResponsavel() { return professorResponsavel; }
+    public LocalDate getDataInicioPeriodo() { return dataInicioPeriodo; }
+    public LocalDate getDataFimPeriodo() { return dataFimPeriodo; }
+    public double getMediaMinima() { return mediaMinima; }
+    public double getFrequenciaMinima() { return frequenciaMinima; }
+    public StatusDiario getStatus() { return status; }
+    public List<RegistroAula> getAulas() { return Collections.unmodifiableList(aulas); }
+    public List<Avaliacao> getAvaliacoes() { return Collections.unmodifiableList(avaliacoes); }
+    public List<LancamentoFrequencia> getFrequencias() { return Collections.unmodifiableList(frequencias); }
+    public List<ResultadoEstudante> getResultados() { return Collections.unmodifiableList(resultados); }
+    public Set<EstudanteId> getEstudantesAtivos() { return Collections.unmodifiableSet(estudantesAtivos); }
+
+    // RN-1: apenas o professor responsável pode registrar aulas.
+    // RN-2: aula deve ser registrada dentro do período letivo.
+    public void registrarAula(RegistroAulaId aulaId, ProfessorId professorId, LocalDate data, String conteudo) {
+        notNull(aulaId, "O id da aula não pode ser nulo");
+        notNull(professorId, "O professor não pode ser nulo");
+        notNull(data, "A data não pode ser nula");
+        if (!professorId.equals(professorResponsavel)) {
+            throw new IllegalStateException("RN-1: Apenas o professor responsável pode registrar aulas");
+        }
+        if (data.isBefore(dataInicioPeriodo) || data.isAfter(dataFimPeriodo)) {
+            throw new IllegalStateException("RN-2: Aula deve ser registrada dentro do período letivo");
+        }
+        aulas.add(new RegistroAula(aulaId, professorId, data, conteudo));
+    }
+
+    // RN-10 e RN-11: delegados ao RegistroAula.
+    public void corrigirAula(RegistroAulaId aulaId, ProfessorId professorId, String novoConteudo) {
+        notNull(aulaId, "O id da aula não pode ser nulo");
+        var aula = aulas.stream()
+                .filter(a -> a.getId().equals(aulaId))
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("Aula não encontrada: " + aulaId));
+        aula.corrigir(professorId, novoConteudo, status == StatusDiario.ABERTO);
+    }
+
+    // RN-4: apenas o professor responsável pode registrar frequência.
+    // RN-3: apenas estudantes com matrícula ativa podem ter frequência registrada.
+    public void registrarFrequencia(ProfessorId professorId, RegistroAulaId aulaId,
+                                    EstudanteId estudanteId, boolean presente) {
+        notNull(professorId, "O professor não pode ser nulo");
+        notNull(aulaId, "O id da aula não pode ser nulo");
+        notNull(estudanteId, "O estudante não pode ser nulo");
+        if (!professorId.equals(professorResponsavel)) {
+            throw new IllegalStateException("RN-4: Apenas o professor responsável pode registrar frequência");
+        }
+        if (!estudantesAtivos.contains(estudanteId)) {
+            throw new IllegalStateException("RN-3: Estudante não possui matrícula ativa na turma");
+        }
+        frequencias.add(new LancamentoFrequencia(aulaId, estudanteId, presente));
+    }
+
+    public void adicionarEstudanteAtivo(EstudanteId estudanteId) {
+        notNull(estudanteId, "O estudante não pode ser nulo");
+        estudantesAtivos.add(estudanteId);
+        boolean jaExiste = resultados.stream().anyMatch(r -> r.getEstudanteId().equals(estudanteId));
+        if (!jaExiste) {
+            resultados.add(new ResultadoEstudante(estudanteId));
+        }
+    }
+
+    // RN-6: prazo da avaliação deve estar dentro do período letivo.
+    // RN-5: soma dos pesos das avaliações não pode ultrapassar 100%.
+    public void adicionarAvaliacao(AvaliacaoId avaliacaoId, String nome, double peso, LocalDate prazo) {
+        notNull(avaliacaoId, "O id da avaliação não pode ser nulo");
+        notNull(nome, "O nome da avaliação não pode ser nulo");
+        notNull(prazo, "O prazo da avaliação não pode ser nulo");
+        if (prazo.isBefore(dataInicioPeriodo) || prazo.isAfter(dataFimPeriodo)) {
+            throw new IllegalStateException("RN-6: Prazo da avaliação fora do período letivo");
+        }
+        double somaAtual = avaliacoes.stream().mapToDouble(Avaliacao::getPeso).sum();
+        if (somaAtual + peso > 100.0) {
+            throw new IllegalStateException("RN-5: Soma dos pesos das avaliações excede 100%");
+        }
+        avaliacoes.add(new Avaliacao(avaliacaoId, nome, peso, prazo));
+    }
+
+    // RN-8: delegado ao ResultadoEstudante.
+    public void lancarNota(EstudanteId estudanteId, AvaliacaoId avaliacaoId, double nota) {
+        notNull(estudanteId, "O estudante não pode ser nulo");
+        notNull(avaliacaoId, "O id da avaliação não pode ser nulo");
+        obterOuCriarResultado(estudanteId).adicionarNota(avaliacaoId, nota);
+    }
+
+    // RN-7: fecha o resultado do estudante calculando média ponderada e frequência.
+    public void fecharResultado(EstudanteId estudanteId) {
+        notNull(estudanteId, "O estudante não pode ser nulo");
+        var resultado = obterResultado(estudanteId);
+
+        int totalAulas = aulas.size();
+        long presencas = frequencias.stream()
+                .filter(f -> f.getEstudanteId().equals(estudanteId) && f.isPresente())
+                .count();
+
+        double somaPonderada = 0.0;
+        double somaPesos = 0.0;
+        for (var avaliacao : avaliacoes) {
+            Double nota = resultado.getNotas().get(avaliacao.getId());
+            if (nota != null) {
+                somaPonderada += nota * avaliacao.getPeso();
+                somaPesos += avaliacao.getPeso();
+            }
+        }
+        double mediaPonderada = somaPesos > 0 ? somaPonderada / somaPesos : 0.0;
+
+        resultado.fechar(mediaMinima, frequenciaMinima, totalAulas, presencas, mediaPonderada);
+    }
+
+    // RN-9: revisão de nota deve estar dentro da janela de revisão.
+    public void solicitarRevisaoNota(EstudanteId estudanteId, LocalDate hoje, LocalDate fimJanelaRevisao) {
+        notNull(estudanteId, "O estudante não pode ser nulo");
+        notNull(hoje, "A data atual não pode ser nula");
+        notNull(fimJanelaRevisao, "A data fim da janela de revisão não pode ser nula");
+        if (hoje.isAfter(fimJanelaRevisao)) {
+            throw new IllegalStateException("RN-9: Revisão de nota fora da janela de revisão");
+        }
+        obterResultado(estudanteId).solicitarRevisao();
+    }
+
+    // RN-13: nota de recuperação deve ser lançada dentro do período letivo.
+    // RN-12: estudante deve estar em situação de recuperação.
+    public void lancarNotaRecuperacao(EstudanteId estudanteId, double nota, LocalDate hoje) {
+        notNull(estudanteId, "O estudante não pode ser nulo");
+        notNull(hoje, "A data atual não pode ser nula");
+        if (hoje.isAfter(dataFimPeriodo)) {
+            throw new IllegalStateException("RN-13: Nota de recuperação fora do período letivo");
+        }
+        var resultado = obterResultado(estudanteId);
+        if (resultado.getSituacao() != SituacaoResultado.RECUPERACAO) {
+            throw new IllegalStateException("RN-12: Estudante não está em situação de recuperação");
+        }
+        resultado.lancarRecuperacao(nota);
+        resultado.atualizarSituacaoRecuperacao(nota >= mediaMinima ? SituacaoResultado.APROVADO : SituacaoResultado.REPROVADO_NOTA);
+    }
+
+    private ResultadoEstudante obterResultado(EstudanteId estudanteId) {
+        return resultados.stream()
+                .filter(r -> r.getEstudanteId().equals(estudanteId))
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("Resultado não encontrado para o estudante: " + estudanteId));
+    }
+
+    private ResultadoEstudante obterOuCriarResultado(EstudanteId estudanteId) {
+        return resultados.stream()
+                .filter(r -> r.getEstudanteId().equals(estudanteId))
+                .findFirst()
+                .orElseGet(() -> {
+                    var novo = new ResultadoEstudante(estudanteId);
+                    resultados.add(novo);
+                    return novo;
+                });
+    }
+}
