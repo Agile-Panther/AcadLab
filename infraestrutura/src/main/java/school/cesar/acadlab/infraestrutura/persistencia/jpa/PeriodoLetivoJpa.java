@@ -7,6 +7,7 @@ import java.util.Optional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import jakarta.persistence.CollectionTable;
@@ -65,8 +66,24 @@ class JanelaAcademicaJpa {
 interface PeriodoLetivoJpaRepository extends JpaRepository<PeriodoLetivoJpa, Integer> {
     List<PeriodoLetivoJpa> findByCursoId(int cursoId);
 
-    boolean existsByCursoIdAndStatusNotAndDataFimGreaterThanEqualAndDataInicioLessThanEqual(
-            int cursoId, StatusPeriodoLetivo status, LocalDate inicio, LocalDate fim);
+    Optional<PeriodoLetivoJpa> findByCursoIdAndStatus(int cursoId, StatusPeriodoLetivo status);
+
+    @Query("SELECT CASE WHEN COUNT(p) > 0 THEN true ELSE false END FROM PeriodoLetivoJpa p " +
+           "WHERE p.cursoId = :cursoId AND p.status NOT IN :excluirStatus " +
+           "AND p.dataFim >= :inicio AND p.dataInicio <= :fim")
+    boolean existsSobreposicao(@Param("cursoId") int cursoId,
+                                @Param("inicio") LocalDate inicio,
+                                @Param("fim") LocalDate fim,
+                                @Param("excluirStatus") List<StatusPeriodoLetivo> excluirStatus);
+
+    @Query("SELECT CASE WHEN COUNT(p) > 0 THEN true ELSE false END FROM PeriodoLetivoJpa p " +
+           "WHERE p.cursoId = :cursoId AND p.status NOT IN :excluirStatus " +
+           "AND p.dataFim >= :inicio AND p.dataInicio <= :fim AND p.id <> :excluirId")
+    boolean existsSobreposicaoExcluindo(@Param("cursoId") int cursoId,
+                                         @Param("inicio") LocalDate inicio,
+                                         @Param("fim") LocalDate fim,
+                                         @Param("excluirStatus") List<StatusPeriodoLetivo> excluirStatus,
+                                         @Param("excluirId") int excluirId);
 
     @Query("SELECT COALESCE(MAX(p.id), 0) + 1 FROM PeriodoLetivoJpa p")
     int proximoId();
@@ -101,17 +118,22 @@ class PeriodoLetivoRepositorioImpl implements PeriodoLetivoRepositorio, PeriodoL
 
     @Override
     public Optional<PeriodoLetivo> pesquisarPorCursoEStatus(CursoId cursoId, StatusPeriodoLetivo status) {
-        return jpaRepository.findByCursoId(cursoId.getId()).stream()
-                .filter(p -> p.status == status)
-                .findFirst()
-                .map(this::toDomain);
+        return jpaRepository.findByCursoIdAndStatus(cursoId.getId(), status).map(this::toDomain);
     }
+
+    private static final List<StatusPeriodoLetivo> STATUS_INATIVOS =
+            List.of(StatusPeriodoLetivo.CANCELADO, StatusPeriodoLetivo.ENCERRADO);
 
     @Override
     public boolean existeSobreposicao(CursoId cursoId, LocalDate inicio, LocalDate fim) {
-        return jpaRepository
-                .existsByCursoIdAndStatusNotAndDataFimGreaterThanEqualAndDataInicioLessThanEqual(
-                        cursoId.getId(), StatusPeriodoLetivo.CANCELADO, inicio, fim);
+        return jpaRepository.existsSobreposicao(cursoId.getId(), inicio, fim, STATUS_INATIVOS);
+    }
+
+    @Override
+    public boolean existeSobreposicaoExcluindo(CursoId cursoId, LocalDate inicio, LocalDate fim,
+                                                PeriodoLetivoId excluindo) {
+        return jpaRepository.existsSobreposicaoExcluindo(
+                cursoId.getId(), inicio, fim, STATUS_INATIVOS, excluindo.getId());
     }
 
     @Override
@@ -123,8 +145,8 @@ class PeriodoLetivoRepositorioImpl implements PeriodoLetivoRepositorio, PeriodoL
 
     private PeriodoLetivoJpa toJpa(PeriodoLetivo periodo) {
         var jpa = new PeriodoLetivoJpa();
-        jpa.id = periodo.getId().valor();
-        jpa.cursoId = periodo.getCursoId().valor();
+        jpa.id = periodo.getId().getId();
+        jpa.cursoId = periodo.getCursoId().getId();
         jpa.ano = periodo.getAno();
         jpa.semestre = periodo.getSemestre();
         jpa.dataInicio = periodo.getDataInicio();

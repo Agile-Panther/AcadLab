@@ -77,6 +77,15 @@ public class PeriodoLetivo {
         return new PeriodoLetivoEditadoEvento(this);
     }
 
+    // US-iniciar: transição NAO_INICIADO → EM_ANDAMENTO
+    public PeriodoLetivoIniciadoEvento iniciar() {
+        if (status != StatusPeriodoLetivo.NAO_INICIADO) {
+            throw new IllegalStateException("Apenas períodos não iniciados podem ser iniciados");
+        }
+        this.status = StatusPeriodoLetivo.EM_ANDAMENTO;
+        return new PeriodoLetivoIniciadoEvento(this);
+    }
+
     // US06 - RN5: cancelamento restrito a períodos não iniciados sem matrículas (verificação externa)
     public PeriodoLetivoCanceladoEvento cancelar() {
         if (status != StatusPeriodoLetivo.NAO_INICIADO) {
@@ -130,6 +139,10 @@ public class PeriodoLetivo {
 
     public static class PeriodoLetivoEncerradoEvento extends PeriodoLetivoEvento {
         private PeriodoLetivoEncerradoEvento(PeriodoLetivo periodo) { super(periodo); }
+    }
+
+    public static class PeriodoLetivoIniciadoEvento extends PeriodoLetivoEvento {
+        private PeriodoLetivoIniciadoEvento(PeriodoLetivo periodo) { super(periodo); }
     }
 
     public static class PeriodoLetivoCanceladoEvento extends PeriodoLetivoEvento {

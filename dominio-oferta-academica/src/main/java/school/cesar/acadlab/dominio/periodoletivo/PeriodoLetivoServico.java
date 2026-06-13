@@ -59,10 +59,21 @@ public class PeriodoLetivoServico {
         repositorio.salvar(periodo);
     }
 
-    // US05 - RN4: edição restrita a períodos não iniciados
+    // US-iniciar: inicia o período letivo (NAO_INICIADO → EM_ANDAMENTO)
+    public void iniciar(PeriodoLetivoId periodoId) {
+        notNull(periodoId, "O período não pode ser nulo");
+        var periodo = repositorio.obter(periodoId);
+        periodo.iniciar();
+        repositorio.salvar(periodo);
+    }
+
+    // US05 - RN1+RN4: edição restrita a períodos não iniciados, sem sobreposição nas novas datas
     public void editar(PeriodoLetivoId periodoId, LocalDate novaDataInicio, LocalDate novaDataFim) {
         notNull(periodoId, "O período não pode ser nulo");
         var periodo = repositorio.obter(periodoId);
+        if (repositorio.existeSobreposicaoExcluindo(periodo.getCursoId(), novaDataInicio, novaDataFim, periodoId)) {
+            throw new IllegalStateException("RN1: Já existe período letivo com datas sobrepostas para este curso");
+        }
         periodo.editar(novaDataInicio, novaDataFim);
         repositorio.salvar(periodo);
     }

@@ -16,3 +16,8 @@ Feature: Cancelar período letivo
     Given um período letivo já encerrado para tentativa de cancelamento
     When a secretaria tenta cancelar o período letivo
     Then o sistema rejeita o cancelamento informando status inválido
+
+  Scenario: Sistema rejeita cancelamento de período em andamento
+    Given um período letivo em andamento para tentativa de cancelamento
+    When a secretaria tenta cancelar o período letivo
+    Then o sistema rejeita o cancelamento informando status inválido
