@@ -95,6 +95,15 @@ public class PeriodoLetivo {
         return new PeriodoLetivoEncerradoEvento(this);
     }
 
+    public static PeriodoLetivo reconstituir(PeriodoLetivoId id, CursoId cursoId, int ano, int semestre,
+                                             LocalDate dataInicio, LocalDate dataFim,
+                                             StatusPeriodoLetivo status, List<JanelaAcademica> janelas) {
+        var periodo = new PeriodoLetivo(id, cursoId, ano, semestre, dataInicio, dataFim);
+        periodo.status = status;
+        periodo.janelas.addAll(janelas);
+        return periodo;
+    }
+
     public PeriodoLetivoId getId() { return id; }
     public CursoId getCursoId() { return cursoId; }
     public int getAno() { return ano; }
