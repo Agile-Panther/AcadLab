@@ -2,6 +2,7 @@ package school.cesar.acadlab.dominio.atividadescomplementares;
 
 import static org.apache.commons.lang3.Validate.notNull;
 import school.cesar.acadlab.dominio.atividadescomplementares.atividade.*;
+import school.cesar.acadlab.dominio.evento.EventoBarramento;
 import java.time.LocalDate;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -12,22 +13,26 @@ public class AtividadeComplementarServico {
     private final VerificadorCertificadoDuplicado verificadorCertificado;
     private final VerificadorLimiteCategoria verificadorLimite;
     private final VerificadorContabilizacaoIntegralizacao verificadorContabilizacao;
+    private final EventoBarramento barramento;
 
     public AtividadeComplementarServico(AtividadeComplementarRepositorio repositorio,
             VerificadorVinculoEstudante verificadorVinculo,
             VerificadorCertificadoDuplicado verificadorCertificado,
             VerificadorLimiteCategoria verificadorLimite,
-            VerificadorContabilizacaoIntegralizacao verificadorContabilizacao) {
+            VerificadorContabilizacaoIntegralizacao verificadorContabilizacao,
+            EventoBarramento barramento) {
         notNull(repositorio, "repositório obrigatório");
         notNull(verificadorVinculo, "verificadorVinculo obrigatório");
         notNull(verificadorCertificado, "verificadorCertificado obrigatório");
         notNull(verificadorLimite, "verificadorLimite obrigatório");
         notNull(verificadorContabilizacao, "verificadorContabilizacao obrigatório");
+        notNull(barramento, "barramento obrigatório");
         this.repositorio = repositorio;
         this.verificadorVinculo = verificadorVinculo;
         this.verificadorCertificado = verificadorCertificado;
         this.verificadorLimite = verificadorLimite;
         this.verificadorContabilizacao = verificadorContabilizacao;
+        this.barramento = barramento;
     }
 
     public AtividadeComplementar submeter(EstudanteId estudanteId, CategoriaAtividadeId categoriaId,
@@ -49,15 +54,17 @@ public class AtividadeComplementarServico {
         var atividade = repositorio.obter(id);
         if (verificadorLimite.excedeLimite(atividade.getEstudanteId(), atividade.getCategoriaId(), horasAprovadas))
             throw new IllegalStateException("RN3: Limite máximo de horas por categoria não pode ser excedido");
-        atividade.deferir(horasAprovadas);
+        var evento = atividade.deferir(horasAprovadas);
         repositorio.salvar(atividade);
+        barramento.postar(evento);
     }
 
     public void indeferir(AtividadeComplementarId id, String justificativa) {
         notNull(id, "id obrigatório");
         var atividade = repositorio.obter(id);
-        atividade.indeferir(justificativa);
+        var evento = atividade.indeferir(justificativa);
         repositorio.salvar(atividade);
+        barramento.postar(evento);
     }
 
     public void solicitarRevisao(AtividadeComplementarId id, String justificativa) {
@@ -65,15 +72,17 @@ public class AtividadeComplementarServico {
         if (verificadorContabilizacao.foiContabilizada(id))
             throw new IllegalStateException("RN4: Revisão não permitida para atividade já contabilizada na integralização curricular");
         var atividade = repositorio.obter(id);
-        atividade.solicitarRevisao(justificativa);
+        var evento = atividade.solicitarRevisao(justificativa);
         repositorio.salvar(atividade);
+        barramento.postar(evento);
     }
 
     public void cancelar(AtividadeComplementarId id) {
         notNull(id, "id obrigatório");
         var atividade = repositorio.obter(id);
-        atividade.cancelar();
+        var evento = atividade.cancelar();
         repositorio.salvar(atividade);
+        barramento.postar(evento);
     }
 
     public Map<CategoriaAtividadeId, Integer> calcularSaldoHoras(EstudanteId estudanteId) {
