@@ -72,6 +72,17 @@ public class AtividadeComplementar {
         return new CanceladaEvento(this);
     }
 
+    public static AtividadeComplementar reconstituir(AtividadeComplementarId id, EstudanteId estudanteId,
+            CategoriaAtividadeId categoriaId, String identificadorCertificado,
+            String descricao, int horasSubmetidas, LocalDate dataRealizacao,
+            StatusAtividade status, int horasAprovadas) {
+        var atividade = new AtividadeComplementar(id, estudanteId, categoriaId,
+                identificadorCertificado, descricao, horasSubmetidas, dataRealizacao);
+        atividade.status = status;
+        atividade.horasAprovadas = horasAprovadas;
+        return atividade;
+    }
+
     public AtividadeComplementarId getId() { return id; }
     public EstudanteId getEstudanteId() { return estudanteId; }
     public CategoriaAtividadeId getCategoriaId() { return categoriaId; }
