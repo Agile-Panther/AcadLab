@@ -1,15 +1,17 @@
 package school.cesar.acadlab.dominio.integralizacao;
 
 public class IntegralizacaoFuncionalidade {
-    protected Repositorio repositorio;
+    protected IntegralizacaoRepositorioTest integralizacaoRepositorio;
+    protected ColacaoRepositorioTest colacaoRepositorio;
     protected IntegralizacaoServico integralizacaoServico;
     protected ColacaoServico colacaoServico;
     protected ConsultaIntegralizacaoServico consultaServico;
 
     public IntegralizacaoFuncionalidade() {
-        repositorio = new Repositorio();
-        integralizacaoServico = new IntegralizacaoServico(repositorio);
-        colacaoServico = new ColacaoServico(repositorio, repositorio);
-        consultaServico = new ConsultaIntegralizacaoServico(repositorio, repositorio);
+        integralizacaoRepositorio = new IntegralizacaoRepositorioTest();
+        colacaoRepositorio = new ColacaoRepositorioTest();
+        integralizacaoServico = new IntegralizacaoServico(integralizacaoRepositorio);
+        colacaoServico = new ColacaoServico(colacaoRepositorio, integralizacaoRepositorio);
+        consultaServico = new ConsultaIntegralizacaoServico(integralizacaoRepositorio, colacaoRepositorio);
     }
 }

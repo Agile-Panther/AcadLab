@@ -26,10 +26,10 @@ public class OfertarTurmaFuncionalidade extends OfertaTurmasFuncionalidade {
     @Dado("um período letivo e uma disciplina disponíveis")
     public void periodo_e_disciplina_disponiveis() {
         // período e disciplina existem externamente — apenas IDs usados
-        salaId = repositorio.proximoId();
-        repositorio.salvar(new Sala(salaId, "Sala 101", 40));
-        professorId = repositorio.proximoId();
-        repositorio.salvar(new Professor(professorId, "Prof. Silva"));
+        salaId = salaRepositorio.proximoId();
+        salaRepositorio.salvar(new Sala(salaId, "Sala 101", 40));
+        professorId = professorRepositorio.proximoId();
+        professorRepositorio.salvar(new Professor(professorId, "Prof. Silva"));
     }
 
     @Quando("a coordenação oferta uma turma para a disciplina")
