@@ -99,6 +99,22 @@ public class Cobranca {
         return new NovaVersaoGeradaEvento(this);
     }
 
+    public static Cobranca reconstituir(CobrancaId id, ContratoId contratoId, EstudanteId estudanteId,
+            PeriodoLetivoId periodoLetivoId, BigDecimal valorBase, BigDecimal valorAtual,
+            LocalDate vencimento, int versao, StatusCobranca status,
+            Pagamento pagamento, Contestacao contestacao,
+            List<HistoricoVersao> historico, List<AplicacaoDesconto> descontos) {
+        var c = new Cobranca(id, contratoId, estudanteId, periodoLetivoId, valorBase, vencimento);
+        c.valorAtual = valorAtual;
+        c.versao = versao;
+        c.status = status;
+        c.pagamento = pagamento;
+        c.contestacao = contestacao;
+        c.historico.addAll(historico);
+        c.descontos.addAll(descontos);
+        return c;
+    }
+
     public void cancelar(String motivo) {
         if (status == StatusCobranca.PAGA)
             throw new IllegalStateException("Não é possível cancelar uma cobrança já paga");
