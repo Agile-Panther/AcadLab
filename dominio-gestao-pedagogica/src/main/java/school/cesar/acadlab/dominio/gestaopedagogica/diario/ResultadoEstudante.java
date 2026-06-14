@@ -18,6 +18,20 @@ public class ResultadoEstudante {
         this.revisaoSolicitada = false;
     }
 
+    public static ResultadoEstudante reconstituir(EstudanteId estudanteId,
+                                                   Map<AvaliacaoId, Double> notas,
+                                                   Double notaRecuperacao,
+                                                   SituacaoResultado situacao,
+                                                   boolean fechado, boolean revisaoSolicitada) {
+        var resultado = new ResultadoEstudante(estudanteId);
+        resultado.notas.putAll(notas);
+        resultado.notaRecuperacao = notaRecuperacao;
+        resultado.situacao = situacao;
+        resultado.fechado = fechado;
+        resultado.revisaoSolicitada = revisaoSolicitada;
+        return resultado;
+    }
+
     public EstudanteId getEstudanteId() { return estudanteId; }
     public Map<AvaliacaoId, Double> getNotas() { return notas; }
     public Double getNotaRecuperacao() { return notaRecuperacao; }

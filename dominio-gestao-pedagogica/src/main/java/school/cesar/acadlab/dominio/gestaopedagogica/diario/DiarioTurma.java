@@ -49,6 +49,43 @@ public class DiarioTurma {
         this.estudantesAtivos = new HashSet<>();
     }
 
+    private DiarioTurma(DiarioTurmaId id, TurmaId turmaId, PeriodoLetivoId periodoLetivoId,
+                        ProfessorId professorResponsavel, LocalDate dataInicioPeriodo,
+                        LocalDate dataFimPeriodo, double mediaMinima, double frequenciaMinima,
+                        StatusDiario status, List<RegistroAula> aulas, List<Avaliacao> avaliacoes,
+                        List<LancamentoFrequencia> frequencias, List<ResultadoEstudante> resultados,
+                        Set<EstudanteId> estudantesAtivos) {
+        this.id = id;
+        this.turmaId = turmaId;
+        this.periodoLetivoId = periodoLetivoId;
+        this.professorResponsavel = professorResponsavel;
+        this.dataInicioPeriodo = dataInicioPeriodo;
+        this.dataFimPeriodo = dataFimPeriodo;
+        this.mediaMinima = mediaMinima;
+        this.frequenciaMinima = frequenciaMinima;
+        this.status = status;
+        this.aulas = new ArrayList<>(aulas);
+        this.avaliacoes = new ArrayList<>(avaliacoes);
+        this.frequencias = new ArrayList<>(frequencias);
+        this.resultados = new ArrayList<>(resultados);
+        this.estudantesAtivos = new HashSet<>(estudantesAtivos);
+    }
+
+    public static DiarioTurma reconstituir(DiarioTurmaId id, TurmaId turmaId,
+                                            PeriodoLetivoId periodoLetivoId,
+                                            ProfessorId professorResponsavel,
+                                            LocalDate dataInicioPeriodo, LocalDate dataFimPeriodo,
+                                            double mediaMinima, double frequenciaMinima,
+                                            StatusDiario status, List<RegistroAula> aulas,
+                                            List<Avaliacao> avaliacoes,
+                                            List<LancamentoFrequencia> frequencias,
+                                            List<ResultadoEstudante> resultados,
+                                            Set<EstudanteId> estudantesAtivos) {
+        return new DiarioTurma(id, turmaId, periodoLetivoId, professorResponsavel,
+                dataInicioPeriodo, dataFimPeriodo, mediaMinima, frequenciaMinima,
+                status, aulas, avaliacoes, frequencias, resultados, estudantesAtivos);
+    }
+
     public DiarioTurmaId getId() { return id; }
     public TurmaId getTurmaId() { return turmaId; }
     public PeriodoLetivoId getPeriodoLetivoId() { return periodoLetivoId; }
