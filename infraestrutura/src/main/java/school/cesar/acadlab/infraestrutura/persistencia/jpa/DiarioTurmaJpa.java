@@ -275,8 +275,8 @@ class DiarioTurmaRepositorioImpl implements DiarioTurmaRepositorio, DiarioTurmaR
             resultadoJpa.fechado = resultado.isFechado();
             resultadoJpa.revisaoSolicitada = resultado.isRevisaoSolicitada();
             resultadoJpa.notas.clear();
-            for (var entrada : resultado.getNotas().entrySet()) {
-                resultadoJpa.notas.put(entrada.getKey().getId(), entrada.getValue());
+            for (var entry : resultado.getNotas().entrySet()) {
+                resultadoJpa.notas.put(entry.getKey().getId(), entry.getValue());
             }
             jpa.resultados.add(resultadoJpa);
         }

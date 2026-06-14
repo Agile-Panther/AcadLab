@@ -1,3 +1,4 @@
+#language: pt
 Funcionalidade: Registrar frequência dos estudantes
 
   Cenário: Professor registra presença de estudante com matrícula ativa
