@@ -1,3 +1,4 @@
+#language: pt
 Funcionalidade: Lançar notas e fechar resultado final
 
   Cenário: Professor fecha resultado final com nota aprovada
