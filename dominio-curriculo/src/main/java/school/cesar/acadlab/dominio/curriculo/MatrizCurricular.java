@@ -147,6 +147,19 @@ public class MatrizCurricular {
         this.status = StatusMatriz.INATIVA;
     }
 
+    public static MatrizCurricular reconstituir(MatrizCurricularId id, CursoId cursoId, String nome,
+            int cargaHorariaMinima, int creditosExigidos, int maximoTrancamentos,
+            StatusMatriz status, List<ItemMatriz> itens,
+            Map<DisciplinaId, List<DisciplinaId>> preRequisitos,
+            Map<DisciplinaId, List<DisciplinaId>> correquisitos) {
+        MatrizCurricular m = new MatrizCurricular(id, cursoId, nome, cargaHorariaMinima, creditosExigidos, maximoTrancamentos);
+        m.status = status;
+        m.itens.addAll(itens);
+        m.preRequisitos.putAll(preRequisitos);
+        m.correquisitos.putAll(correquisitos);
+        return m;
+    }
+
     private boolean existeCiclo(DisciplinaId disciplina, DisciplinaId preRequisito) {
         Set<DisciplinaId> visitados = new HashSet<>();
         return alcancavel(preRequisito, disciplina, visitados);
