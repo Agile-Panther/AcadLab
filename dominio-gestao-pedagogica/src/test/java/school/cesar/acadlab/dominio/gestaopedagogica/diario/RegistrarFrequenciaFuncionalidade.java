@@ -69,4 +69,20 @@ public class RegistrarFrequenciaFuncionalidade extends GestaoPedagogicaFuncional
         assertInstanceOf(IllegalStateException.class, excecao);
         assertTrue(excecao.getMessage().contains("RN-3"));
     }
+
+    @Quando("outro professor tenta registrar a frequência do estudante")
+    public void outro_professor_tenta_frequencia() {
+        try {
+            diario.registrarFrequencia(new ProfessorId(99), aulaId, estudanteId, true);
+        } catch (RuntimeException e) {
+            excecao = e;
+        }
+    }
+
+    @Entao("o sistema rejeita a frequência informando RN-4")
+    public void sistema_rejeita_rn4() {
+        assertNotNull(excecao);
+        assertInstanceOf(IllegalStateException.class, excecao);
+        assertTrue(excecao.getMessage().contains("RN-4"));
+    }
 }
