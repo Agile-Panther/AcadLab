@@ -16,6 +16,7 @@
 8. [Guia BDD — Gherkin + Cucumber](#8-guia-bdd--gherkin--cucumber)
 9. [Guia TDD — Test-Driven Development](#9-guia-tdd--test-driven-development)
 10. [Definition of Done por Feature](#10-definition-of-done-por-feature)
+11. [Padrão de Commits](#11-padrão-de-commits)
 
 ---
 
@@ -657,6 +658,63 @@ Uma feature só está concluída quando **todos** os itens abaixo estiverem aten
 - [ ] PR aberto para `develop` com descrição das User Stories implementadas
 - [ ] Aprovação de ao menos um membro do time `@agile-panther/team-aprovadores-develop`
 - [ ] Nenhum conflito com `develop` antes do merge
+
+---
+
+## 11. Padrão de Commits
+
+Todo commit do projeto segue **Conventional Commits** com prefixo em inglês e mensagem em português.
+
+### Formato obrigatório
+
+```
+<tipo>(<escopo>): <descrição em português> <local ou feature>
+```
+
+O `(<escopo>)` é **opcional**. A `<descrição>` deve ser curta (uma linha) e terminar indicando o local ou a feature afetada.
+
+### Tipos permitidos
+
+| Tipo | Quando usar |
+|------|-------------|
+| `feat` | Nova funcionalidade ou adição de código de produção |
+| `fix` | Correção de bug ou problema |
+| `test` | Adição ou correção de testes (BDD, unitários, integração) |
+| `refactor` | Refatoração sem mudança de comportamento |
+| `docs` | Alteração em documentação |
+| `chore` | Tarefas de manutenção: dependências, build, configuração |
+| `style` | Formatação de código sem mudança de lógica |
+
+### Exemplos corretos
+
+```
+feat: adiciona agregado e value objects de mobilidade acadêmica
+feat: implementa persistência JPA para mobilidade acadêmica
+feat: adiciona controlador REST e beans para mobilidade acadêmica
+test: adiciona testes BDD e unitários para mobilidade acadêmica
+fix: corrige carga horária mínima no plano de estudos
+chore: adiciona dependência commons-lang3 ao módulo de mobilidade
+docs: atualiza contrato com padrão de commits
+```
+
+### Com escopo (opcional)
+
+Use o escopo quando quiser precisar o sub-contexto afetado dentro de uma feature ou módulo:
+
+```
+feat(mobilidade): adiciona método reconstituir no agregado
+fix(jpa): corrige lambda não-final em DiarioTurmaJpa
+test(cancelamento): adiciona cenário BDD para RN-7
+```
+
+### Regras
+
+1. **Prefixo sempre em inglês** — `feat`, `fix`, `test`, etc.
+2. **Descrição sempre em português** — nunca misture idiomas na mensagem.
+3. **Uma linha, sem ponto final** — a mensagem deve ser curta e direta.
+4. **Indique o local ou feature no final** — deixe claro onde a mudança se aplica (ex.: "para mobilidade acadêmica", "em DiarioTurmaJpa", "no módulo de matrícula").
+5. **Sem co-autoria automática** — não adicione trailers `Co-authored-by` gerados por ferramentas.
+6. **Um commit por checkpoint lógico** — prefira commits pequenos e frequentes a um único commit gigante.
 
 ---
 
