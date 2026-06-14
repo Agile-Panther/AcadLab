@@ -11,8 +11,12 @@ import school.cesar.acadlab.aplicacao.gestaofinanceira.CobrancaRepositorioAplica
 import school.cesar.acadlab.aplicacao.gestaofinanceira.CobrancaServicoAplicacao;
 import school.cesar.acadlab.aplicacao.gestaopedagogica.DiarioTurmaRepositorioAplicacao;
 import school.cesar.acadlab.aplicacao.gestaopedagogica.DiarioTurmaServicoAplicacao;
+import school.cesar.acadlab.aplicacao.mobilidadeacademica.MobilidadeAcademicaRepositorioAplicacao;
+import school.cesar.acadlab.aplicacao.mobilidadeacademica.MobilidadeAcademicaServicoAplicacao;
 import school.cesar.acadlab.dominio.gestaopedagogica.DiarioTurmaServico;
 import school.cesar.acadlab.dominio.gestaopedagogica.diario.DiarioTurmaRepositorio;
+import school.cesar.acadlab.dominio.mobilidadeacademica.MobilidadeAcademicaServico;
+import school.cesar.acadlab.dominio.mobilidadeacademica.mobilidade.MobilidadeAcademicaRepositorio;
 
 @SpringBootApplication
 public class BackendAplicacao {
@@ -37,6 +41,17 @@ public class BackendAplicacao {
     @Bean
     DiarioTurmaServicoAplicacao diarioTurmaServicoAplicacao(DiarioTurmaRepositorioAplicacao repositorio) {
         return new DiarioTurmaServicoAplicacao(repositorio);
+    }
+
+    @Bean
+    MobilidadeAcademicaServico mobilidadeAcademicaServico(MobilidadeAcademicaRepositorio repositorio) {
+        return new MobilidadeAcademicaServico(repositorio);
+    }
+
+    @Bean
+    MobilidadeAcademicaServicoAplicacao mobilidadeAcademicaServicoAplicacao(
+            MobilidadeAcademicaRepositorioAplicacao repositorio) {
+        return new MobilidadeAcademicaServicoAplicacao(repositorio);
     }
 
     public static void main(String[] args) {
