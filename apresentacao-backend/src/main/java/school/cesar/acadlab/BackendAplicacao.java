@@ -9,6 +9,10 @@ import school.cesar.acadlab.aplicacao.atividadescomplementares.AtividadeCompleme
 import school.cesar.acadlab.aplicacao.atividadescomplementares.AtividadeComplementarServicoAplicacao;
 import school.cesar.acadlab.aplicacao.curriculo.MatrizCurricularRepositorioAplicacao;
 import school.cesar.acadlab.aplicacao.curriculo.MatrizCurricularServicoAplicacao;
+import school.cesar.acadlab.aplicacao.estagios.EstagioRepositorioAplicacao;
+import school.cesar.acadlab.aplicacao.estagios.EstagioServicoAplicacao;
+import school.cesar.acadlab.aplicacao.estagios.OportunidadeRepositorioAplicacao;
+import school.cesar.acadlab.aplicacao.estagios.OportunidadeServicoAplicacao;
 import school.cesar.acadlab.aplicacao.gestaofinanceira.CobrancaRepositorioAplicacao;
 import school.cesar.acadlab.aplicacao.gestaofinanceira.CobrancaServicoAplicacao;
 import school.cesar.acadlab.aplicacao.gestaopedagogica.DiarioTurmaRepositorioAplicacao;
@@ -17,6 +21,9 @@ import school.cesar.acadlab.aplicacao.matricula.MatriculaRepositorioAplicacao;
 import school.cesar.acadlab.aplicacao.matricula.MatriculaServicoAplicacao;
 import school.cesar.acadlab.aplicacao.mobilidadeacademica.MobilidadeAcademicaRepositorioAplicacao;
 import school.cesar.acadlab.aplicacao.mobilidadeacademica.MobilidadeAcademicaServicoAplicacao;
+import school.cesar.acadlab.dominio.estagios.EstagioServico;
+import school.cesar.acadlab.dominio.estagios.estagio.EstagioRepositorio;
+import school.cesar.acadlab.dominio.estagios.oportunidade.OportunidadeRepositorio;
 import school.cesar.acadlab.dominio.gestaopedagogica.DiarioTurmaServico;
 import school.cesar.acadlab.dominio.gestaopedagogica.diario.DiarioTurmaRepositorio;
 import school.cesar.acadlab.dominio.matricula.MatriculaServico;
@@ -74,6 +81,23 @@ public class BackendAplicacao {
     MobilidadeAcademicaServicoAplicacao mobilidadeAcademicaServicoAplicacao(
             MobilidadeAcademicaRepositorioAplicacao repositorio) {
         return new MobilidadeAcademicaServicoAplicacao(repositorio);
+    }
+
+    @Bean
+    EstagioServico estagioServico(OportunidadeRepositorio oportunidadeRepositorio,
+                                   EstagioRepositorio estagioRepositorio) {
+        return new EstagioServico(oportunidadeRepositorio, estagioRepositorio);
+    }
+
+    @Bean
+    OportunidadeServicoAplicacao oportunidadeServicoAplicacao(
+            OportunidadeRepositorioAplicacao repositorio) {
+        return new OportunidadeServicoAplicacao(repositorio);
+    }
+
+    @Bean
+    EstagioServicoAplicacao estagioServicoAplicacao(EstagioRepositorioAplicacao repositorio) {
+        return new EstagioServicoAplicacao(repositorio);
     }
 
     public static void main(String[] args) {
