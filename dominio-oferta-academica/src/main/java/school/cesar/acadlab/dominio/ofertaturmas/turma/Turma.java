@@ -8,8 +8,9 @@ import school.cesar.acadlab.dominio.ofertaturmas.DisciplinaId;
 import school.cesar.acadlab.dominio.ofertaturmas.PeriodoLetivoId;
 import school.cesar.acadlab.dominio.ofertaturmas.professor.ProfessorId;
 import school.cesar.acadlab.dominio.ofertaturmas.sala.SalaId;
+import school.cesar.acadlab.dominio.ofertaturmas.turma.decorator.TurmaOferecida;
 
-public class Turma {
+public class Turma implements TurmaOferecida {
     private final TurmaId id;
     private final PeriodoLetivoId periodoLetivoId;
     private final DisciplinaId disciplinaId;
