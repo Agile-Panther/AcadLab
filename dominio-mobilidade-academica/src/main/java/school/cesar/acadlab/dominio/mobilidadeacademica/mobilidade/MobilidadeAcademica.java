@@ -86,6 +86,21 @@ public class MobilidadeAcademica {
         this.status = StatusMobilidade.CANCELADA;
     }
 
+    public static MobilidadeAcademica reconstituir(MobilidadeAcademicaId id, EstudanteId estudanteId,
+                                                    String instituicaoDestino, StatusMobilidade status,
+                                                    CoordenadorId coordenadorAutorizacao,
+                                                    LocalDate dataInicioPeriodoExterno,
+                                                    String justificativaCancelamento,
+                                                    List<ItemPlanoEstudos> planoEstudos) {
+        var m = new MobilidadeAcademica(id, estudanteId, instituicaoDestino);
+        m.status = status;
+        m.coordenadorAutorizacao = coordenadorAutorizacao;
+        m.dataInicioPeriodoExterno = dataInicioPeriodoExterno;
+        m.justificativaCancelamento = justificativaCancelamento;
+        m.planoEstudos.addAll(planoEstudos);
+        return m;
+    }
+
     private ItemPlanoEstudos encontrarItemPorDisciplinaExterna(DisciplinaId disciplinaExterna) {
         return planoEstudos.stream()
                 .filter(i -> i.getDisciplinaExterna().equals(disciplinaExterna))
