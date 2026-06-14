@@ -1,3 +1,4 @@
+#language: pt
 Funcionalidade: Registrar aulas no diário de turma
 
   Cenário: Professor registra aula dentro do período letivo

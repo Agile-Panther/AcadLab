@@ -1,3 +1,4 @@
+#language: pt
 Funcionalidade: Registrar nota de recuperação
 
   Cenário: Professor registra nota de recuperação aprovada dentro do período
