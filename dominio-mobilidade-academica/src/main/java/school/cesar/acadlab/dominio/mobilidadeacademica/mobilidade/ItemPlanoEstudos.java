@@ -38,6 +38,18 @@ public class ItemPlanoEstudos {
         this.resultadoRegistrado = true;
     }
 
+    public static ItemPlanoEstudos reconstituir(DisciplinaId disciplinaExterna, DisciplinaId disciplinaEquivalente,
+                                                int cargaHorariaExterna, int cargaHorariaEquivalente,
+                                                StatusItemPlano status, boolean comprovanteAnexado,
+                                                boolean resultadoRegistrado) {
+        var item = new ItemPlanoEstudos(disciplinaExterna, disciplinaEquivalente,
+                cargaHorariaExterna, cargaHorariaEquivalente);
+        item.status = status;
+        item.comprovanteAnexado = comprovanteAnexado;
+        item.resultadoRegistrado = resultadoRegistrado;
+        return item;
+    }
+
     public DisciplinaId getDisciplinaExterna() { return disciplinaExterna; }
     public DisciplinaId getDisciplinaEquivalente() { return disciplinaEquivalente; }
     public int getCargaHorariaExterna() { return cargaHorariaExterna; }
