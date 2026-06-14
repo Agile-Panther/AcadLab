@@ -11,8 +11,12 @@ import school.cesar.acadlab.aplicacao.gestaofinanceira.CobrancaRepositorioAplica
 import school.cesar.acadlab.aplicacao.gestaofinanceira.CobrancaServicoAplicacao;
 import school.cesar.acadlab.aplicacao.gestaopedagogica.DiarioTurmaRepositorioAplicacao;
 import school.cesar.acadlab.aplicacao.gestaopedagogica.DiarioTurmaServicoAplicacao;
+import school.cesar.acadlab.aplicacao.matricula.MatriculaRepositorioAplicacao;
+import school.cesar.acadlab.aplicacao.matricula.MatriculaServicoAplicacao;
 import school.cesar.acadlab.dominio.gestaopedagogica.DiarioTurmaServico;
 import school.cesar.acadlab.dominio.gestaopedagogica.diario.DiarioTurmaRepositorio;
+import school.cesar.acadlab.dominio.matricula.MatriculaServico;
+import school.cesar.acadlab.dominio.matricula.matricula.MatriculaRepositorio;
 
 @SpringBootApplication
 public class BackendAplicacao {
@@ -37,6 +41,16 @@ public class BackendAplicacao {
     @Bean
     DiarioTurmaServicoAplicacao diarioTurmaServicoAplicacao(DiarioTurmaRepositorioAplicacao repositorio) {
         return new DiarioTurmaServicoAplicacao(repositorio);
+    }
+
+    @Bean
+    MatriculaServico matriculaServico(MatriculaRepositorio repositorio) {
+        return new MatriculaServico(repositorio);
+    }
+
+    @Bean
+    MatriculaServicoAplicacao matriculaServicoAplicacao(MatriculaRepositorioAplicacao repositorio) {
+        return new MatriculaServicoAplicacao(repositorio);
     }
 
     public static void main(String[] args) {
