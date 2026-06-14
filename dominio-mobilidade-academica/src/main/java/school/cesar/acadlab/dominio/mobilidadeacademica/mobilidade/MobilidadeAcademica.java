@@ -1,0 +1,119 @@
+package school.cesar.acadlab.dominio.mobilidadeacademica.mobilidade;
+
+import static org.apache.commons.lang3.Validate.notBlank;
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
+public class MobilidadeAcademica {
+
+    private final MobilidadeAcademicaId id;
+    private final EstudanteId estudanteId;
+    private final String instituicaoDestino;
+    private LocalDate dataInicioPeriodoExterno;
+    private StatusMobilidade status;
+    private final List<ItemPlanoEstudos> planoEstudos;
+    private String justificativaCancelamento;
+    private CoordenadorId coordenadorAutorizacao;
+
+    public MobilidadeAcademica(MobilidadeAcademicaId id, EstudanteId estudanteId, String instituicaoDestino) {
+        this.id = id;
+        this.estudanteId = estudanteId;
+        this.instituicaoDestino = instituicaoDestino;
+        this.status = StatusMobilidade.SOLICITADA;
+        this.planoEstudos = new ArrayList<>();
+    }
+
+    public void autorizar(CoordenadorId coordenadorId) {
+        if (status != StatusMobilidade.SOLICITADA) {
+            throw new IllegalStateException("RN-1: Mobilidade não pode ser autorizada neste status");
+        }
+        this.status = StatusMobilidade.AUTORIZADA;
+        this.coordenadorAutorizacao = coordenadorId;
+    }
+
+    public void iniciarPeriodoExterno(LocalDate dataInicio) {
+        if (status != StatusMobilidade.AUTORIZADA) {
+            throw new IllegalStateException("Mobilidade deve estar autorizada para iniciar");
+        }
+        this.status = StatusMobilidade.EM_ANDAMENTO;
+        this.dataInicioPeriodoExterno = dataInicio;
+    }
+
+    public void adicionarItemPlano(DisciplinaId disciplinaExterna, DisciplinaId disciplinaEquivalente,
+                                   int cargaHorariaExterna, int cargaHorariaEquivalente) {
+        var item = new ItemPlanoEstudos(disciplinaExterna, disciplinaEquivalente,
+                cargaHorariaExterna, cargaHorariaEquivalente);
+        item.autorizar(cargaHorariaExterna, cargaHorariaEquivalente);
+        planoEstudos.add(item);
+    }
+
+    public void registrarResultado(DisciplinaId disciplinaExterna, SecretariaId secretariaId) {
+        if (secretariaId == null) {
+            throw new IllegalStateException("RN-5: Registro deve ser realizado pela secretaria");
+        }
+        var item = encontrarItemPorDisciplinaExterna(disciplinaExterna);
+        if (item.getStatus() != StatusItemPlano.AUTORIZADO) {
+            throw new IllegalStateException("RN-2: Apenas disciplinas do plano autorizado podem ter resultado registrado");
+        }
+        if (!item.isComprovanteAnexado()) {
+            throw new IllegalStateException("RN-4: Comprovante obrigatório antes do registro do resultado");
+        }
+        item.registrarResultado();
+        if (planoEstudos.stream().allMatch(ItemPlanoEstudos::isResultadoRegistrado)) {
+            this.status = StatusMobilidade.CONCLUIDA;
+        }
+    }
+
+    public void anexarComprovante(DisciplinaId disciplinaExterna) {
+        var item = encontrarItemPorDisciplinaExterna(disciplinaExterna);
+        item.anexarComprovante();
+    }
+
+    public void solicitarCancelamento(String justificativa, LocalDate hoje) {
+        if (dataInicioPeriodoExterno != null && !hoje.isBefore(dataInicioPeriodoExterno)) {
+            throw new IllegalStateException("RN-7: Cancelamento restrito a mobilidades ainda não iniciadas");
+        }
+        notBlank(justificativa, "RN-8: Justificativa obrigatória para cancelamento");
+        this.justificativaCancelamento = justificativa;
+    }
+
+    public void confirmarCancelamento(CoordenadorId coordenadorId) {
+        if (justificativaCancelamento == null) {
+            throw new IllegalStateException("RN-8: Cancelamento deve ter justificativa antes de ser confirmado");
+        }
+        this.status = StatusMobilidade.CANCELADA;
+    }
+
+    public static MobilidadeAcademica reconstituir(MobilidadeAcademicaId id, EstudanteId estudanteId,
+                                                    String instituicaoDestino, StatusMobilidade status,
+                                                    CoordenadorId coordenadorAutorizacao,
+                                                    LocalDate dataInicioPeriodoExterno,
+                                                    String justificativaCancelamento,
+                                                    List<ItemPlanoEstudos> planoEstudos) {
+        var m = new MobilidadeAcademica(id, estudanteId, instituicaoDestino);
+        m.status = status;
+        m.coordenadorAutorizacao = coordenadorAutorizacao;
+        m.dataInicioPeriodoExterno = dataInicioPeriodoExterno;
+        m.justificativaCancelamento = justificativaCancelamento;
+        m.planoEstudos.addAll(planoEstudos);
+        return m;
+    }
+
+    private ItemPlanoEstudos encontrarItemPorDisciplinaExterna(DisciplinaId disciplinaExterna) {
+        return planoEstudos.stream()
+                .filter(i -> i.getDisciplinaExterna().equals(disciplinaExterna))
+                .findFirst()
+                .orElseThrow(() -> new IllegalStateException("Disciplina não encontrada no plano de estudos"));
+    }
+
+    public MobilidadeAcademicaId getId() { return id; }
+    public EstudanteId getEstudanteId() { return estudanteId; }
+    public String getInstituicaoDestino() { return instituicaoDestino; }
+    public LocalDate getDataInicioPeriodoExterno() { return dataInicioPeriodoExterno; }
+    public StatusMobilidade getStatus() { return status; }
+    public List<ItemPlanoEstudos> getPlanoEstudos() { return Collections.unmodifiableList(planoEstudos); }
+    public String getJustificativaCancelamento() { return justificativaCancelamento; }
+    public CoordenadorId getCoordenadorAutorizacao() { return coordenadorAutorizacao; }
+}
