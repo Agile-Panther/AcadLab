@@ -23,6 +23,17 @@ import school.cesar.acadlab.dominio.matricula.MatriculaServico;
 import school.cesar.acadlab.dominio.matricula.matricula.MatriculaRepositorio;
 import school.cesar.acadlab.dominio.mobilidadeacademica.MobilidadeAcademicaServico;
 import school.cesar.acadlab.dominio.mobilidadeacademica.mobilidade.MobilidadeAcademicaRepositorio;
+import school.cesar.acadlab.aplicacao.ofertaturmas.ProfessorRepositorioAplicacao;
+import school.cesar.acadlab.aplicacao.ofertaturmas.ProfessorServicoAplicacao;
+import school.cesar.acadlab.aplicacao.ofertaturmas.SalaRepositorioAplicacao;
+import school.cesar.acadlab.aplicacao.ofertaturmas.SalaServicoAplicacao;
+import school.cesar.acadlab.aplicacao.ofertaturmas.TurmaRepositorioAplicacao;
+import school.cesar.acadlab.aplicacao.ofertaturmas.TurmaServicoAplicacao;
+import school.cesar.acadlab.dominio.ofertaturmas.ConsultaTurmaServico;
+import school.cesar.acadlab.dominio.ofertaturmas.OfertaTurmaServico;
+import school.cesar.acadlab.dominio.ofertaturmas.professor.ProfessorRepositorio;
+import school.cesar.acadlab.dominio.ofertaturmas.sala.SalaRepositorio;
+import school.cesar.acadlab.dominio.ofertaturmas.turma.TurmaRepositorio;
 
 @SpringBootApplication
 public class BackendAplicacao {
@@ -74,6 +85,33 @@ public class BackendAplicacao {
     MobilidadeAcademicaServicoAplicacao mobilidadeAcademicaServicoAplicacao(
             MobilidadeAcademicaRepositorioAplicacao repositorio) {
         return new MobilidadeAcademicaServicoAplicacao(repositorio);
+    }
+
+    @Bean
+    OfertaTurmaServico ofertaTurmaServico(TurmaRepositorio turmaRepositorio,
+                                           SalaRepositorio salaRepositorio,
+                                           ProfessorRepositorio professorRepositorio) {
+        return new OfertaTurmaServico(turmaRepositorio, salaRepositorio, professorRepositorio);
+    }
+
+    @Bean
+    ConsultaTurmaServico consultaTurmaServico(TurmaRepositorio turmaRepositorio) {
+        return new ConsultaTurmaServico(turmaRepositorio);
+    }
+
+    @Bean
+    TurmaServicoAplicacao turmaServicoAplicacao(TurmaRepositorioAplicacao repositorio) {
+        return new TurmaServicoAplicacao(repositorio);
+    }
+
+    @Bean
+    SalaServicoAplicacao salaServicoAplicacao(SalaRepositorioAplicacao repositorio) {
+        return new SalaServicoAplicacao(repositorio);
+    }
+
+    @Bean
+    ProfessorServicoAplicacao professorServicoAplicacao(ProfessorRepositorioAplicacao repositorio) {
+        return new ProfessorServicoAplicacao(repositorio);
     }
 
     public static void main(String[] args) {
