@@ -73,14 +73,17 @@ public class CurriculoFuncionalidade extends school.cesar.acadlab.dominio.curric
         assertEquals(StatusMatriz.ATIVA, matriz.getStatus());
     }
 
+    private CursoId cursoId;
+
     @Given("a course with id {int}")
     public void aCourseWithId(int id) {
+        this.cursoId = new CursoId(id);
     }
 
     @And("a new curricular matrix named {string} with minimum workload {int} and minimum credits {int}")
     public void aNewCurricularMatrixNamed(String nome, int cargaMinima, int creditosMinimos) {
         matrizId = repositorio.proximaMatrizId();
-        matriz = new MatrizCurricular(matrizId, new CursoId(10), nome, cargaMinima, creditosMinimos, 3);
+        matriz = new MatrizCurricular(matrizId, cursoId, nome, cargaMinima, creditosMinimos, 3);
     }
 
     @And("a discipline with id {int} is added with workload {int} and credits {int}")
