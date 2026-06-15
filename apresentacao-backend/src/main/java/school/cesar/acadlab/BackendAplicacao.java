@@ -7,6 +7,8 @@ import org.springframework.context.annotation.Bean;
 
 import school.cesar.acadlab.aplicacao.atividadescomplementares.AtividadeComplementarRepositorioAplicacao;
 import school.cesar.acadlab.aplicacao.atividadescomplementares.AtividadeComplementarServicoAplicacao;
+import school.cesar.acadlab.aplicacao.curriculo.MatrizCurricularRepositorioAplicacao;
+import school.cesar.acadlab.aplicacao.curriculo.MatrizCurricularServicoAplicacao;
 import school.cesar.acadlab.aplicacao.gestaofinanceira.CobrancaRepositorioAplicacao;
 import school.cesar.acadlab.aplicacao.gestaofinanceira.CobrancaServicoAplicacao;
 import school.cesar.acadlab.aplicacao.gestaopedagogica.DiarioTurmaRepositorioAplicacao;
@@ -24,6 +26,12 @@ import school.cesar.acadlab.dominio.mobilidadeacademica.mobilidade.MobilidadeAca
 
 @SpringBootApplication
 public class BackendAplicacao {
+
+    @Bean
+    MatrizCurricularServicoAplicacao matrizCurricularServicoAplicacao(
+            MatrizCurricularRepositorioAplicacao repositorio) {
+        return new MatrizCurricularServicoAplicacao(repositorio);
+    }
 
     @Bean
     AtividadeComplementarServicoAplicacao atividadeComplementarServicoAplicacao(
