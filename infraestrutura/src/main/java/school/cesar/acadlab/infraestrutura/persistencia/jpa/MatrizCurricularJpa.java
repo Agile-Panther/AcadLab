@@ -92,8 +92,8 @@ class CorrequisitoJpa {
     @Column(name = "disciplinaId")
     int disciplinaId;
 
-    @Column(name = "corequisitoId")
-    int corequisitoId;
+    @Column(name = "correquisitoId")
+    int correquisitoId;
 }
 
 interface MatrizCurricularJpaRepository extends JpaRepository<MatrizCurricularJpa, Integer> {
@@ -192,7 +192,7 @@ class MatrizCurricularRepositorioImpl implements MatrizCurricularRepositorio,
             for (var dep : entry.getValue()) {
                 var cqJpa = new CorrequisitoJpa();
                 cqJpa.disciplinaId = entry.getKey().getValor();
-                cqJpa.corequisitoId = dep.getValor();
+                cqJpa.correquisitoId = dep.getValor();
                 jpa.correquisitos.add(cqJpa);
             }
         }
@@ -218,7 +218,7 @@ class MatrizCurricularRepositorioImpl implements MatrizCurricularRepositorio,
         Map<DisciplinaId, List<DisciplinaId>> correquisitos = new HashMap<>();
         for (var cq : jpa.correquisitos) {
             correquisitos.computeIfAbsent(new DisciplinaId(cq.disciplinaId), k -> new ArrayList<>())
-                    .add(new DisciplinaId(cq.corequisitoId));
+                    .add(new DisciplinaId(cq.correquisitoId));
         }
 
         return MatrizCurricular.reconstituir(
