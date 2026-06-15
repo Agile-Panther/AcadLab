@@ -80,6 +80,17 @@ public class Turma implements TurmaOferecida {
         return new TurmaCanceladaEvento(this);
     }
 
+    public static Turma reconstituir(TurmaId id, PeriodoLetivoId periodoLetivoId, DisciplinaId disciplinaId,
+            ProfessorId professorId, SalaId salaId, ModalidadeTurma modalidade,
+            int capacidade, StatusTurma status, List<HorarioAula> horarios) {
+        var turma = new Turma(id, periodoLetivoId, disciplinaId, modalidade, capacidade);
+        turma.professorId = professorId;
+        turma.salaId = salaId;
+        turma.status = status;
+        turma.horarios.addAll(horarios);
+        return turma;
+    }
+
     public TurmaId getId() { return id; }
     public PeriodoLetivoId getPeriodoLetivoId() { return periodoLetivoId; }
     public DisciplinaId getDisciplinaId() { return disciplinaId; }
