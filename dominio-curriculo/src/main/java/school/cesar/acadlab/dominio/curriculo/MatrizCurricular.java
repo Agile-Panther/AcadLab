@@ -56,8 +56,16 @@ public class MatrizCurricular {
     public int getMaximoTrancamentos() { return maximoTrancamentos; }
     public StatusMatriz getStatus() { return status; }
     public List<ItemMatriz> getItens() { return Collections.unmodifiableList(itens); }
-    public Map<DisciplinaId, List<DisciplinaId>> getPreRequisitos() { return Collections.unmodifiableMap(preRequisitos); }
-    public Map<DisciplinaId, List<DisciplinaId>> getCorrequisitos() { return Collections.unmodifiableMap(correquisitos); }
+    public Map<DisciplinaId, List<DisciplinaId>> getPreRequisitos() {
+        Map<DisciplinaId, List<DisciplinaId>> copia = new HashMap<>();
+        preRequisitos.forEach((k, v) -> copia.put(k, Collections.unmodifiableList(v)));
+        return Collections.unmodifiableMap(copia);
+    }
+    public Map<DisciplinaId, List<DisciplinaId>> getCorrequisitos() {
+        Map<DisciplinaId, List<DisciplinaId>> copia = new HashMap<>();
+        correquisitos.forEach((k, v) -> copia.put(k, Collections.unmodifiableList(v)));
+        return Collections.unmodifiableMap(copia);
+    }
 
     public void adicionarDisciplina(DisciplinaId disciplinaId, TipoDisciplina tipo, int cargaHoraria, int creditos) {
         notNull(disciplinaId, "DisciplinaId não pode ser nulo");
@@ -98,6 +106,10 @@ public class MatrizCurricular {
         notNull(disciplina, "DisciplinaId não pode ser nulo");
         notNull(preRequisito, "PreRequisito DisciplinaId não pode ser nulo");
 
+        if (status == StatusMatriz.ATIVA) {
+            throw new IllegalStateException("RN-8: Não é possível alterar matriz ativa");
+        }
+
         boolean disciplinaExiste = itens.stream().anyMatch(i -> i.getDisciplinaId().equals(disciplina));
         boolean preRequisitoExiste = itens.stream().anyMatch(i -> i.getDisciplinaId().equals(preRequisito));
 
@@ -115,6 +127,10 @@ public class MatrizCurricular {
     public void adicionarCorrequisito(DisciplinaId disciplina, DisciplinaId correquisito) {
         notNull(disciplina, "DisciplinaId não pode ser nulo");
         notNull(correquisito, "Correquisito DisciplinaId não pode ser nulo");
+
+        if (status == StatusMatriz.ATIVA) {
+            throw new IllegalStateException("RN-8: Não é possível alterar matriz ativa");
+        }
 
         boolean disciplinaExiste = itens.stream().anyMatch(i -> i.getDisciplinaId().equals(disciplina));
         boolean corequisitoExiste = itens.stream().anyMatch(i -> i.getDisciplinaId().equals(correquisito));
