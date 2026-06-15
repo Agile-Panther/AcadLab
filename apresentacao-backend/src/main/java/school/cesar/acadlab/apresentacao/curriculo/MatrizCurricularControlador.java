@@ -9,10 +9,12 @@ import java.util.List;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
 
 import school.cesar.acadlab.aplicacao.curriculo.MatrizCurricularResumo;
 import school.cesar.acadlab.aplicacao.curriculo.MatrizCurricularServicoAplicacao;
@@ -68,7 +70,7 @@ class MatrizCurricularControlador {
     @RequestMapping(method = POST, path = "{id}/disciplinas")
     void adicionarDisciplina(@PathVariable int id, @RequestBody AdicionarDisciplinaRequest request) {
         MatrizCurricular matriz = repositorio.buscarPorId(new MatrizCurricularId(id))
-                .orElseThrow(() -> new IllegalArgumentException("Matriz não encontrada"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Matriz não encontrada"));
         matriz.adicionarDisciplina(
                 new DisciplinaId(request.disciplinaId()),
                 TipoDisciplina.valueOf(request.tipo()),
@@ -80,7 +82,7 @@ class MatrizCurricularControlador {
     @RequestMapping(method = DELETE, path = "{id}/disciplinas/{disciplinaId}")
     void removerDisciplina(@PathVariable int id, @PathVariable int disciplinaId) {
         MatrizCurricular matriz = repositorio.buscarPorId(new MatrizCurricularId(id))
-                .orElseThrow(() -> new IllegalArgumentException("Matriz não encontrada"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Matriz não encontrada"));
         matriz.removerDisciplina(new DisciplinaId(disciplinaId), consultaTurmas);
         repositorio.salvar(matriz);
     }
@@ -88,7 +90,7 @@ class MatrizCurricularControlador {
     @RequestMapping(method = PUT, path = "{id}/prerequisitos")
     void adicionarPreRequisito(@PathVariable int id, @RequestBody DependenciaRequest request) {
         MatrizCurricular matriz = repositorio.buscarPorId(new MatrizCurricularId(id))
-                .orElseThrow(() -> new IllegalArgumentException("Matriz não encontrada"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Matriz não encontrada"));
         matriz.adicionarPreRequisito(
                 new DisciplinaId(request.disciplinaId()),
                 new DisciplinaId(request.dependenciaId()));
@@ -98,7 +100,7 @@ class MatrizCurricularControlador {
     @RequestMapping(method = PUT, path = "{id}/correquisitos")
     void adicionarCorrequisito(@PathVariable int id, @RequestBody DependenciaRequest request) {
         MatrizCurricular matriz = repositorio.buscarPorId(new MatrizCurricularId(id))
-                .orElseThrow(() -> new IllegalArgumentException("Matriz não encontrada"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Matriz não encontrada"));
         matriz.adicionarCorrequisito(
                 new DisciplinaId(request.disciplinaId()),
                 new DisciplinaId(request.dependenciaId()));
@@ -108,7 +110,7 @@ class MatrizCurricularControlador {
     @RequestMapping(method = PUT, path = "{id}/ativar")
     void ativar(@PathVariable int id) {
         MatrizCurricular matriz = repositorio.buscarPorId(new MatrizCurricularId(id))
-                .orElseThrow(() -> new IllegalArgumentException("Matriz não encontrada"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Matriz não encontrada"));
         matriz.ativar(consultaMatrizAtiva);
         repositorio.salvar(matriz);
     }
@@ -116,7 +118,7 @@ class MatrizCurricularControlador {
     @RequestMapping(method = PUT, path = "{id}/desativar")
     void desativar(@PathVariable int id) {
         MatrizCurricular matriz = repositorio.buscarPorId(new MatrizCurricularId(id))
-                .orElseThrow(() -> new IllegalArgumentException("Matriz não encontrada"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Matriz não encontrada"));
         matriz.desativar();
         repositorio.salvar(matriz);
     }
