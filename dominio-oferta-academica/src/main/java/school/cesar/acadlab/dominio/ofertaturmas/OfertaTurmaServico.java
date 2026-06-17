@@ -49,6 +49,15 @@ public class OfertaTurmaServico {
             throw new IllegalStateException("RN3: Professor inativo não pode ser vinculado a turma");
         }
         var turma = turmaRepositorio.obter(turmaId);
+        var turmasProfessor = turmaRepositorio.pesquisarPorProfessorEPeriodo(professorId, turma.getPeriodoLetivoId());
+        for (var outra : turmasProfessor) {
+            for (var h1 : turma.getHorarios()) {
+                for (var h2 : outra.getHorarios()) {
+                    if (h1.conflitaCom(h2))
+                        throw new IllegalStateException("RN6: conflito de horário do professor");
+                }
+            }
+        }
         turma.vincularProfessor(professorId);
         turmaRepositorio.salvar(turma);
     }
@@ -62,6 +71,15 @@ public class OfertaTurmaServico {
             throw new IllegalStateException("RN1: Sala inativa não pode ser vinculada a turma");
         }
         var turma = turmaRepositorio.obter(turmaId);
+        var turmasSala = turmaRepositorio.pesquisarPorSalaEPeriodo(salaId, turma.getPeriodoLetivoId());
+        for (var outra : turmasSala) {
+            for (var h1 : turma.getHorarios()) {
+                for (var h2 : outra.getHorarios()) {
+                    if (h1.conflitaCom(h2))
+                        throw new IllegalStateException("RN7: conflito de horário da sala");
+                }
+            }
+        }
         turma.vincularSala(salaId, sala.getCapacidade());
         turmaRepositorio.salvar(turma);
     }
