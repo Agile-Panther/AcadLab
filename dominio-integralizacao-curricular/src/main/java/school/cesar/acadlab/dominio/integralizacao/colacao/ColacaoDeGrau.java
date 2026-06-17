@@ -40,6 +40,16 @@ public class ColacaoDeGrau {
         return new ColacaoRegistradaEvento(this);
     }
 
+    public static ColacaoDeGrau reconstituir(ColacaoId id, EstudanteId estudanteId,
+                                              IntegralizacaoId integralizacaoId,
+                                              LocalDate dataAptidaoAprovada,
+                                              LocalDate dataCerimonia, String local) {
+        var c = new ColacaoDeGrau(id, estudanteId, integralizacaoId, dataAptidaoAprovada);
+        c.dataCerimonia = dataCerimonia;
+        c.local = local;
+        return c;
+    }
+
     public ColacaoId getId() { return id; }
     public EstudanteId getEstudanteId() { return estudanteId; }
     public IntegralizacaoId getIntegralizacaoId() { return integralizacaoId; }

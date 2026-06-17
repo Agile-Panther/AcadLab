@@ -71,6 +71,22 @@ public class IntegralizacaoCurricular {
         return aprovadorId != null && dataAprovacao != null;
     }
 
+    public static IntegralizacaoCurricular reconstituir(IntegralizacaoId id, EstudanteId estudanteId,
+                                                        MatrizCurricularId matrizCurricularId,
+                                                        StatusIntegralizacao status,
+                                                        CoordenadorId aprovadorId,
+                                                        LocalDate dataAprovacao,
+                                                        List<ItemChecklist> itensChecklist) {
+        var i = new IntegralizacaoCurricular(id, estudanteId, matrizCurricularId);
+        i.status = status;
+        i.aprovadorId = aprovadorId;
+        i.dataAprovacao = dataAprovacao;
+        if (itensChecklist != null) {
+            i.itensChecklist.addAll(itensChecklist);
+        }
+        return i;
+    }
+
     public IntegralizacaoId getId() { return id; }
     public EstudanteId getEstudanteId() { return estudanteId; }
     public MatrizCurricularId getMatrizCurricularId() { return matrizCurricularId; }
