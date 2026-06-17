@@ -16,6 +16,7 @@ public class IntegralizacaoCurricular {
     private final MatrizCurricularId matrizCurricularId;
     private final List<ItemChecklist> itensChecklist = new ArrayList<>();
     private StatusIntegralizacao status;
+    private String observacao;
     private CoordenadorId aprovadorId;
     private LocalDate dataAprovacao;
 
@@ -41,6 +42,10 @@ public class IntegralizacaoCurricular {
 
     // US02 - RN4: resultado inapto exige ao menos uma pendência
     public ResultadoRegistradoEvento registrarResultado(StatusIntegralizacao resultado) {
+        return registrarResultado(resultado, null);
+    }
+
+    public ResultadoRegistradoEvento registrarResultado(StatusIntegralizacao resultado, String observacao) {
         notNull(resultado, "O resultado não pode ser nulo");
         if (itensChecklist.isEmpty()) {
             throw new IllegalStateException("Checklist deve ser gerado antes do registro do resultado");
@@ -52,6 +57,7 @@ public class IntegralizacaoCurricular {
             }
         }
         this.status = resultado;
+        this.observacao = observacao;
         return new ResultadoRegistradoEvento(this);
     }
 
@@ -74,11 +80,13 @@ public class IntegralizacaoCurricular {
     public static IntegralizacaoCurricular reconstituir(IntegralizacaoId id, EstudanteId estudanteId,
                                                         MatrizCurricularId matrizCurricularId,
                                                         StatusIntegralizacao status,
+                                                        String observacao,
                                                         CoordenadorId aprovadorId,
                                                         LocalDate dataAprovacao,
                                                         List<ItemChecklist> itensChecklist) {
         var i = new IntegralizacaoCurricular(id, estudanteId, matrizCurricularId);
         i.status = status;
+        i.observacao = observacao;
         i.aprovadorId = aprovadorId;
         i.dataAprovacao = dataAprovacao;
         if (itensChecklist != null) {
@@ -92,6 +100,7 @@ public class IntegralizacaoCurricular {
     public MatrizCurricularId getMatrizCurricularId() { return matrizCurricularId; }
     public List<ItemChecklist> getItensChecklist() { return Collections.unmodifiableList(itensChecklist); }
     public StatusIntegralizacao getStatus() { return status; }
+    public String getObservacao() { return observacao; }
     public CoordenadorId getAprovadorId() { return aprovadorId; }
     public LocalDate getDataAprovacao() { return dataAprovacao; }
 

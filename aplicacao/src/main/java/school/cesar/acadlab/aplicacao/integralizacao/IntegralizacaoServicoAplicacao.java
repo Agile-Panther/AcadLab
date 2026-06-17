@@ -17,6 +17,10 @@ public class IntegralizacaoServicoAplicacao {
         this.colacaoRepositorio = colacaoRepositorio;
     }
 
+    public List<IntegralizacaoResumo> buscarTodasIntegralizacoes() {
+        return integralizacaoRepositorio.buscarTodas();
+    }
+
     public List<IntegralizacaoResumo> buscarIntegralizacoesPorEstudante(int estudanteId) {
         return integralizacaoRepositorio.buscarPorEstudante(estudanteId);
     }

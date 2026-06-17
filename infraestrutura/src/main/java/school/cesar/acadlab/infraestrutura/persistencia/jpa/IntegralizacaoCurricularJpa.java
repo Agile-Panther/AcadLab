@@ -25,6 +25,7 @@ import school.cesar.acadlab.aplicacao.integralizacao.ColacaoRepositorioAplicacao
 import school.cesar.acadlab.aplicacao.integralizacao.ColacaoResumo;
 import school.cesar.acadlab.aplicacao.integralizacao.IntegralizacaoRepositorioAplicacao;
 import school.cesar.acadlab.aplicacao.integralizacao.IntegralizacaoResumo;
+import school.cesar.acadlab.aplicacao.integralizacao.ItemChecklistResumo;
 import school.cesar.acadlab.dominio.integralizacao.CoordenadorId;
 import school.cesar.acadlab.dominio.integralizacao.EstudanteId;
 import school.cesar.acadlab.dominio.integralizacao.MatrizCurricularId;
@@ -49,6 +50,7 @@ class IntegralizacaoJpaEntity {
     @Enumerated(EnumType.STRING)
     StatusIntegralizacao status;
 
+    String observacao;
     Integer aprovadorId;
     LocalDate dataAprovacao;
 
@@ -79,7 +81,10 @@ class ColacaoJpaEntity {
     int integralizacaoId;
     LocalDate dataAptidaoAprovada;
     LocalDate dataCerimonia;
+    String horario;
     String local;
+    String modalidade;
+    String observacoes;
 }
 
 interface IntegralizacaoJpaRepository extends JpaRepository<IntegralizacaoJpaEntity, Integer> {
@@ -125,6 +130,13 @@ class IntegralizacaoRepositorioImpl implements IntegralizacaoRepositorio, Integr
     }
 
     @Override
+    public List<IntegralizacaoResumo> buscarTodas() {
+        return repository.findAll().stream()
+                .map(this::toResumo)
+                .toList();
+    }
+
+    @Override
     public List<IntegralizacaoResumo> buscarPorEstudante(int estudanteId) {
         return repository.findByEstudanteId(estudanteId).stream()
                 .map(this::toResumo)
@@ -142,6 +154,7 @@ class IntegralizacaoRepositorioImpl implements IntegralizacaoRepositorio, Integr
         jpa.estudanteId = i.getEstudanteId().getId();
         jpa.matrizCurricularId = i.getMatrizCurricularId().getId();
         jpa.status = i.getStatus();
+        jpa.observacao = i.getObservacao();
         jpa.aprovadorId = i.getAprovadorId() != null ? i.getAprovadorId().getId() : null;
         jpa.dataAprovacao = i.getDataAprovacao();
 
@@ -167,19 +180,26 @@ class IntegralizacaoRepositorioImpl implements IntegralizacaoRepositorio, Integr
                 new EstudanteId(jpa.estudanteId),
                 new MatrizCurricularId(jpa.matrizCurricularId),
                 jpa.status,
+                jpa.observacao,
                 jpa.aprovadorId != null ? new CoordenadorId(jpa.aprovadorId) : null,
                 jpa.dataAprovacao,
                 itens);
     }
 
     private IntegralizacaoResumo toResumo(IntegralizacaoJpaEntity jpa) {
+        var itens = jpa.itensChecklist.stream()
+                .map(i -> new ItemChecklistResumo(i.tipo.name(), i.descricao, i.cumprido))
+                .toList();
+
         return new IntegralizacaoResumo(
                 jpa.id,
                 jpa.estudanteId,
                 jpa.matrizCurricularId,
                 jpa.status.name(),
+                jpa.observacao,
                 jpa.aprovadorId,
-                jpa.dataAprovacao != null ? jpa.dataAprovacao.toString() : null);
+                jpa.dataAprovacao != null ? jpa.dataAprovacao.toString() : null,
+                itens);
     }
 }
 
@@ -226,7 +246,10 @@ class ColacaoRepositorioImpl implements ColacaoRepositorio, ColacaoRepositorioAp
         jpa.integralizacaoId = c.getIntegralizacaoId().getId();
         jpa.dataAptidaoAprovada = c.getDataAptidaoAprovada();
         jpa.dataCerimonia = c.getDataCerimonia();
+        jpa.horario = c.getHorario();
         jpa.local = c.getLocal();
+        jpa.modalidade = c.getModalidade();
+        jpa.observacoes = c.getObservacoes();
         return jpa;
     }
 
@@ -237,7 +260,10 @@ class ColacaoRepositorioImpl implements ColacaoRepositorio, ColacaoRepositorioAp
                 new IntegralizacaoId(jpa.integralizacaoId),
                 jpa.dataAptidaoAprovada,
                 jpa.dataCerimonia,
-                jpa.local);
+                jpa.horario,
+                jpa.local,
+                jpa.modalidade,
+                jpa.observacoes);
     }
 
     private ColacaoResumo toResumo(ColacaoJpaEntity jpa) {
@@ -247,6 +273,9 @@ class ColacaoRepositorioImpl implements ColacaoRepositorio, ColacaoRepositorioAp
                 jpa.integralizacaoId,
                 jpa.dataAptidaoAprovada != null ? jpa.dataAptidaoAprovada.toString() : null,
                 jpa.dataCerimonia != null ? jpa.dataCerimonia.toString() : null,
-                jpa.local);
+                jpa.horario,
+                jpa.local,
+                jpa.modalidade,
+                jpa.observacoes);
     }
 }
