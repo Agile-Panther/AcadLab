@@ -24,4 +24,8 @@ public class SolicitacaoAcademicaServicoAplicacao {
     public List<SolicitacaoAcademicaResumo> buscarPendentesDeAnalise() {
         return repositorio.buscarPorStatus("PENDENTE_ANALISE");
     }
+
+    public List<SolicitacaoAcademicaResumo> buscarTodas() {
+        return repositorio.buscarTodas();
+    }
 }

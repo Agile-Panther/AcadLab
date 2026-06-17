@@ -142,6 +142,9 @@ public class BackendAplicacao {
     @Bean
     ProfessorServicoAplicacao professorServicoAplicacao(ProfessorRepositorioAplicacao repositorio) {
         return new ProfessorServicoAplicacao(repositorio);
+    }
+
+    @Bean
     EstagioServico estagioServico(OportunidadeRepositorio oportunidadeRepositorio,
                                    EstagioRepositorio estagioRepositorio) {
         return new EstagioServico(oportunidadeRepositorio, estagioRepositorio);

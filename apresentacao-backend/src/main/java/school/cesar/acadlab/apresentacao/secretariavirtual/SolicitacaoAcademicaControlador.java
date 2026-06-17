@@ -5,6 +5,7 @@ import static org.springframework.web.bind.annotation.RequestMethod.POST;
 import static org.springframework.web.bind.annotation.RequestMethod.PUT;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -49,6 +50,25 @@ class SolicitacaoAcademicaControlador {
     @RequestMapping(method = GET, path = "pendentes")
     List<SolicitacaoAcademicaResumo> buscarPendentesDeAnalise() {
         return servicoAplicacao.buscarPendentesDeAnalise();
+    }
+
+    @RequestMapping(method = GET, path = "todas")
+    List<SolicitacaoAcademicaResumo> buscarTodas() {
+        return servicoAplicacao.buscarTodas();
+    }
+
+    @RequestMapping(method = GET, path = "estatisticas")
+    Map<String, Long> obterEstatisticas() {
+        var todas = servicoAplicacao.buscarTodas();
+        return Map.of(
+                "PENDENTE_ANALISE", todas.stream().filter(s -> "PENDENTE_ANALISE".equals(s.status())).count(),
+                "EM_ANALISE", todas.stream().filter(s -> "EM_ANALISE".equals(s.status())).count(),
+                "DEFERIDA", todas.stream().filter(s -> "DEFERIDA".equals(s.status())).count(),
+                "INDEFERIDA", todas.stream().filter(s -> "INDEFERIDA".equals(s.status())).count(),
+                "CONCLUIDA", todas.stream().filter(s -> "CONCLUIDA".equals(s.status())).count(),
+                "CANCELADA", todas.stream().filter(s -> "CANCELADA".equals(s.status())).count(),
+                "PENDENTE_COMPLEMENTACAO", todas.stream().filter(s -> "PENDENTE_COMPLEMENTACAO".equals(s.status())).count()
+        );
     }
 
     @RequestMapping(method = POST)

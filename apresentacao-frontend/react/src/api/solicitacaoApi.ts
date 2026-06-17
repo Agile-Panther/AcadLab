@@ -1,4 +1,4 @@
-import type { SolicitacaoResumo, AbrirSolicitacaoRequest, DocumentoRequest } from '../types/solicitacao';
+import type { SolicitacaoResumo, AbrirSolicitacaoRequest, DocumentoRequest, Estatisticas } from '../types/solicitacao';
 
 const BASE_URL = '/backend/solicitacoes';
 
@@ -28,6 +28,14 @@ export function buscarPorId(id: number): Promise<SolicitacaoResumo> {
 
 export function buscarPendentes(): Promise<SolicitacaoResumo[]> {
   return fetchJson(`${BASE_URL}/pendentes`);
+}
+
+export function buscarTodas(): Promise<SolicitacaoResumo[]> {
+  return fetchJson(`${BASE_URL}/todas`);
+}
+
+export function buscarEstatisticas(): Promise<Estatisticas> {
+  return fetchJson(`${BASE_URL}/estatisticas`);
 }
 
 export function abrirSolicitacao(request: AbrirSolicitacaoRequest): Promise<number> {
