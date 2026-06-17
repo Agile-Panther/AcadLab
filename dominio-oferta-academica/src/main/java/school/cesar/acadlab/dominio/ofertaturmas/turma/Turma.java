@@ -8,8 +8,9 @@ import school.cesar.acadlab.dominio.ofertaturmas.DisciplinaId;
 import school.cesar.acadlab.dominio.ofertaturmas.PeriodoLetivoId;
 import school.cesar.acadlab.dominio.ofertaturmas.professor.ProfessorId;
 import school.cesar.acadlab.dominio.ofertaturmas.sala.SalaId;
+import school.cesar.acadlab.dominio.ofertaturmas.turma.decorator.TurmaOferecida;
 
-public class Turma {
+public class Turma implements TurmaOferecida {
     private final TurmaId id;
     private final PeriodoLetivoId periodoLetivoId;
     private final DisciplinaId disciplinaId;
@@ -77,6 +78,17 @@ public class Turma {
         }
         this.status = StatusTurma.CANCELADA;
         return new TurmaCanceladaEvento(this);
+    }
+
+    public static Turma reconstituir(TurmaId id, PeriodoLetivoId periodoLetivoId, DisciplinaId disciplinaId,
+            ProfessorId professorId, SalaId salaId, ModalidadeTurma modalidade,
+            int capacidade, StatusTurma status, List<HorarioAula> horarios) {
+        var turma = new Turma(id, periodoLetivoId, disciplinaId, modalidade, capacidade);
+        turma.professorId = professorId;
+        turma.salaId = salaId;
+        turma.status = status;
+        turma.horarios.addAll(horarios);
+        return turma;
     }
 
     public TurmaId getId() { return id; }
