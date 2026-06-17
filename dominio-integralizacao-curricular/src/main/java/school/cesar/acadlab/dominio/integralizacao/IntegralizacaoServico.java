@@ -8,7 +8,7 @@ import school.cesar.acadlab.dominio.integralizacao.integralizacao.Integralizacao
 import school.cesar.acadlab.dominio.integralizacao.integralizacao.IntegralizacaoRepositorio;
 import school.cesar.acadlab.dominio.integralizacao.integralizacao.StatusIntegralizacao;
 
-public class IntegralizacaoServico {
+public class IntegralizacaoServico implements IntegralizacaoOperacoes {
     private final IntegralizacaoRepositorio repositorio;
 
     public IntegralizacaoServico(IntegralizacaoRepositorio repositorio) {

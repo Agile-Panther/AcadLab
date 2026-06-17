@@ -36,6 +36,18 @@ import school.cesar.acadlab.aplicacao.ofertaturmas.SalaRepositorioAplicacao;
 import school.cesar.acadlab.aplicacao.ofertaturmas.SalaServicoAplicacao;
 import school.cesar.acadlab.aplicacao.ofertaturmas.TurmaRepositorioAplicacao;
 import school.cesar.acadlab.aplicacao.ofertaturmas.TurmaServicoAplicacao;
+import school.cesar.acadlab.aplicacao.integralizacao.ColacaoRepositorioAplicacao;
+import school.cesar.acadlab.aplicacao.integralizacao.IntegralizacaoRepositorioAplicacao;
+import school.cesar.acadlab.aplicacao.integralizacao.IntegralizacaoServicoAplicacao;
+import school.cesar.acadlab.dominio.integralizacao.ColacaoServico;
+import school.cesar.acadlab.dominio.integralizacao.ConsultaPendenciasPorta;
+import school.cesar.acadlab.dominio.integralizacao.ConsultaPeriodoLetivoPorta;
+import school.cesar.acadlab.dominio.integralizacao.ConsultaRequisitosIntegralizacaoPorta;
+import school.cesar.acadlab.dominio.integralizacao.IntegralizacaoOperacoes;
+import school.cesar.acadlab.dominio.integralizacao.IntegralizacaoServico;
+import school.cesar.acadlab.dominio.integralizacao.IntegralizacaoServicoProxy;
+import school.cesar.acadlab.dominio.integralizacao.colacao.ColacaoRepositorio;
+import school.cesar.acadlab.dominio.integralizacao.integralizacao.IntegralizacaoRepositorio;
 import school.cesar.acadlab.dominio.ofertaturmas.ConsultaTurmaServico;
 import school.cesar.acadlab.dominio.ofertaturmas.OfertaTurmaServico;
 import school.cesar.acadlab.dominio.ofertaturmas.professor.ProfessorRepositorio;
@@ -119,6 +131,9 @@ public class BackendAplicacao {
     @Bean
     ProfessorServicoAplicacao professorServicoAplicacao(ProfessorRepositorioAplicacao repositorio) {
         return new ProfessorServicoAplicacao(repositorio);
+    }
+
+    @Bean
     EstagioServico estagioServico(OportunidadeRepositorio oportunidadeRepositorio,
                                    EstagioRepositorio estagioRepositorio) {
         return new EstagioServico(oportunidadeRepositorio, estagioRepositorio);
@@ -133,6 +148,49 @@ public class BackendAplicacao {
     @Bean
     EstagioServicoAplicacao estagioServicoAplicacao(EstagioRepositorioAplicacao repositorio) {
         return new EstagioServicoAplicacao(repositorio);
+    }
+
+    @Bean
+    IntegralizacaoServico integralizacaoServico(IntegralizacaoRepositorio repositorio) {
+        return new IntegralizacaoServico(repositorio);
+    }
+
+    @Bean
+    IntegralizacaoOperacoes integralizacaoOperacoes(IntegralizacaoServico servico,
+                                                     IntegralizacaoRepositorio repositorio,
+                                                     ConsultaPeriodoLetivoPorta periodoLetivoPorta,
+                                                     ConsultaPendenciasPorta pendenciasPorta,
+                                                     ConsultaRequisitosIntegralizacaoPorta requisitosPorta) {
+        return new IntegralizacaoServicoProxy(servico, repositorio,
+                periodoLetivoPorta, pendenciasPorta, requisitosPorta);
+    }
+
+    @Bean
+    ConsultaPeriodoLetivoPorta consultaPeriodoLetivoPorta() {
+        return e -> true;
+    }
+
+    @Bean
+    ConsultaPendenciasPorta consultaPendenciasPorta() {
+        return e -> false;
+    }
+
+    @Bean
+    ConsultaRequisitosIntegralizacaoPorta consultaRequisitosPorta() {
+        return (e, m) -> true;
+    }
+
+    @Bean
+    ColacaoServico colacaoServico(ColacaoRepositorio colacaoRepositorio,
+                                   IntegralizacaoRepositorio integralizacaoRepositorio) {
+        return new ColacaoServico(colacaoRepositorio, integralizacaoRepositorio);
+    }
+
+    @Bean
+    IntegralizacaoServicoAplicacao integralizacaoServicoAplicacao(
+            IntegralizacaoRepositorioAplicacao integralizacaoRepositorio,
+            ColacaoRepositorioAplicacao colacaoRepositorio) {
+        return new IntegralizacaoServicoAplicacao(integralizacaoRepositorio, colacaoRepositorio);
     }
 
     public static void main(String[] args) {
