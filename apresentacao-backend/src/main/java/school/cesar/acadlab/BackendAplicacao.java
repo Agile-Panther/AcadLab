@@ -23,6 +23,14 @@ import school.cesar.acadlab.dominio.matricula.MatriculaServico;
 import school.cesar.acadlab.dominio.matricula.matricula.MatriculaRepositorio;
 import school.cesar.acadlab.dominio.mobilidadeacademica.MobilidadeAcademicaServico;
 import school.cesar.acadlab.dominio.mobilidadeacademica.mobilidade.MobilidadeAcademicaRepositorio;
+import school.cesar.acadlab.aplicacao.secretariavirtual.SolicitacaoAcademicaRepositorioAplicacao;
+import school.cesar.acadlab.aplicacao.secretariavirtual.SolicitacaoAcademicaServicoAplicacao;
+import school.cesar.acadlab.dominio.secretariavirtual.AnaliseServico;
+import school.cesar.acadlab.dominio.secretariavirtual.CalendarioAcademicoPorta;
+import school.cesar.acadlab.dominio.secretariavirtual.SolicitacaoServico;
+import school.cesar.acadlab.dominio.secretariavirtual.SolicitacaoServicoProxy;
+import school.cesar.acadlab.dominio.secretariavirtual.SolicitacaoServicoReal;
+import school.cesar.acadlab.dominio.secretariavirtual.solicitacaoAcademica.SolicitacaoAcademicaRepositorio;
 
 @SpringBootApplication
 public class BackendAplicacao {
@@ -74,6 +82,24 @@ public class BackendAplicacao {
     MobilidadeAcademicaServicoAplicacao mobilidadeAcademicaServicoAplicacao(
             MobilidadeAcademicaRepositorioAplicacao repositorio) {
         return new MobilidadeAcademicaServicoAplicacao(repositorio);
+    }
+
+    @Bean
+    SolicitacaoServico solicitacaoServico(SolicitacaoAcademicaRepositorio repositorio,
+                                          CalendarioAcademicoPorta calendario) {
+        var servicoReal = new SolicitacaoServicoReal(repositorio);
+        return new SolicitacaoServicoProxy(servicoReal, repositorio, calendario);
+    }
+
+    @Bean
+    AnaliseServico analiseServico(SolicitacaoAcademicaRepositorio repositorio) {
+        return new AnaliseServico(repositorio);
+    }
+
+    @Bean
+    SolicitacaoAcademicaServicoAplicacao solicitacaoAcademicaServicoAplicacao(
+            SolicitacaoAcademicaRepositorioAplicacao repositorio) {
+        return new SolicitacaoAcademicaServicoAplicacao(repositorio);
     }
 
     public static void main(String[] args) {
