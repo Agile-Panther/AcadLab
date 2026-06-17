@@ -22,6 +22,7 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.Table;
+import school.cesar.acadlab.aplicacao.secretariavirtual.DocumentoResumo;
 import school.cesar.acadlab.aplicacao.secretariavirtual.SolicitacaoAcademicaRepositorioAplicacao;
 import school.cesar.acadlab.aplicacao.secretariavirtual.SolicitacaoAcademicaResumo;
 import school.cesar.acadlab.dominio.secretariavirtual.analista.SecretariaId;
@@ -166,6 +167,13 @@ class SolicitacaoAcademicaRepositorioImpl
                 .toList();
     }
 
+    @Override
+    public List<SolicitacaoAcademicaResumo> buscarTodas() {
+        return repository.findAll().stream()
+                .map(this::toResumo)
+                .toList();
+    }
+
     // --- Mapeamentos ---
 
     private SolicitacaoAcademicaJpa toJpa(SolicitacaoAcademica s) {
@@ -219,6 +227,10 @@ class SolicitacaoAcademicaRepositorioImpl
     }
 
     private SolicitacaoAcademicaResumo toResumo(SolicitacaoAcademicaJpa jpa) {
+        var docs = jpa.documentos.stream()
+                .map(d -> new DocumentoResumo(d.tipo, d.nomeArquivo, d.dataAnexo))
+                .toList();
+
         return new SolicitacaoAcademicaResumo(
                 jpa.id,
                 jpa.estudanteId,
@@ -229,6 +241,10 @@ class SolicitacaoAcademicaRepositorioImpl
                 jpa.protocoloId,
                 jpa.dataAbertura,
                 jpa.justificativaAnalise,
-                jpa.dataAnalise);
+                jpa.dataAnalise,
+                jpa.analistaId,
+                jpa.possuiImpactoAcademico,
+                jpa.alteracoesVinculadas,
+                docs);
     }
 }

@@ -7,4 +7,5 @@ public interface SolicitacaoAcademicaRepositorioAplicacao {
     List<SolicitacaoAcademicaResumo> buscarPorEstudante(int estudanteId);
     Optional<SolicitacaoAcademicaResumo> buscarPorId(int id);
     List<SolicitacaoAcademicaResumo> buscarPorStatus(String status);
+    List<SolicitacaoAcademicaResumo> buscarTodas();
 }
