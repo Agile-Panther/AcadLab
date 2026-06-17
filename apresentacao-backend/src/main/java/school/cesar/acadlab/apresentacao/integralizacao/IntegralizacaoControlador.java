@@ -40,6 +40,11 @@ class IntegralizacaoControlador {
     @Autowired
     private IntegralizacaoServicoAplicacao servicoAplicacao;
 
+    @RequestMapping(method = GET)
+    List<IntegralizacaoResumo> buscarTodas() {
+        return servicoAplicacao.buscarTodasIntegralizacoes();
+    }
+
     @RequestMapping(method = GET, path = "estudante/{estudanteId}")
     List<IntegralizacaoResumo> buscarPorEstudante(@PathVariable int estudanteId) {
         return servicoAplicacao.buscarIntegralizacoesPorEstudante(estudanteId);
@@ -88,12 +93,16 @@ class IntegralizacaoControlador {
         return colacaoServico.registrar(
                 new IntegralizacaoId(id),
                 request.dataCerimonia(),
-                request.local()).getId().getId();
+                request.horario(),
+                request.local(),
+                request.modalidade(),
+                request.observacoes()).getId().getId();
     }
 
     record IniciarAnaliseRequest(int estudanteId, int matrizCurricularId) {}
     record ItemChecklistRequest(String tipo, String descricao, boolean cumprido) {}
     record ResultadoRequest(String resultado) {}
     record AprovarAptidaoRequest(int coordenadorId) {}
-    record RegistrarColacaoRequest(LocalDate dataCerimonia, String local) {}
+    record RegistrarColacaoRequest(LocalDate dataCerimonia, String horario,
+                                    String local, String modalidade, String observacoes) {}
 }

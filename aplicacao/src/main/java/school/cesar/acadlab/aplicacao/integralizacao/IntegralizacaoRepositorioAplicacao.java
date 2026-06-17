@@ -6,4 +6,5 @@ import java.util.Optional;
 public interface IntegralizacaoRepositorioAplicacao {
     List<IntegralizacaoResumo> buscarPorEstudante(int estudanteId);
     Optional<IntegralizacaoResumo> buscarPorId(int id);
+    List<IntegralizacaoResumo> buscarTodas();
 }

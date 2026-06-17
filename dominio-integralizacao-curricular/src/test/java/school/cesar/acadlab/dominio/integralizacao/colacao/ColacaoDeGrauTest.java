@@ -70,7 +70,7 @@ class ColacaoDeGrauTest {
         var dataCerimonia = dataAptidao.plusDays(30);
         var colacao = ColacaoDeGrau.reconstituir(
                 colacaoId, estudanteId, integralizacaoId, dataAptidao,
-                dataCerimonia, "Auditório Central");
+                dataCerimonia, null, "Auditório Central", null, null);
 
         assertEquals(colacaoId, colacao.getId());
         assertEquals(estudanteId, colacao.getEstudanteId());

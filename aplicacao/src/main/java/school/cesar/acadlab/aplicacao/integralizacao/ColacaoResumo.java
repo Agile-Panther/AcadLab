@@ -6,5 +6,8 @@ public record ColacaoResumo(
         int integralizacaoId,
         String dataAptidaoAprovada,
         String dataCerimonia,
-        String local) {
+        String horario,
+        String local,
+        String modalidade,
+        String observacoes) {
 }
