@@ -20,9 +20,15 @@ public class ColacaoServico {
         this.integralizacaoRepositorio = integralizacaoRepositorio;
     }
 
-    // US04 - RN7: aptidão aprovada; RN8: data da cerimônia >= data da aprovação (validado no agregado)
     public ColacaoDeGrau registrar(IntegralizacaoId integralizacaoId,
                                     LocalDate dataCerimonia, String local) {
+        return registrar(integralizacaoId, dataCerimonia, null, local, null, null);
+    }
+
+    // US04 - RN7: aptidão aprovada; RN8: data da cerimônia >= data da aprovação (validado no agregado)
+    public ColacaoDeGrau registrar(IntegralizacaoId integralizacaoId,
+                                    LocalDate dataCerimonia, String horario,
+                                    String local, String modalidade, String observacoes) {
         notNull(integralizacaoId, "O id da integralização não pode ser nulo");
         notNull(dataCerimonia, "A data da cerimônia não pode ser nula");
         notBlank(local, "O local não pode estar em branco");
@@ -36,7 +42,7 @@ public class ColacaoServico {
         var id = colacaoRepositorio.proximoId();
         var colacao = new ColacaoDeGrau(id, integralizacao.getEstudanteId(),
                 integralizacaoId, integralizacao.getDataAprovacao());
-        colacao.registrar(dataCerimonia, local);
+        colacao.registrar(dataCerimonia, horario, local, modalidade, observacoes);
         colacaoRepositorio.salvar(colacao);
         return colacao;
     }
