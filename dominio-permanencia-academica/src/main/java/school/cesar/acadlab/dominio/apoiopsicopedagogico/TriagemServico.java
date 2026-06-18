@@ -5,13 +5,17 @@ import school.cesar.acadlab.dominio.apoiopsicopedagogico.caso.CasoId;
 import school.cesar.acadlab.dominio.apoiopsicopedagogico.caso.CasoRepositorio;
 import school.cesar.acadlab.dominio.apoiopsicopedagogico.profissional.PsicopedagogoId;
 import school.cesar.acadlab.dominio.apoiopsicopedagogico.triagem.Triagem;
+import school.cesar.acadlab.dominio.evento.EventoBarramento;
 
 public class TriagemServico {
     private final CasoRepositorio casoRepositorio;
+    private final EventoBarramento eventoBarramento;
 
-    public TriagemServico(CasoRepositorio casoRepositorio) {
+    public TriagemServico(CasoRepositorio casoRepositorio, EventoBarramento eventoBarramento) {
         notNull(casoRepositorio, "O repositório de casos não pode ser nulo");
+        notNull(eventoBarramento, "O barramento de eventos não pode ser nulo");
         this.casoRepositorio = casoRepositorio;
+        this.eventoBarramento = eventoBarramento;
     }
 
     public void realizarTriagem(CasoId casoId, Triagem triagem) {
@@ -19,8 +23,9 @@ public class TriagemServico {
         notNull(triagem, "A triagem não pode ser nula");
 
         var caso = casoRepositorio.obter(casoId);
-        caso.realizarTriagem(triagem);
+        var evento = caso.realizarTriagem(triagem);
         casoRepositorio.salvar(caso);
+        eventoBarramento.postar(evento);
     }
 
     public Triagem obterTriagem(CasoId casoId, PsicopedagogoId solicitanteId) {
