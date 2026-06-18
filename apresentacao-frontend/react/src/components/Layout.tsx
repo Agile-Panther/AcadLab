@@ -29,6 +29,13 @@ function getPageInfo(pathname: string): { title: string; subtitle: string; initi
       initials: 'AC',
     };
   }
+  if (pathname.startsWith('/integralizacao')) {
+    return {
+      title: 'Integralização Curricular',
+      subtitle: 'F-08 · Validação de Integralização e Colação de Grau',
+      initials: 'IC',
+    };
+  }
   return {
     title: 'AcadLab',
     subtitle: 'Sistema Acadêmico Integrado',
