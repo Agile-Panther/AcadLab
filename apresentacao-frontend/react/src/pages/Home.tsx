@@ -15,6 +15,10 @@ export default function Home() {
           <h3>Painel da Secretaria</h3>
           <p>Analise e gerencie as solicitações acadêmicas</p>
         </Link>
+        <Link to="/integralizacao" className="home-card">
+          <h3>Integralização Curricular</h3>
+          <p>Validação de integralização e colação de grau</p>
+        </Link>
       </div>
     </div>
   );

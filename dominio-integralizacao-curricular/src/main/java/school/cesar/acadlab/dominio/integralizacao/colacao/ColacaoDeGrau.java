@@ -12,7 +12,10 @@ public class ColacaoDeGrau {
     private final IntegralizacaoId integralizacaoId;
     private final LocalDate dataAptidaoAprovada;
     private LocalDate dataCerimonia;
+    private String horario;
     private String local;
+    private String modalidade;
+    private String observacoes;
 
     public ColacaoDeGrau(ColacaoId id, EstudanteId estudanteId,
                           IntegralizacaoId integralizacaoId, LocalDate dataAptidaoAprovada) {
@@ -29,6 +32,11 @@ public class ColacaoDeGrau {
     // US04 - RN7: aptidão aprovada verificada antes da criação do objeto
     // RN8: data da colação igual ou posterior à data de aprovação
     public ColacaoRegistradaEvento registrar(LocalDate dataCerimonia, String local) {
+        return registrar(dataCerimonia, null, local, null, null);
+    }
+
+    public ColacaoRegistradaEvento registrar(LocalDate dataCerimonia, String horario,
+                                              String local, String modalidade, String observacoes) {
         notNull(dataCerimonia, "A data da cerimônia não pode ser nula");
         notBlank(local, "O local da cerimônia não pode estar em branco");
         if (dataCerimonia.isBefore(dataAptidaoAprovada)) {
@@ -36,8 +44,26 @@ public class ColacaoDeGrau {
                     "RN8: A data da cerimônia deve ser igual ou posterior à data de aprovação da aptidão");
         }
         this.dataCerimonia = dataCerimonia;
+        this.horario = horario;
         this.local = local;
+        this.modalidade = modalidade;
+        this.observacoes = observacoes;
         return new ColacaoRegistradaEvento(this);
+    }
+
+    public static ColacaoDeGrau reconstituir(ColacaoId id, EstudanteId estudanteId,
+                                              IntegralizacaoId integralizacaoId,
+                                              LocalDate dataAptidaoAprovada,
+                                              LocalDate dataCerimonia, String horario,
+                                              String local, String modalidade,
+                                              String observacoes) {
+        var c = new ColacaoDeGrau(id, estudanteId, integralizacaoId, dataAptidaoAprovada);
+        c.dataCerimonia = dataCerimonia;
+        c.horario = horario;
+        c.local = local;
+        c.modalidade = modalidade;
+        c.observacoes = observacoes;
+        return c;
     }
 
     public ColacaoId getId() { return id; }
@@ -45,7 +71,10 @@ public class ColacaoDeGrau {
     public IntegralizacaoId getIntegralizacaoId() { return integralizacaoId; }
     public LocalDate getDataAptidaoAprovada() { return dataAptidaoAprovada; }
     public LocalDate getDataCerimonia() { return dataCerimonia; }
+    public String getHorario() { return horario; }
     public String getLocal() { return local; }
+    public String getModalidade() { return modalidade; }
+    public String getObservacoes() { return observacoes; }
 
     public static class ColacaoRegistradaEvento {
         private final ColacaoDeGrau colacao;
