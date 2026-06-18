@@ -5,6 +5,8 @@ import static org.springframework.boot.SpringApplication.run;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
 
+import school.cesar.acadlab.aplicacao.apoiopsicopedagogico.ApoioPsicopedagogicoRepositorioAplicacao;
+import school.cesar.acadlab.aplicacao.apoiopsicopedagogico.ApoioPsicopedagogicoServicoAplicacao;
 import school.cesar.acadlab.aplicacao.atividadescomplementares.AtividadeComplementarRepositorioAplicacao;
 import school.cesar.acadlab.aplicacao.atividadescomplementares.AtividadeComplementarServicoAplicacao;
 import school.cesar.acadlab.aplicacao.curriculo.MatrizCurricularRepositorioAplicacao;
@@ -17,36 +19,34 @@ import school.cesar.acadlab.aplicacao.gestaofinanceira.CobrancaRepositorioAplica
 import school.cesar.acadlab.aplicacao.gestaofinanceira.CobrancaServicoAplicacao;
 import school.cesar.acadlab.aplicacao.gestaopedagogica.DiarioTurmaRepositorioAplicacao;
 import school.cesar.acadlab.aplicacao.gestaopedagogica.DiarioTurmaServicoAplicacao;
+import school.cesar.acadlab.aplicacao.integralizacao.ColacaoRepositorioAplicacao;
+import school.cesar.acadlab.aplicacao.integralizacao.IntegralizacaoRepositorioAplicacao;
+import school.cesar.acadlab.aplicacao.integralizacao.IntegralizacaoServicoAplicacao;
 import school.cesar.acadlab.aplicacao.matricula.MatriculaRepositorioAplicacao;
 import school.cesar.acadlab.aplicacao.matricula.MatriculaServicoAplicacao;
 import school.cesar.acadlab.aplicacao.mobilidadeacademica.MobilidadeAcademicaRepositorioAplicacao;
 import school.cesar.acadlab.aplicacao.mobilidadeacademica.MobilidadeAcademicaServicoAplicacao;
-import school.cesar.acadlab.dominio.estagios.EstagioServico;
-import school.cesar.acadlab.dominio.estagios.estagio.EstagioRepositorio;
-import school.cesar.acadlab.dominio.estagios.oportunidade.OportunidadeRepositorio;
-import school.cesar.acadlab.dominio.gestaopedagogica.DiarioTurmaServico;
-import school.cesar.acadlab.dominio.gestaopedagogica.diario.DiarioTurmaRepositorio;
-import school.cesar.acadlab.dominio.matricula.MatriculaServico;
-import school.cesar.acadlab.dominio.matricula.matricula.MatriculaRepositorio;
-import school.cesar.acadlab.dominio.mobilidadeacademica.MobilidadeAcademicaServico;
-import school.cesar.acadlab.dominio.mobilidadeacademica.mobilidade.MobilidadeAcademicaRepositorio;
-import school.cesar.acadlab.aplicacao.secretariavirtual.SolicitacaoAcademicaRepositorioAplicacao;
-import school.cesar.acadlab.aplicacao.secretariavirtual.SolicitacaoAcademicaServicoAplicacao;
-import school.cesar.acadlab.dominio.secretariavirtual.AnaliseServico;
-import school.cesar.acadlab.dominio.secretariavirtual.CalendarioAcademicoPorta;
-import school.cesar.acadlab.dominio.secretariavirtual.SolicitacaoServico;
-import school.cesar.acadlab.dominio.secretariavirtual.SolicitacaoServicoProxy;
-import school.cesar.acadlab.dominio.secretariavirtual.SolicitacaoServicoReal;
-import school.cesar.acadlab.dominio.secretariavirtual.solicitacaoAcademica.SolicitacaoAcademicaRepositorio;
 import school.cesar.acadlab.aplicacao.ofertaturmas.ProfessorRepositorioAplicacao;
 import school.cesar.acadlab.aplicacao.ofertaturmas.ProfessorServicoAplicacao;
 import school.cesar.acadlab.aplicacao.ofertaturmas.SalaRepositorioAplicacao;
 import school.cesar.acadlab.aplicacao.ofertaturmas.SalaServicoAplicacao;
 import school.cesar.acadlab.aplicacao.ofertaturmas.TurmaRepositorioAplicacao;
 import school.cesar.acadlab.aplicacao.ofertaturmas.TurmaServicoAplicacao;
-import school.cesar.acadlab.aplicacao.integralizacao.ColacaoRepositorioAplicacao;
-import school.cesar.acadlab.aplicacao.integralizacao.IntegralizacaoRepositorioAplicacao;
-import school.cesar.acadlab.aplicacao.integralizacao.IntegralizacaoServicoAplicacao;
+import school.cesar.acadlab.aplicacao.permanenciaacademica.PermanenciaAcademicaRepositorioAplicacao;
+import school.cesar.acadlab.aplicacao.permanenciaacademica.PermanenciaAcademicaServicoAplicacao;
+import school.cesar.acadlab.aplicacao.secretariavirtual.SolicitacaoAcademicaRepositorioAplicacao;
+import school.cesar.acadlab.aplicacao.secretariavirtual.SolicitacaoAcademicaServicoAplicacao;
+import school.cesar.acadlab.dominio.apoiopsicopedagogico.ApoioServico;
+import school.cesar.acadlab.dominio.apoiopsicopedagogico.AtendimentoServico;
+import school.cesar.acadlab.dominio.apoiopsicopedagogico.TriagemServico;
+import school.cesar.acadlab.dominio.apoiopsicopedagogico.caso.CasoRepositorio;
+import school.cesar.acadlab.dominio.apoiopsicopedagogico.solicitacao.SolicitacaoApoioRepositorio;
+import school.cesar.acadlab.dominio.estagios.EstagioServico;
+import school.cesar.acadlab.dominio.estagios.estagio.EstagioRepositorio;
+import school.cesar.acadlab.dominio.estagios.oportunidade.OportunidadeRepositorio;
+import school.cesar.acadlab.dominio.evento.EventoBarramento;
+import school.cesar.acadlab.dominio.gestaopedagogica.DiarioTurmaServico;
+import school.cesar.acadlab.dominio.gestaopedagogica.diario.DiarioTurmaRepositorio;
 import school.cesar.acadlab.dominio.integralizacao.ColacaoServico;
 import school.cesar.acadlab.dominio.integralizacao.ConsultaPendenciasPorta;
 import school.cesar.acadlab.dominio.integralizacao.ConsultaPeriodoLetivoPorta;
@@ -56,11 +56,27 @@ import school.cesar.acadlab.dominio.integralizacao.IntegralizacaoServico;
 import school.cesar.acadlab.dominio.integralizacao.IntegralizacaoServicoProxy;
 import school.cesar.acadlab.dominio.integralizacao.colacao.ColacaoRepositorio;
 import school.cesar.acadlab.dominio.integralizacao.integralizacao.IntegralizacaoRepositorio;
+import school.cesar.acadlab.dominio.matricula.MatriculaServico;
+import school.cesar.acadlab.dominio.matricula.matricula.MatriculaRepositorio;
+import school.cesar.acadlab.dominio.mobilidadeacademica.MobilidadeAcademicaServico;
+import school.cesar.acadlab.dominio.mobilidadeacademica.mobilidade.MobilidadeAcademicaRepositorio;
 import school.cesar.acadlab.dominio.ofertaturmas.ConsultaTurmaServico;
 import school.cesar.acadlab.dominio.ofertaturmas.OfertaTurmaServico;
 import school.cesar.acadlab.dominio.ofertaturmas.professor.ProfessorRepositorio;
 import school.cesar.acadlab.dominio.ofertaturmas.sala.SalaRepositorio;
 import school.cesar.acadlab.dominio.ofertaturmas.turma.TurmaRepositorio;
+import school.cesar.acadlab.dominio.permanenciaacademica.BeneficioRepositorio;
+import school.cesar.acadlab.dominio.permanenciaacademica.BeneficioServico;
+import school.cesar.acadlab.dominio.permanenciaacademica.EditalRepositorio;
+import school.cesar.acadlab.dominio.permanenciaacademica.EditalServico;
+import school.cesar.acadlab.dominio.permanenciaacademica.InscricaoRepositorio;
+import school.cesar.acadlab.dominio.permanenciaacademica.InscricaoServico;
+import school.cesar.acadlab.dominio.secretariavirtual.AnaliseServico;
+import school.cesar.acadlab.dominio.secretariavirtual.CalendarioAcademicoPorta;
+import school.cesar.acadlab.dominio.secretariavirtual.SolicitacaoServico;
+import school.cesar.acadlab.dominio.secretariavirtual.SolicitacaoServicoProxy;
+import school.cesar.acadlab.dominio.secretariavirtual.SolicitacaoServicoReal;
+import school.cesar.acadlab.dominio.secretariavirtual.solicitacaoAcademica.SolicitacaoAcademicaRepositorio;
 
 @SpringBootApplication
 public class BackendAplicacao {
@@ -130,6 +146,9 @@ public class BackendAplicacao {
     SolicitacaoAcademicaServicoAplicacao solicitacaoAcademicaServicoAplicacao(
             SolicitacaoAcademicaRepositorioAplicacao repositorio) {
         return new SolicitacaoAcademicaServicoAplicacao(repositorio);
+    }
+
+    @Bean
     OfertaTurmaServico ofertaTurmaServico(TurmaRepositorio turmaRepositorio,
                                            SalaRepositorio salaRepositorio,
                                            ProfessorRepositorio professorRepositorio) {
@@ -214,6 +233,59 @@ public class BackendAplicacao {
             IntegralizacaoRepositorioAplicacao integralizacaoRepositorio,
             ColacaoRepositorioAplicacao colacaoRepositorio) {
         return new IntegralizacaoServicoAplicacao(integralizacaoRepositorio, colacaoRepositorio);
+    }
+
+    /* ===== F-10: Permanência Acadêmica ===== */
+
+    @Bean
+    EditalServico editalServico(EditalRepositorio repositorio, EventoBarramento barramento) {
+        return new EditalServico(repositorio, barramento);
+    }
+
+    @Bean
+    InscricaoServico inscricaoServico(EditalRepositorio editalRepositorio,
+                                      InscricaoRepositorio inscricaoRepositorio,
+                                      EventoBarramento barramento) {
+        return new InscricaoServico(editalRepositorio, inscricaoRepositorio, barramento);
+    }
+
+    @Bean
+    BeneficioServico beneficioServico(BeneficioRepositorio beneficioRepositorio,
+                                      InscricaoRepositorio inscricaoRepositorio,
+                                      EditalRepositorio editalRepositorio,
+                                      EventoBarramento barramento) {
+        return new BeneficioServico(beneficioRepositorio, inscricaoRepositorio, editalRepositorio, barramento);
+    }
+
+    @Bean
+    PermanenciaAcademicaServicoAplicacao permanenciaAcademicaServicoAplicacao(
+            PermanenciaAcademicaRepositorioAplicacao repositorio) {
+        return new PermanenciaAcademicaServicoAplicacao(repositorio);
+    }
+
+    /* ===== F-11: Apoio Psicopedagógico ===== */
+
+    @Bean
+    ApoioServico apoioServico(SolicitacaoApoioRepositorio solicitacaoRepositorio,
+                               CasoRepositorio casoRepositorio,
+                               EventoBarramento barramento) {
+        return new ApoioServico(solicitacaoRepositorio, casoRepositorio, barramento);
+    }
+
+    @Bean
+    TriagemServico triagemServico(CasoRepositorio casoRepositorio, EventoBarramento barramento) {
+        return new TriagemServico(casoRepositorio, barramento);
+    }
+
+    @Bean
+    AtendimentoServico atendimentoServico(CasoRepositorio casoRepositorio, EventoBarramento barramento) {
+        return new AtendimentoServico(casoRepositorio, barramento);
+    }
+
+    @Bean
+    ApoioPsicopedagogicoServicoAplicacao apoioPsicopedagogicoServicoAplicacao(
+            ApoioPsicopedagogicoRepositorioAplicacao repositorio) {
+        return new ApoioPsicopedagogicoServicoAplicacao(repositorio);
     }
 
     public static void main(String[] args) {

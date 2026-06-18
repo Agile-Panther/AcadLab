@@ -2,6 +2,7 @@ package school.cesar.acadlab.dominio.apoiopsicopedagogico;
 
 public class ApoioPsicopedagogicoFuncionalidade {
     protected Repositorio repositorio;
+    protected EventoBarramentoEmMemoria eventoBarramento;
     protected ApoioServico apoioServico;
     protected TriagemServico triagemServico;
     protected AtendimentoServico atendimentoServico;
@@ -10,9 +11,10 @@ public class ApoioPsicopedagogicoFuncionalidade {
 
     public ApoioPsicopedagogicoFuncionalidade() {
         repositorio = new Repositorio();
-        apoioServico = new ApoioServico(repositorio, repositorio);
-        triagemServico = new TriagemServico(repositorio);
-        atendimentoServico = new AtendimentoServico(repositorio);
+        eventoBarramento = new EventoBarramentoEmMemoria();
+        apoioServico = new ApoioServico(repositorio, repositorio, eventoBarramento);
+        triagemServico = new TriagemServico(repositorio, eventoBarramento);
+        atendimentoServico = new AtendimentoServico(repositorio, eventoBarramento);
         acaoPermanenciaServico = new AcaoPermanenciaServico(repositorio);
         consultaServico = new ConsultaServico(repositorio);
     }

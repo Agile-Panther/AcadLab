@@ -7,16 +7,22 @@ import school.cesar.acadlab.dominio.apoiopsicopedagogico.caso.CasoRepositorio;
 import school.cesar.acadlab.dominio.apoiopsicopedagogico.estudante.EstudanteId;
 import school.cesar.acadlab.dominio.apoiopsicopedagogico.solicitacao.SolicitacaoApoio;
 import school.cesar.acadlab.dominio.apoiopsicopedagogico.solicitacao.SolicitacaoApoioRepositorio;
+import school.cesar.acadlab.dominio.evento.EventoBarramento;
 
 public class ApoioServico {
     private final SolicitacaoApoioRepositorio solicitacaoRepositorio;
     private final CasoRepositorio casoRepositorio;
+    private final EventoBarramento eventoBarramento;
 
-    public ApoioServico(SolicitacaoApoioRepositorio solicitacaoRepositorio, CasoRepositorio casoRepositorio) {
+    public ApoioServico(SolicitacaoApoioRepositorio solicitacaoRepositorio,
+                        CasoRepositorio casoRepositorio,
+                        EventoBarramento eventoBarramento) {
         notNull(solicitacaoRepositorio, "O repositório de solicitações não pode ser nulo");
         notNull(casoRepositorio, "O repositório de casos não pode ser nulo");
+        notNull(eventoBarramento, "O barramento de eventos não pode ser nulo");
         this.solicitacaoRepositorio = solicitacaoRepositorio;
         this.casoRepositorio = casoRepositorio;
+        this.eventoBarramento = eventoBarramento;
     }
 
     public void solicitar(EstudanteId estudanteId, String descricao) {
@@ -27,8 +33,9 @@ public class ApoioServico {
         var casoEncerrado = casoRepositorio.pesquisarUltimoCasoEncerradoPorEstudante(estudanteId);
         if (casoEncerrado.isPresent()) {
             var caso = casoEncerrado.get();
-            caso.reabrir();
+            var evento = caso.reabrir();
             casoRepositorio.salvar(caso);
+            eventoBarramento.postar(evento);
         } else {
             var casoAtivo = casoRepositorio.pesquisarCasoAbertoPorEstudante(estudanteId);
             if (casoAtivo.isPresent()) {

@@ -7,13 +7,17 @@ import school.cesar.acadlab.dominio.apoiopsicopedagogico.caso.CasoId;
 import school.cesar.acadlab.dominio.apoiopsicopedagogico.caso.CasoRepositorio;
 import school.cesar.acadlab.dominio.apoiopsicopedagogico.estudante.EstudanteId;
 import school.cesar.acadlab.dominio.apoiopsicopedagogico.profissional.PsicopedagogoId;
+import school.cesar.acadlab.dominio.evento.EventoBarramento;
 
 public class AtendimentoServico {
     private final CasoRepositorio casoRepositorio;
+    private final EventoBarramento eventoBarramento;
 
-    public AtendimentoServico(CasoRepositorio casoRepositorio) {
+    public AtendimentoServico(CasoRepositorio casoRepositorio, EventoBarramento eventoBarramento) {
         notNull(casoRepositorio, "O repositório de casos não pode ser nulo");
+        notNull(eventoBarramento, "O barramento de eventos não pode ser nulo");
         this.casoRepositorio = casoRepositorio;
+        this.eventoBarramento = eventoBarramento;
     }
 
     public void registrarAtendimento(CasoId casoId, Atendimento atendimento) {
@@ -21,8 +25,9 @@ public class AtendimentoServico {
         notNull(atendimento, "O atendimento não pode ser nulo");
 
         var caso = casoRepositorio.obter(casoId);
-        caso.registrarAtendimento(atendimento);
+        var evento = caso.registrarAtendimento(atendimento);
         casoRepositorio.salvar(caso);
+        eventoBarramento.postar(evento);
     }
 
     public List<Atendimento> obterAtendimentos(CasoId casoId, PsicopedagogoId responsavelId, EstudanteId estudanteId) {
@@ -42,7 +47,8 @@ public class AtendimentoServico {
         notNull(casoId, "O id do caso não pode ser nulo");
 
         var caso = casoRepositorio.obter(casoId);
-        caso.encerrar();
+        var evento = caso.encerrar();
         casoRepositorio.salvar(caso);
+        eventoBarramento.postar(evento);
     }
 }
