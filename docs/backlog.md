@@ -896,8 +896,8 @@ Cada integrante deve implementar o padrão de projeto designado em ao menos uma 
 | | |
 |---|---|
 | Título | Uma solicitação do mesmo tipo por período letivo |
-| Descrição | O estudante não pode abrir mais de uma solicitação do mesmo tipo para o mesmo período letivo, salvo quando a anterior tiver sido encerrada. |
-| Consultas | Verificar se o estudante possui solicitação do mesmo tipo para o mesmo período letivo com status diferente de encerrado. |
+| Descrição | O estudante não pode abrir mais de uma solicitação do mesmo tipo para o mesmo período letivo, salvo quando a anterior tiver sido encerrada. A solicitação do tipo "Revisão de Nota" constitui uma exceção a esta regra, sendo permitido ao estudante abrir e manter múltiplas solicitações deste tipo simultaneamente. |
+| Consultas | Verificar se o estudante possui solicitação do mesmo tipo para o mesmo período letivo com status diferente de encerrado, aplicando o bloqueio apenas se o tipo da nova solicitação não for "Revisão de Nota". |
 | Complexidade | Média |
 
 **RN 3 — Documentos obrigatórios antes da submissão**
