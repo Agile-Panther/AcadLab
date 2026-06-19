@@ -1,6 +1,7 @@
 package school.cesar.acadlab.dominio.mobilidadeacademica.mobilidade;
 
 import static org.apache.commons.lang3.Validate.notBlank;
+import static org.apache.commons.lang3.Validate.notNull;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -18,9 +19,9 @@ public class MobilidadeAcademica {
     private CoordenadorId coordenadorAutorizacao;
 
     public MobilidadeAcademica(MobilidadeAcademicaId id, EstudanteId estudanteId, String instituicaoDestino) {
-        this.id = id;
-        this.estudanteId = estudanteId;
-        this.instituicaoDestino = instituicaoDestino;
+        this.id = notNull(id, "id é obrigatório");
+        this.estudanteId = notNull(estudanteId, "estudanteId é obrigatório");
+        this.instituicaoDestino = notBlank(instituicaoDestino, "instituicaoDestino é obrigatório");
         this.status = StatusMobilidade.SOLICITADA;
         this.planoEstudos = new ArrayList<>();
     }

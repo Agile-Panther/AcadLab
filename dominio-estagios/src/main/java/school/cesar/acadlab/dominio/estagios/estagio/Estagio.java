@@ -1,5 +1,6 @@
 package school.cesar.acadlab.dominio.estagios.estagio;
 
+import static org.apache.commons.lang3.Validate.notNull;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -17,10 +18,10 @@ public class Estagio {
     private final List<Relatorio> relatorios;
 
     public Estagio(EstagioId id, OportunidadeId oportunidadeId, EstudanteId estudanteId, EmpresaId empresaId) {
-        this.id = id;
-        this.oportunidadeId = oportunidadeId;
-        this.estudanteId = estudanteId;
-        this.empresaId = empresaId;
+        this.id = notNull(id, "id é obrigatório");
+        this.oportunidadeId = notNull(oportunidadeId, "oportunidadeId é obrigatório");
+        this.estudanteId = notNull(estudanteId, "estudanteId é obrigatório");
+        this.empresaId = notNull(empresaId, "empresaId é obrigatório");
         this.status = StatusEstagio.EM_ANDAMENTO;
         this.relatorios = new ArrayList<>();
     }
