@@ -13,7 +13,7 @@ Funcionalidade: Solicitar análise de conclusão de curso
     Quando o estudante tenta solicitar análise de conclusão de curso
     Então o sistema deve rejeitar informando "período letivo ainda não foi encerrado"
 
-  Cenário: Estudante com pendências acadêmicas não pode solicitar análise
+  Cenário: Estudante com pendências acadêmicas ou documentais não pode solicitar análise
     Dado um estudante com pendências acadêmicas registradas
     Quando o estudante tenta solicitar análise de conclusão de curso
-    Então o sistema deve rejeitar informando "estudante possui pendências acadêmicas"
+    Então o sistema deve rejeitar informando "estudante possui pendências acadêmicas ou documentais"

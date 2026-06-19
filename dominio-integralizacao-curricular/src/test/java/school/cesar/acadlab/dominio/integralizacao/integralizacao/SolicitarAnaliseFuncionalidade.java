@@ -85,14 +85,14 @@ public class SolicitarAnaliseFuncionalidade extends IntegralizacaoFuncionalidade
         assertEquals(StatusIntegralizacao.valueOf(statusEsperado), integralizacaoCriada.getStatus());
     }
 
-    @Entao("o sistema rejeita a solicitação por período não encerrado")
+    @Entao("o sistema deve rejeitar informando \"período letivo ainda não foi encerrado\"")
     public void rejeita_periodo_nao_encerrado() {
         assertNotNull(excecao);
         assertInstanceOf(IllegalStateException.class, excecao);
         assertTrue(excecao.getMessage().contains("RN1"));
     }
 
-    @Entao("o sistema rejeita a solicitação por pendências existentes")
+    @Entao("o sistema deve rejeitar informando \"estudante possui pendências acadêmicas ou documentais\"")
     public void rejeita_pendencias() {
         assertNotNull(excecao);
         assertInstanceOf(IllegalStateException.class, excecao);

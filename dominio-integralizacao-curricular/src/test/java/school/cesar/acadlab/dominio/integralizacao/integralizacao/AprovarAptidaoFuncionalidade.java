@@ -91,14 +91,14 @@ public class AprovarAptidaoFuncionalidade extends IntegralizacaoFuncionalidade {
         assertEquals(coordenadorId, integralizacao.getAprovadorId());
     }
 
-    @Entao("o sistema rejeita a aprovação por requisitos não cumpridos")
+    @Entao("o sistema deve rejeitar informando \"requisitos curriculares não foram cumpridos\"")
     public void rejeita_requisitos() {
         assertNotNull(excecao);
         assertInstanceOf(IllegalStateException.class, excecao);
         assertTrue(excecao.getMessage().contains("RN6"));
     }
 
-    @Entao("o sistema rejeita a aprovação por resultado não apto")
+    @Entao("o sistema deve rejeitar informando \"resultado da análise de integralização é inapto\"")
     public void rejeita_resultado_nao_apto() {
         assertNotNull(excecao);
         assertInstanceOf(IllegalStateException.class, excecao);

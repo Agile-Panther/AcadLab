@@ -70,7 +70,7 @@ public class RegistrarColacaoFuncionalidade extends IntegralizacaoFuncionalidade
         assertNotNull(colacaoRegistrada.getDataCerimonia());
     }
 
-    @Entao("o sistema rejeita o registro da colação por ausência de aptidão")
+    @Entao("o sistema deve rejeitar informando \"estudante não possui aptidão aprovada para colação de grau\"")
     public void colacao_rejeitada() {
         assertNotNull(excecao);
         assertInstanceOf(IllegalStateException.class, excecao);
