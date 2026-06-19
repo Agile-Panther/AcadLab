@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
 import {
   FeaturePage, StatsRow, DataTable, StatusBadge, RowActionButton, FormField,
   SuccessBanner, SectionTitle, ActionBar,
@@ -7,40 +8,61 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Printer } from "lucide-react";
+import { api } from "@/lib/api";
 
 export const Route = createFileRoute("/financeiro")({
   head: () => ({ meta: [{ title: "Gestão Financeira — AcadLab" }] }),
   component: Page,
 });
 
-const tone = (s: string) =>
-  s === "Pago" ? "success" : s === "Vencido" ? "danger" : s === "Em aberto" ? "warning" : "info";
+const CONTRATO_ID = 1;
+
+const cobTone = (s: string) =>
+  s === "PAGO" ? "success" : s === "VENCIDO" ? "danger" : s === "EM_ABERTO" ? "warning" : "info";
+
+const cobLabel = (s: string) =>
+  ({ PAGO: "Pago", VENCIDO: "Vencido", EM_ABERTO: "Em aberto", GERADO: "Gerado" }[s] ?? s);
 
 function Extrato() {
+  const { data = [], isLoading, isError } = useQuery({
+    queryKey: ["cobrancas", CONTRATO_ID],
+    queryFn: () => api.cobrancas.getByContrato(CONTRATO_ID),
+  });
+
+  const totalPago = data.filter((c) => c.status === "PAGO").reduce((a, c) => a + c.valorAtual, 0);
+  const vencidas = data.filter((c) => c.status === "VENCIDO").length;
+  const emAberto = data.filter((c) => c.status === "EM_ABERTO").length;
+
+  const rows = data.map((c) => ({
+    id: c.id,
+    ref: `COB-${c.id}`,
+    aluno: `Estudante ${c.estudanteId}`,
+    venc: c.vencimento,
+    valor: `R$ ${c.valorAtual.toFixed(2)}`,
+    status: cobLabel(c.status),
+    _status: c.status,
+  }));
+
   return (
     <>
       <StatsRow stats={[
-        { label: "Total a receber", value: "R$ 1.240k", tone: "info" },
-        { label: "Recebido no mês", value: "R$ 892k", tone: "success" },
-        { label: "Inadimplência", value: "8,4%", tone: "warning" },
-        { label: "Estornos", value: 12, tone: "danger" },
+        { label: "Total de Cobranças", value: isLoading ? "…" : data.length, tone: "info" },
+        { label: "Total Pago", value: isLoading ? "…" : `R$ ${totalPago.toFixed(0)}`, tone: "success" },
+        { label: "Em aberto", value: isLoading ? "…" : emAberto, tone: "warning" },
+        { label: "Vencidas", value: isLoading ? "…" : vencidas, tone: "danger" },
       ]} />
       <ActionBar searchPlaceholder="Buscar por aluno, cobrança ou referência..." primaryLabel="Gerar Cobranças" />
+      {isError && <p className="text-sm text-destructive px-1">Não foi possível conectar ao servidor.</p>}
       <DataTable
         columns={[
           { key: "ref", header: "Referência" },
           { key: "aluno", header: "Estudante" },
           { key: "venc", header: "Vencimento" },
           { key: "valor", header: "Valor", align: "right" },
-          { key: "status", header: "Status", render: (r) => <StatusBadge tone={tone(r.status)}>{r.status}</StatusBadge> },
+          { key: "status", header: "Status", render: (r) => <StatusBadge tone={cobTone(r._status)}>{r.status}</StatusBadge> },
           { key: "acoes", header: "Ações", render: () => <div className="flex justify-end gap-1.5"><RowActionButton>Detalhes</RowActionButton><RowActionButton>Pagar</RowActionButton></div>, align: "right" },
         ]}
-        rows={[
-          { ref: "MENS-2025-03", aluno: "Maria Santos", venc: "10/03/2025", valor: "R$ 1.290,00", status: "Pago" },
-          { ref: "MENS-2025-04", aluno: "Maria Santos", venc: "10/04/2025", valor: "R$ 1.290,00", status: "Em aberto" },
-          { ref: "MENS-2025-02", aluno: "João P.", venc: "10/02/2025", valor: "R$ 1.290,00", status: "Vencido" },
-          { ref: "TAXA-LAB-25", aluno: "Maria Santos", venc: "15/03/2025", valor: "R$ 180,00", status: "Pago" },
-        ]}
+        rows={rows}
       />
     </>
   );

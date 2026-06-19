@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
 import {
   FeaturePage, StatsRow, FormField, SuccessBanner, SectionTitle, ProgressRow,
   ValidationCallout,
@@ -7,11 +8,35 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { CheckCircle2, AlertCircle } from "lucide-react";
+import { api } from "@/lib/api";
 
 export const Route = createFileRoute("/integralizacao")({
   head: () => ({ meta: [{ title: "Integralização — AcadLab" }] }),
   component: Page,
 });
+
+function Painel() {
+  const { data = [], isLoading, isError } = useQuery({
+    queryKey: ["integralizacoes"],
+    queryFn: () => api.integralizacao.listAll(),
+  });
+
+  const aptos = data.filter((i) => i.status === "APTO").length;
+  const pendentes = data.filter((i) => i.status === "PENDENTE").length;
+  const aprovados = data.filter((i) => i.status === "APROVADO").length;
+
+  return (
+    <>
+      <StatsRow stats={[
+        { label: "Total de Análises", value: isLoading ? "…" : data.length, tone: "info" },
+        { label: "Aptos", value: isLoading ? "…" : aptos, tone: "success" },
+        { label: "Pendentes", value: isLoading ? "…" : pendentes, tone: "warning" },
+        { label: "Aprovados p/ colação", value: isLoading ? "…" : aprovados, tone: "success" },
+      ]} />
+      {isError && <p className="text-sm text-destructive px-1">Não foi possível conectar ao servidor.</p>}
+    </>
+  );
+}
 
 function Solicitar() {
   return (
@@ -96,6 +121,7 @@ function Page() {
       title="Validação de Integralização e Colação de Grau"
       subtitle="Análise curricular e colação"
       sections={[
+        { value: "painel", label: "Painel", content: <Painel /> },
         { value: "sol", label: "Solicitar", content: <Solicitar /> },
         { value: "anal", label: "Analisar", content: <Analisar /> },
         { value: "apr", label: "Aprovar Aptidão", content: <AprovarColacao /> },

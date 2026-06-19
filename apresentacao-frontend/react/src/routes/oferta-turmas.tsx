@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
 import {
   FeaturePage, StatsRow, ActionBar, DataTable, StatusBadge, RowActionButton,
   FormField, ValidationCallout, SectionTitle, ConflictGrid, SuccessBanner,
@@ -6,39 +7,64 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
+import { api } from "@/lib/api";
 
 export const Route = createFileRoute("/oferta-turmas")({
   head: () => ({ meta: [{ title: "Oferta de Turmas — AcadLab" }] }),
   component: Page,
 });
 
+const PERIODO_ID = 1;
+
+const turmaTone = (s: string) =>
+  s === "OFERTADA" ? "success" : s === "CANCELADA" ? "danger" : "warning";
+
+const turmaLabel = (s: string) =>
+  ({ CRIADA: "Criada", OFERTADA: "Ativa", CANCELADA: "Cancelada" }[s] ?? s);
+
 function Painel() {
+  const { data = [], isLoading, isError } = useQuery({
+    queryKey: ["turmas", PERIODO_ID],
+    queryFn: () => api.turmas.listByPeriodo(PERIODO_ID),
+  });
+
+  const semProf = data.filter((t) => !t.professorId).length;
+  const vagasTotal = data.reduce((a, t) => a + t.capacidade, 0);
+
+  const rows = data.map((t) => ({
+    id: t.id,
+    turma: `Turma ${t.id}`,
+    disc: `Disciplina ${t.disciplinaId}`,
+    prof: t.professorId ? `Prof. ${t.professorId}` : "—",
+    sala: t.salaId ? `Sala ${t.salaId}` : "—",
+    vagas: t.capacidade,
+    status: turmaLabel(t.status),
+    _status: t.status,
+    modalidade: t.modalidade,
+  }));
+
   return (
     <>
       <StatsRow stats={[
-        { label: "Turmas em 2025.2", value: 48, tone: "info" },
-        { label: "Pendentes de Prof.", value: 5, tone: "warning" },
-        { label: "Vagas Abertas", value: "1.920", tone: "success" },
-        { label: "Com Conflito", value: 2, tone: "danger" },
+        { label: "Turmas no Período", value: isLoading ? "…" : data.length, tone: "info" },
+        { label: "Sem Professor", value: isLoading ? "…" : semProf, tone: "warning" },
+        { label: "Vagas Cadastradas", value: isLoading ? "…" : vagasTotal, tone: "success" },
+        { label: "Canceladas", value: isLoading ? "…" : data.filter((t) => t.status === "CANCELADA").length, tone: "danger" },
       ]} />
       <ActionBar searchPlaceholder="Buscar turma ou disciplina..." primaryLabel="Ofertar Turma" />
+      {isError && <p className="text-sm text-destructive px-1">Não foi possível conectar ao servidor.</p>}
       <DataTable
         columns={[
           { key: "turma", header: "Turma" },
           { key: "disc", header: "Disciplina" },
           { key: "prof", header: "Professor" },
-          { key: "horario", header: "Horário" },
+          { key: "modalidade", header: "Modalidade" },
           { key: "sala", header: "Sala" },
           { key: "vagas", header: "Vagas", align: "right" },
-          { key: "status", header: "Status", render: (r) => <StatusBadge tone={r.tone as any}>{r.status}</StatusBadge> },
+          { key: "status", header: "Status", render: (r) => <StatusBadge tone={turmaTone(r._status)}>{r.status}</StatusBadge> },
           { key: "acoes", header: "Ações", render: () => <RowActionButton>Editar</RowActionButton>, align: "right" },
         ]}
-        rows={[
-          { turma: "AED201-T01", disc: "Algoritmos e Estruturas de Dados", prof: "Carlos Lima", horario: "Seg/Qua 10-12", sala: "L-203", vagas: "30/40", status: "Ativa", tone: "success" },
-          { turma: "BD302-T01", disc: "Banco de Dados II", prof: "Ana Souza", horario: "Ter/Qui 14-16", sala: "L-205", vagas: "28/40", status: "Ativa", tone: "success" },
-          { turma: "ES303-T02", disc: "Testes de Software", prof: "—", horario: "Qua 18-22", sala: "L-101", vagas: "0/35", status: "Pendente", tone: "warning" },
-          { turma: "RC305-T01", disc: "Redes Avançadas", prof: "Pedro Alves", horario: "Sex 16-20", sala: "S-302", vagas: "12/30", status: "Conflito", tone: "danger" },
-        ]}
+        rows={rows}
       />
     </>
   );

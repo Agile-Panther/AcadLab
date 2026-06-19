@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
 import {
   FeaturePage, StatsRow, DataTable, StatusBadge, RowActionButton, FormField,
   SuccessBanner, SectionTitle, ProgressRow, ActionBar,
@@ -6,24 +7,40 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
+import { api } from "@/lib/api";
 
 export const Route = createFileRoute("/atividades-complementares")({
   head: () => ({ meta: [{ title: "Atividades Complementares — AcadLab" }] }),
   component: Page,
 });
 
-const tone = (s: string) =>
-  s === "Deferida" ? "success" : s === "Indeferida" ? "danger" : "info";
+const ESTUDANTE_ID = 1;
+
+const atTone = (s: string) =>
+  s === "DEFERIDA" ? "success" : s === "INDEFERIDA" ? "danger" : "info";
+
+const atLabel = (s: string) =>
+  ({ DEFERIDA: "Deferida", INDEFERIDA: "Indeferida", EM_ANALISE: "Em análise", PENDENTE: "Pendente" }[s] ?? s);
 
 function Saldo() {
+  const { data = [], isLoading, isError } = useQuery({
+    queryKey: ["atividades", ESTUDANTE_ID],
+    queryFn: () => api.atividades.listByEstudante(ESTUDANTE_ID),
+  });
+
+  const validadas = data.reduce((a, r) => a + r.horasAprovadas, 0);
+  const emAnalise = data.filter((r) => r.status === "EM_ANALISE").reduce((a, r) => a + r.horasSubmetidas, 0);
+  const pendentes = data.filter((r) => r.status === "PENDENTE").reduce((a, r) => a + r.horasSubmetidas, 0);
+
   return (
     <>
       <StatsRow stats={[
-        { label: "Horas Validadas", value: 180, tone: "success" },
-        { label: "Em análise", value: 24, tone: "info" },
-        { label: "Pendentes", value: 32, tone: "warning" },
-        { label: "Exigência total", value: 200, tone: "danger" },
+        { label: "Horas Validadas", value: isLoading ? "…" : validadas, tone: "success" },
+        { label: "Em análise", value: isLoading ? "…" : emAnalise, tone: "info" },
+        { label: "Pendentes", value: isLoading ? "…" : pendentes, tone: "warning" },
+        { label: "Atividades Submetidas", value: isLoading ? "…" : data.length, tone: "danger" },
       ]} />
+      {isError && <p className="text-sm text-destructive px-1">Não foi possível conectar ao servidor.</p>}
       <div className="rounded-xl border bg-card p-6 shadow-card">
         <SectionTitle title="Saldo de Horas por Categoria" subtitle="Acompanhe horas exigidas vs. cumpridas em cada categoria." />
         <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2">

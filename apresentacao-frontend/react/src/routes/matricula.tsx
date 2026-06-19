@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
 import {
   FeaturePage, StatsRow, SuccessBanner, ScheduleGrid, SectionTitle, FormField,
   ValidationCallout, DataTable, StatusBadge, RowActionButton, ActionBar,
@@ -8,11 +9,14 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Printer, Pencil, Lock } from "lucide-react";
+import { api } from "@/lib/api";
 
 export const Route = createFileRoute("/matricula")({
   head: () => ({ meta: [{ title: "Matrícula — AcadLab" }] }),
   component: Page,
 });
+
+const MATRICULA_ID = 1;
 
 const blocos: ClassBlock[] = [
   { day: 1, start: 8, duration: 2, title: "Algoritmos Avançados", code: "AED301", color: "info" },
@@ -34,16 +38,30 @@ const ofertas = [
 ];
 
 function Painel() {
+  const { data, isLoading, isError } = useQuery({
+    queryKey: ["matricula", MATRICULA_ID],
+    queryFn: () => api.matricula.getById(MATRICULA_ID),
+  });
+
+  const statusLabel = (s: string) =>
+    ({ CONFIRMADA: "Confirmada", PENDENTE: "Pendente", CANCELADA: "Cancelada", EM_AJUSTE: "Em ajuste" }[s] ?? s);
+  const statusTone = (s: string) =>
+    s === "CONFIRMADA" ? "success" : s === "CANCELADA" ? "danger" : "warning";
+
   return (
     <>
       <StatsRow stats={[
-        { label: "Disciplinas Matriculadas", value: 5, tone: "info" },
-        { label: "Créditos", value: 18, tone: "success" },
+        { label: "Status", value: isLoading ? "…" : statusLabel(data?.status ?? ""), tone: statusTone(data?.status ?? "") },
+        { label: "Período Letivo", value: isLoading ? "…" : data ? `Período ${data.periodoLetivoId}` : "—", tone: "info" },
         { label: "Janela de Ajuste", value: "11 dias", tone: "warning" },
         { label: "Pendências", value: 0, tone: "neutral" as any },
       ]} />
+      {isError && <p className="text-sm text-destructive px-1">Não foi possível conectar ao servidor.</p>}
       <div className="rounded-xl border bg-card p-5 shadow-card">
-        <SectionTitle title="Visão geral da matrícula 2025.2" subtitle="Confirmação em 12/01/2025 · 5 disciplinas · 18 créditos" />
+        <SectionTitle
+          title="Visão geral da matrícula"
+          subtitle={data ? `Matrícula ${data.id} · Estudante ${data.estudanteId} · ${statusLabel(data.status)}` : "Carregando..."}
+        />
       </div>
     </>
   );

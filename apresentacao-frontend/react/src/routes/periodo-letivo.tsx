@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
 import {
   FeaturePage, StatsRow, ActionBar, DataTable, StatusBadge, RowActionButton,
   FormField, SuccessBanner, SectionTitle, ValidationCallout,
@@ -6,40 +7,60 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
+import { api } from "@/lib/api";
 
 export const Route = createFileRoute("/periodo-letivo")({
   head: () => ({ meta: [{ title: "Período Letivo — AcadLab" }] }),
   component: Page,
 });
 
-const periodos = [
-  { codigo: "2025.2", inicio: "04/08/2025", fim: "12/12/2025", status: "Planejado" },
-  { codigo: "2025.1", inicio: "10/02/2025", fim: "27/06/2025", status: "Em andamento" },
-  { codigo: "2024.2", inicio: "05/08/2024", fim: "13/12/2024", status: "Encerrado" },
-];
+const CURSO_ID = 1;
 
-const tone = (s: string) =>
-  s === "Em andamento" ? "info" : s === "Encerrado" ? "neutral" : "warning";
+const statusTone = (s: string) =>
+  s === "EM_ANDAMENTO" ? "info" : s === "ENCERRADO" ? "neutral" : "warning";
+
+const statusLabel = (s: string) =>
+  ({ PLANEJADO: "Planejado", EM_ANDAMENTO: "Em andamento", ENCERRADO: "Encerrado", CANCELADO: "Cancelado" }[s] ?? s);
 
 function Painel() {
+  const { data = [], isLoading, isError } = useQuery({
+    queryKey: ["periodos", CURSO_ID],
+    queryFn: () => api.periodos.listByCurso(CURSO_ID),
+  });
+
+  const planejados = data.filter((p) => p.status === "PLANEJADO").length;
+  const emAndamento = data.filter((p) => p.status === "EM_ANDAMENTO").length;
+  const encerrados = data.filter((p) => p.status === "ENCERRADO").length;
+  const janelasAbertas = data.flatMap((p) => p.janelas).length;
+
+  const rows = data.map((p) => ({
+    codigo: `${p.ano}.${p.semestre}`,
+    inicio: p.dataInicio,
+    fim: p.dataFim,
+    status: statusLabel(p.status),
+    _status: p.status,
+    id: p.id,
+  }));
+
   return (
     <>
       <StatsRow stats={[
-        { label: "Períodos Planejados", value: 2, tone: "warning" },
-        { label: "Em Andamento", value: 1, tone: "info" },
-        { label: "Encerrados", value: 12, tone: "neutral" as any, hint: "Histórico" },
-        { label: "Janelas Abertas", value: 4, tone: "success" },
+        { label: "Períodos Planejados", value: isLoading ? "…" : planejados, tone: "warning" },
+        { label: "Em Andamento", value: isLoading ? "…" : emAndamento, tone: "info" },
+        { label: "Encerrados", value: isLoading ? "…" : encerrados, tone: "neutral" as any, hint: "Histórico" },
+        { label: "Janelas Cadastradas", value: isLoading ? "…" : janelasAbertas, tone: "success" },
       ]} />
       <ActionBar searchPlaceholder="Buscar período..." primaryLabel="Cadastrar Período" />
+      {isError && <p className="text-sm text-destructive px-1">Não foi possível conectar ao servidor.</p>}
       <DataTable
         columns={[
           { key: "codigo", header: "Período" },
           { key: "inicio", header: "Início" },
           { key: "fim", header: "Fim" },
-          { key: "status", header: "Status", render: (r) => <StatusBadge tone={tone(r.status)}>{r.status}</StatusBadge> },
+          { key: "status", header: "Status", render: (r) => <StatusBadge tone={statusTone(r._status)}>{r.status}</StatusBadge> },
           { key: "acoes", header: "Ações", align: "right", render: () => <div className="flex justify-end gap-1.5"><RowActionButton>Editar</RowActionButton><RowActionButton tone="danger">Cancelar</RowActionButton></div> },
         ]}
-        rows={periodos}
+        rows={rows}
       />
     </>
   );

@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
 import {
   FeaturePage, StatsRow, DataTable, StatusBadge, RowActionButton, FormField,
   SuccessBanner, SectionTitle, ActionBar,
@@ -6,36 +7,58 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
+import { api } from "@/lib/api";
 
 export const Route = createFileRoute("/permanencia")({
   head: () => ({ meta: [{ title: "Permanência — AcadLab" }] }),
   component: Page,
 });
 
+const editalTone = (s: string) =>
+  s === "ABERTO" ? "info" : s === "EM_ANALISE" ? "warning" : s === "ENCERRADO" ? "neutral" : "success";
+
+const editalLabel = (s: string) =>
+  ({ ABERTO: "Aberto", EM_ANALISE: "Em análise", ENCERRADO: "Encerrado", PUBLICADO: "Publicado" }[s] ?? s);
+
 function Editais() {
+  const { data = [], isLoading, isError } = useQuery({
+    queryKey: ["permanencia", "editais"],
+    queryFn: () => api.permanencia.listEditais(),
+  });
+
+  const abertos = data.filter((e) => e.status === "ABERTO").length;
+  const totalVagas = data.reduce((a, e) => a + e.vagas, 0);
+  const emAnalise = data.filter((e) => e.status === "EM_ANALISE").length;
+
+  const rows = data.map((e) => ({
+    id: `ED-${e.id}`,
+    nome: e.programa,
+    vagas: e.vagas,
+    prazo: e.prazoInscricaoFim ?? "—",
+    status: editalLabel(e.status),
+    _status: e.status,
+  }));
+
   return (
     <>
       <StatsRow stats={[
-        { label: "Editais Abertos", value: 3, tone: "info" },
-        { label: "Inscritos", value: 412, tone: "success" },
-        { label: "Em análise", value: 86, tone: "warning" },
-        { label: "Benefícios ativos", value: 245, tone: "danger" },
+        { label: "Editais Abertos", value: isLoading ? "…" : abertos, tone: "info" },
+        { label: "Total de Vagas", value: isLoading ? "…" : totalVagas, tone: "success" },
+        { label: "Em análise", value: isLoading ? "…" : emAnalise, tone: "warning" },
+        { label: "Total de Editais", value: isLoading ? "…" : data.length, tone: "danger" },
       ]} />
       <ActionBar searchPlaceholder="Buscar edital..." primaryLabel="Criar Edital" />
+      {isError && <p className="text-sm text-destructive px-1">Não foi possível conectar ao servidor.</p>}
       <DataTable
         columns={[
           { key: "id", header: "Edital" },
           { key: "nome", header: "Nome" },
           { key: "vagas", header: "Vagas", align: "right" },
           { key: "prazo", header: "Prazo" },
-          { key: "status", header: "Status", render: (r) => <StatusBadge tone={r.tone as any}>{r.status}</StatusBadge> },
+          { key: "status", header: "Status", render: (r) => <StatusBadge tone={editalTone(r._status) as any}>{r.status}</StatusBadge> },
           { key: "acoes", header: "", render: () => <RowActionButton>Ver</RowActionButton>, align: "right" },
         ]}
-        rows={[
-          { id: "ED-2025-001", nome: "Bolsa Permanência", vagas: 120, prazo: "30/03/2025", status: "Aberto", tone: "info" },
-          { id: "ED-2025-002", nome: "Auxílio Moradia", vagas: 40, prazo: "15/03/2025", status: "Em análise", tone: "warning" },
-          { id: "ED-2024-008", nome: "Bolsa Iniciação Científica", vagas: 60, prazo: "—", status: "Encerrado", tone: "neutral" as any },
-        ]}
+        rows={rows}
       />
     </>
   );

@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
 import {
   FeaturePage,
   StatsRow,
@@ -14,18 +15,14 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
+import { api } from "@/lib/api";
 
 export const Route = createFileRoute("/gestao-curricular")({
   head: () => ({ meta: [{ title: "Gestão Curricular — AcadLab" }] }),
   component: Page,
 });
 
-const matrizes = [
-  { codigo: "MAT-2024-01", nome: "Matriz 2024 — Engenharia de Software", curso: "Eng. de Software", ch: "3.200h", creditos: 240, status: "Ativa" },
-  { codigo: "MAT-2022-01", nome: "Matriz 2022", curso: "Sistemas de Informação", ch: "3.000h", creditos: 220, status: "Ativa" },
-  { codigo: "MAT-2020-01", nome: "Matriz 2020", curso: "Ciência da Computação", ch: "3.400h", creditos: 260, status: "Inativa" },
-  { codigo: "MAT-2023-02", nome: "Matriz 2023 — Análise e Desenv.", curso: "ADS", ch: "2.400h", creditos: 180, status: "Ativa" },
-];
+const CURSO_ID = 1;
 
 const disciplinas = [
   { codigo: "AED201", nome: "Algoritmos e Estruturas de Dados", ch: 80, creditos: 4, periodo: "3º" },
@@ -35,15 +32,33 @@ const disciplinas = [
 ];
 
 function Painel() {
+  const { data = [], isLoading, isError } = useQuery({
+    queryKey: ["curriculo", CURSO_ID],
+    queryFn: () => api.curriculo.listByCurso(CURSO_ID),
+  });
+
+  const ativas = data.filter((m) => m.status === "ATIVA").length;
+
+  const rows = data.map((m) => ({
+    codigo: `MAT-${m.id}`,
+    nome: m.nome,
+    curso: `Curso ${m.cursoId}`,
+    ch: "—",
+    creditos: "—",
+    status: m.status === "ATIVA" ? "Ativa" : "Inativa",
+    _status: m.status,
+  }));
+
   return (
     <>
       <StatsRow stats={[
-        { label: "Matrizes Ativas", value: 12, tone: "info" },
-        { label: "Total de Disciplinas", value: 248, tone: "success" },
+        { label: "Matrizes Ativas", value: isLoading ? "…" : ativas, tone: "info" },
+        { label: "Total de Matrizes", value: isLoading ? "…" : data.length, tone: "success" },
         { label: "Cursos Cadastrados", value: 8, tone: "warning" },
         { label: "Com Pré-requisitos", value: 94, tone: "danger" },
       ]} />
       <ActionBar searchPlaceholder="Buscar por nome do curso ou código..." primaryLabel="Nova Matriz Curricular" />
+      {isError && <p className="text-sm text-destructive px-1">Não foi possível conectar ao servidor.</p>}
       <DataTable
         columns={[
           { key: "codigo", header: "Código" },
@@ -51,10 +66,10 @@ function Painel() {
           { key: "curso", header: "Curso" },
           { key: "ch", header: "CH Mínima" },
           { key: "creditos", header: "Créditos", align: "right" },
-          { key: "status", header: "Status", render: (r) => <StatusBadge tone={r.status === "Ativa" ? "success" : "neutral"}>{r.status}</StatusBadge> },
+          { key: "status", header: "Status", render: (r) => <StatusBadge tone={r._status === "ATIVA" ? "success" : "neutral"}>{r.status}</StatusBadge> },
           { key: "acoes", header: "Ações", render: () => <RowActionButton>Editar</RowActionButton>, align: "right" },
         ]}
-        rows={matrizes}
+        rows={rows}
       />
     </>
   );
