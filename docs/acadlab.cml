@@ -1,0 +1,758 @@
+Domain AcadLabDomain {
+
+    Subdomain AcademicoSubdomain {
+        type CORE_DOMAIN
+        domainVisionStatement "Núcleo da vida acadêmica: currículo, oferta de turmas, matrícula, gestão pedagógica e histórico acadêmico"
+    }
+
+    Subdomain ServicosAcademicosSubdomain {
+        type SUPPORTING_DOMAIN
+        domainVisionStatement "Serviços de suporte à trajetória do estudante: secretaria virtual, integralização, atividades complementares, mobilidade e estágios"
+    }
+
+    Subdomain PermanenciaSubdomain {
+        type SUPPORTING_DOMAIN
+        domainVisionStatement "Programas de permanência estudantil: bolsas, auxílios e acompanhamento psicopedagógico"
+    }
+
+    Subdomain FinanceiroSubdomain {
+        type GENERIC_SUBDOMAIN
+        domainVisionStatement "Gestão de cobranças, pagamentos, descontos e comprovantes financeiros"
+    }
+
+    Subdomain CompartilhadoSubdomain {
+        type GENERIC_SUBDOMAIN
+        domainVisionStatement "Primitivos de identidade e eventos de domínio compartilhados entre todos os contextos"
+    }
+}
+
+/* ─────────────────────────────────────────────
+   SHARED KERNEL
+   ───────────────────────────────────────────── */
+
+BoundedContext CompartilhadoContext implements CompartilhadoSubdomain {
+    domainVisionStatement "Value objects de identidade e contratos de evento usados por todos os bounded contexts"
+
+    Aggregate Compartilhado {
+        ValueObject EstudanteId { int valor }
+        ValueObject CursoId { int valor }
+        ValueObject MatrizCurricularId { int valor }
+        ValueObject DisciplinaId { int valor }
+        ValueObject TurmaId { int valor }
+        ValueObject PeriodoLetivoId { int valor }
+        ValueObject SecretariaId { int valor }
+    }
+}
+
+/* ─────────────────────────────────────────────
+   CURRÍCULO CONTEXT — F-01 (Julia) · Iterator
+   ───────────────────────────────────────────── */
+
+BoundedContext CurriculoContext implements AcademicoSubdomain {
+    domainVisionStatement "Define a estrutura formal do curso: disciplinas, cargas horárias, pré-requisitos, correquisitos e ciclo de vida da matriz curricular"
+    type FEATURE
+
+    Aggregate MatrizCurricular {
+        enum StatusMatriz { ATIVA, INATIVA }
+
+        Entity MatrizCurricular {
+            aggregateRoot
+            int id
+            int cursoId
+            String nome
+            int cargaHorariaMinima
+            int creditosExigidos
+            - StatusMatriz status
+            - List<ItemMatriz> itens
+        }
+        Entity ItemMatriz {
+            int disciplinaId
+            String nomeDisciplina
+            int cargaHoraria
+            int creditos
+            boolean obrigatoria
+            - List<Integer> preRequisitos
+            - List<Integer> correquisitos
+        }
+        Service MatrizCurricularServico {
+            void criarMatriz(@MatrizCurricular matriz);
+            void adicionarDisciplina(int matrizId, @ItemMatriz item);
+            void configurarPreRequisito(int matrizId, int disciplinaId, int preRequisitoId);
+            void ativar(int matrizId);
+            void desativar(int matrizId);
+        }
+    }
+}
+
+/* ─────────────────────────────────────────────
+   OFERTA ACADÊMICA CONTEXT — F-02 (Neto) + F-03 (Clara)
+   ───────────────────────────────────────────── */
+
+BoundedContext OfertaAcademicaContext implements AcademicoSubdomain {
+    domainVisionStatement "Planejamento do período letivo com janelas acadêmicas (Neto) e oferta de turmas com professor, sala e horário (Clara)"
+    type FEATURE
+
+    Aggregate PeriodoLetivo {
+        enum StatusPeriodoLetivo { PLANEJADO, EM_ANDAMENTO, ENCERRADO, CANCELADO }
+        enum TipoJanela { MATRICULA, AJUSTE_MATRICULA, LANCAMENTO_NOTAS, LANCAMENTO_FREQUENCIA }
+
+        Entity PeriodoLetivo {
+            aggregateRoot
+            int id
+            int cursoId
+            String descricao
+            - StatusPeriodoLetivo status
+            - List<JanelaAcademica> janelas
+        }
+        Entity JanelaAcademica {
+            - TipoJanela tipo
+            java.time.LocalDate inicio
+            java.time.LocalDate fim
+        }
+        Service PeriodoLetivoServico {
+            void cadastrar(@PeriodoLetivo periodo);
+            void definirJanela(int periodoId, @JanelaAcademica janela);
+            void iniciar(int periodoId);
+            void encerrar(int periodoId);
+        }
+    }
+
+    Aggregate OfertaTurmas {
+        enum EstadoTurma { ABERTA, ENCERRADA, CANCELADA }
+
+        Entity Turma {
+            aggregateRoot
+            int id
+            int disciplinaId
+            int periodoLetivoId
+            int professorId
+            int salaId
+            int vagas
+            int vagasOcupadas
+            - EstadoTurma estado
+        }
+        Entity Sala {
+            aggregateRoot
+            int id
+            String codigo
+            int capacidade
+        }
+        Entity Professor {
+            aggregateRoot
+            int id
+            String nome
+            String matriculaDocente
+        }
+        Service OfertaTurmaServico {
+            void ofertarTurma(@Turma turma);
+            void definirProfessorHorarioSala(int turmaId, int professorId, int salaId);
+        }
+    }
+}
+
+/* ─────────────────────────────────────────────
+   MATRÍCULA CONTEXT — F-04 (Vinicius) · Strategy
+   ───────────────────────────────────────────── */
+
+BoundedContext MatriculaContext implements AcademicoSubdomain {
+    domainVisionStatement "Montagem do plano de matrícula do estudante, confirmação, ajustes e trancamento de disciplinas com validação de elegibilidade por estratégia"
+    type FEATURE
+
+    Aggregate Matricula {
+        enum StatusMatricula { EM_MONTAGEM, CONFIRMADA, TRANCADA, CANCELADA }
+        enum StatusItem { ATIVO, TRANCADO, CANCELADO }
+
+        Entity Matricula {
+            aggregateRoot
+            int id
+            - EstudanteId estudanteId
+            int periodoLetivoId
+            - StatusMatricula status
+            - List<ItemMatricula> itens
+        }
+        Entity ItemMatricula {
+            int turmaId
+            int disciplinaId
+            - StatusItem status
+        }
+        Service MatriculaServico {
+            void montarPlano(@EstudanteId estudanteId, int periodoLetivoId);
+            void adicionarItem(int matriculaId, int turmaId);
+            void confirmar(int matriculaId);
+            void trancarDisciplina(int matriculaId, int turmaId);
+            void solicitarExcecao(int matriculaId, int disciplinaId, String justificativa);
+        }
+    }
+}
+
+/* ─────────────────────────────────────────────
+   GESTÃO PEDAGÓGICA CONTEXT — F-05 (Neto) · Template Method
+   ───────────────────────────────────────────── */
+
+BoundedContext GestaoPedagogicaContext implements AcademicoSubdomain {
+    domainVisionStatement "Gestão pedagógica da turma pelo professor: registro de aulas, frequência, avaliações, notas e resultado final do estudante"
+    type FEATURE
+
+    Aggregate DiarioTurma {
+        enum SituacaoFinal { APROVADO, REPROVADO, REPROVADO_POR_FREQUENCIA, EM_ANDAMENTO }
+
+        Entity DiarioTurma {
+            aggregateRoot
+            int id
+            int turmaId
+            - List<RegistroAula> aulas
+            - List<Avaliacao> avaliacoes
+            - List<ResultadoEstudante> resultados
+        }
+        Entity RegistroAula {
+            int numero
+            java.time.LocalDate data
+            String conteudo
+        }
+        Entity Avaliacao {
+            int id
+            String descricao
+            double peso
+        }
+        Entity ResultadoEstudante {
+            - EstudanteId estudanteId
+            double frequencia
+            double media
+            - SituacaoFinal situacao
+        }
+        Service DiarioTurmaServico {
+            void registrarAula(int diarioId, @RegistroAula aula);
+            void registrarFrequencia(int diarioId, @EstudanteId estudanteId, boolean presente);
+            void lancarNota(int diarioId, @EstudanteId estudanteId, int avaliacaoId, double nota);
+            void fecharResultado(int diarioId, @EstudanteId estudanteId);
+        }
+    }
+}
+
+/* ─────────────────────────────────────────────
+   HISTÓRICO ACADÊMICO CONTEXT — F-06 (Julia) · Iterator
+   ───────────────────────────────────────────── */
+
+BoundedContext HistoricoAcademicoContext implements AcademicoSubdomain {
+    domainVisionStatement "Fonte de verdade da trajetória acadêmica do estudante: consolidação de resultados, aproveitamentos, retificações e acompanhamentos"
+    type FEATURE
+
+    Aggregate HistoricoAcademico {
+        enum SituacaoDiscente { ATIVO, TRANCADO, DESLIGADO, FORMADO }
+        enum SituacaoAcademica { APROVADO, REPROVADO, REPROVADO_POR_FREQUENCIA, APROVADO_POR_APROVEITAMENTO }
+
+        Entity HistoricoAcademico {
+            aggregateRoot
+            int id
+            - EstudanteId estudanteId
+            int matrizCurricularId
+            - SituacaoDiscente situacaoDiscente
+            - List<RegistroDisciplina> registros
+            - List<Aproveitamento> aproveitamentos
+            - List<Retificacao> retificacoes
+            - List<AcompanhamentoAcademico> acompanhamentos
+        }
+        Entity RegistroDisciplina {
+            int id
+            int disciplinaId
+            int turmaId
+            int periodoLetivoId
+            double nota
+            double frequencia
+            - SituacaoAcademica situacao
+        }
+        Entity Aproveitamento {
+            int id
+            int disciplinaEquivalenteId
+            int cargaHorariaExterna
+            int cargaHorariaRequerida
+            String instituicaoOrigem
+            String disciplinaOrigem
+        }
+        Entity Retificacao {
+            int id
+            int registroId
+            - SituacaoAcademica situacaoAnterior
+            - SituacaoAcademica novaSituacao
+            int responsavelId
+            String justificativa
+            java.time.LocalDate data
+        }
+        Entity AcompanhamentoAcademico {
+            int id
+            String observacao
+            java.time.LocalDate data
+        }
+        Service HistoricoAcademicoServico {
+            void criarHistorico(@EstudanteId estudanteId, int matrizCurricularId);
+            void consolidarRegistro(int historicoId, int disciplinaId, int turmaId, int periodoLetivoId, double nota, double frequencia, @SituacaoAcademica situacao, boolean turmaEncerrada);
+            void registrarAproveitamento(int historicoId, int disciplinaEquivalenteId, int cargaHorariaExterna, int cargaHorariaRequerida, String instituicaoOrigem, String disciplinaOrigem);
+            void retificarRegistro(int historicoId, int registroId, @SituacaoAcademica novaSituacao, int responsavelId, String justificativa, java.time.LocalDate data);
+            void atualizarSituacaoDiscente(int historicoId, @SituacaoDiscente novaSituacao, int responsavelId, String justificativa, java.time.LocalDate data);
+        }
+        Service ConsultaHistoricoServico {
+            // RN-10: retorna apenas registros consolidados de períodos encerrados via Iterator
+            List<@RegistroDisciplina> obterHistoricoOficial(@EstudanteId estudanteId);
+        }
+    }
+}
+
+/* ─────────────────────────────────────────────
+   SECRETARIA VIRTUAL CONTEXT — F-07 (Bernardo) · Proxy
+   ───────────────────────────────────────────── */
+
+BoundedContext SecretariaVirtualContext implements ServicosAcademicosSubdomain {
+    domainVisionStatement "Protocolo e tramitação de solicitações acadêmicas formais: abertura, análise, complementação, deferimento e indeferimento"
+    type FEATURE
+
+    Aggregate SolicitacaoAcademica {
+        enum TipoSolicitacao { HISTORICO, DECLARACAO_MATRICULA, DECLARACAO_FREQUENCIA, REVISAO_NOTA, REAPROVEITAMENTO, OUTROS }
+        enum EstadoSolicitacao { ABERTA, EM_ANALISE, AGUARDANDO_COMPLEMENTACAO, DEFERIDA, INDEFERIDA, CANCELADA, CONCLUIDA }
+
+        Entity SolicitacaoAcademica {
+            aggregateRoot
+            int id
+            - EstudanteId estudanteId
+            - TipoSolicitacao tipo
+            - EstadoSolicitacao estado
+            String descricao
+            - List<Documento> documentos
+        }
+        Entity Documento {
+            int id
+            String nome
+            String url
+        }
+        Service SolicitacaoServico {
+            // acesso via SolicitacaoServicoProxy (Proxy Pattern)
+            void abrir(@EstudanteId estudanteId, @TipoSolicitacao tipo, String descricao);
+            void complementar(int solicitacaoId, @Documento documento);
+            void cancelar(int solicitacaoId);
+            void iniciarAnalise(int solicitacaoId);
+            void deferir(int solicitacaoId, String parecer);
+            void indeferir(int solicitacaoId, String justificativa);
+        }
+    }
+}
+
+/* ─────────────────────────────────────────────
+   INTEGRALIZAÇÃO CURRICULAR CONTEXT — F-08 (Bernardo) · Proxy
+   ───────────────────────────────────────────── */
+
+BoundedContext IntegralizacaoContext implements ServicosAcademicosSubdomain {
+    domainVisionStatement "Verificação do cumprimento de todos os requisitos curriculares para conclusão do curso e registro formal da colação de grau"
+    type FEATURE
+
+    Aggregate IntegralizacaoCurricular {
+        enum StatusIntegralizacao { PENDENTE, EM_ANALISE, APTO, INAPTO }
+
+        Entity IntegralizacaoCurricular {
+            aggregateRoot
+            int id
+            - EstudanteId estudanteId
+            int matrizCurricularId
+            - StatusIntegralizacao status
+            - List<ItemChecklist> checklist
+        }
+        Entity ItemChecklist {
+            String descricao
+            boolean cumprido
+            String observacao
+        }
+        Entity ColacaoDeGrau {
+            aggregateRoot
+            int id
+            - EstudanteId estudanteId
+            java.time.LocalDate data
+            String local
+        }
+        Service IntegralizacaoServico {
+            // acesso via IntegralizacaoServicoProxy (Proxy Pattern)
+            void solicitarAnalise(@EstudanteId estudanteId);
+            void analisar(int integralizacaoId);
+            void aprovarAptidao(int integralizacaoId);
+        }
+        Service ColacaoServico {
+            void registrarColacao(@EstudanteId estudanteId, java.time.LocalDate data, String local);
+        }
+    }
+}
+
+/* ─────────────────────────────────────────────
+   ATIVIDADES COMPLEMENTARES CONTEXT — F-09 (Jera) · Observer
+   ───────────────────────────────────────────── */
+
+BoundedContext AtividadesComplementaresContext implements ServicosAcademicosSubdomain {
+    domainVisionStatement "Submissão e análise de atividades complementares para integralização da carga horária extracurricular"
+    type FEATURE
+
+    Aggregate AtividadeComplementar {
+        enum TipoAtividade { EXTENSAO, PESQUISA, ENSINO, CULTURAL, ESPORTIVA, REPRESENTACAO_ESTUDANTIL }
+        enum StatusAtividade { SUBMETIDA, EM_ANALISE, DEFERIDA, INDEFERIDA, CANCELADA, AGUARDANDO_REVISAO }
+
+        Entity AtividadeComplementar {
+            aggregateRoot
+            int id
+            - EstudanteId estudanteId
+            - TipoAtividade tipo
+            String descricao
+            int cargaHorariaSolicitada
+            int cargaHorariaAprovada
+            - StatusAtividade status
+        }
+        Service AtividadeComplementarServico {
+            void submeter(@EstudanteId estudanteId, @TipoAtividade tipo, String descricao, int cargaHoraria);
+            void deferir(int atividadeId, int cargaHorariaAprovada);
+            void indeferir(int atividadeId, String justificativa);
+            void solicitarRevisao(int atividadeId, String observacao);
+            void cancelar(int atividadeId);
+            int consultarSaldo(@EstudanteId estudanteId);
+        }
+    }
+}
+
+/* ─────────────────────────────────────────────
+   PERMANÊNCIA ACADÊMICA CONTEXT — F-10 (Matheus) · Observer
+   ───────────────────────────────────────────── */
+
+BoundedContext PermanenciaAcademicaContext implements PermanenciaSubdomain {
+    domainVisionStatement "Programas de permanência estudantil: publicação de editais, inscrições, análise e gestão de benefícios com notificação automática via Observer"
+    type FEATURE
+
+    Aggregate Edital {
+        enum StatusEdital { ABERTO, ENCERRADO, RESULTADO_PUBLICADO }
+
+        Entity Edital {
+            aggregateRoot
+            int id
+            String titulo
+            String descricao
+            - StatusEdital status
+            java.time.LocalDate dataAbertura
+            java.time.LocalDate dataEncerramento
+        }
+        Service EditalServico {
+            void criar(@Edital edital);
+            void publicarResultado(int editalId);
+            void encerrar(int editalId);
+        }
+    }
+
+    Aggregate Inscricao {
+        enum StatusInscricao { PENDENTE, DEFERIDA, INDEFERIDA, EM_RECURSO }
+
+        Entity Inscricao {
+            aggregateRoot
+            int id
+            int editalId
+            - EstudanteId estudanteId
+            - StatusInscricao status
+            String justificativa
+        }
+        Service InscricaoServico {
+            void inscrever(int editalId, @EstudanteId estudanteId, String justificativa);
+            void deferir(int inscricaoId);
+            void indeferir(int inscricaoId, String motivo);
+        }
+    }
+
+    Aggregate Beneficio {
+        enum StatusBeneficio { ATIVO, SUSPENSO, CANCELADO }
+
+        Entity Beneficio {
+            aggregateRoot
+            int id
+            - EstudanteId estudanteId
+            int inscricaoId
+            String tipo
+            - StatusBeneficio status
+        }
+        Service BeneficioServico {
+            void suspender(int beneficioId, String motivo);
+            void cancelar(int beneficioId, String motivo);
+        }
+    }
+}
+
+/* ─────────────────────────────────────────────
+   APOIO PSICOPEDAGÓGICO CONTEXT — F-11 (Matheus) · Observer
+   ───────────────────────────────────────────── */
+
+BoundedContext ApoioPsicopedagogicoContext implements PermanenciaSubdomain {
+    domainVisionStatement "Acompanhamento psicopedagógico individual com sigilo de atendimento: solicitação, triagem, sessões e encerramento de caso"
+    type FEATURE
+
+    Aggregate Caso {
+        enum StatusCaso { EM_ABERTO, EM_ATENDIMENTO, ENCERRADO }
+        enum PrioridadeTriagem { BAIXA, MEDIA, ALTA }
+
+        Entity Caso {
+            aggregateRoot
+            int id
+            - EstudanteId estudanteId
+            - StatusCaso status
+            String conclusao
+            - List<Atendimento> atendimentos
+        }
+        Entity SolicitacaoApoio {
+            int id
+            - EstudanteId estudanteId
+            java.time.LocalDateTime dataSolicitacao
+        }
+        Entity Triagem {
+            int id
+            int casoId
+            - PrioridadeTriagem prioridade
+            String observacao
+        }
+        Entity Atendimento {
+            int id
+            int casoId
+            java.time.LocalDate data
+            String relatorio
+        }
+        Service ApoioServico {
+            void solicitarApoio(@EstudanteId estudanteId);
+        }
+        Service TriagemServico {
+            void realizarTriagem(int casoId, @PrioridadeTriagem prioridade, String observacao);
+        }
+        Service AtendimentoServico {
+            void registrarAtendimento(int casoId, java.time.LocalDate data, String relatorio);
+            void encerrarCaso(int casoId, String conclusao);
+        }
+    }
+}
+
+/* ─────────────────────────────────────────────
+   MOBILIDADE ACADÊMICA CONTEXT — F-12 (Vinicius) · Strategy
+   ───────────────────────────────────────────── */
+
+BoundedContext MobilidadeAcademicaContext implements ServicosAcademicosSubdomain {
+    domainVisionStatement "Programa de mobilidade internacional ou nacional do estudante: solicitação, plano de estudos com equivalências e registro de resultados externos"
+    type FEATURE
+
+    Aggregate MobilidadeAcademica {
+        enum StatusMobilidade { SOLICITADA, AUTORIZADA, EM_ANDAMENTO, CONCLUIDA, CANCELADA }
+
+        Entity MobilidadeAcademica {
+            aggregateRoot
+            int id
+            - EstudanteId estudanteId
+            String instituicaoDestino
+            - StatusMobilidade status
+            - List<ItemPlanoEstudos> planoEstudos
+        }
+        Entity ItemPlanoEstudos {
+            int id
+            int disciplinaEquivalenteId
+            String disciplinaExterna
+            int cargaHorariaExterna
+            String comprovante
+            String resultado
+        }
+        Service MobilidadeAcademicaServico {
+            void solicitar(@EstudanteId estudanteId, String instituicaoDestino);
+            void autorizar(int mobilidadeId);
+            void iniciar(int mobilidadeId);
+            void adicionarItemPlano(int mobilidadeId, @ItemPlanoEstudos item);
+            void registrarResultado(int mobilidadeId, int itemId, String resultado);
+            void cancelar(int mobilidadeId, String motivo);
+        }
+    }
+}
+
+/* ─────────────────────────────────────────────
+   GESTÃO FINANCEIRA CONTEXT — F-13 (Jera) · Observer
+   ───────────────────────────────────────────── */
+
+BoundedContext GestaoFinanceiraContext implements FinanceiroSubdomain {
+    domainVisionStatement "Cobranças acadêmicas do estudante: geração, pagamento, descontos, contestação e comprovantes"
+    type FEATURE
+
+    Aggregate Cobranca {
+        enum StatusCobranca { PENDENTE, PAGA, VENCIDA, CANCELADA, CONTESTADA }
+        enum TipoDesconto { BOLSA, CONVENIO, PONTUALIDADE }
+
+        Entity Cobranca {
+            aggregateRoot
+            int id
+            - EstudanteId estudanteId
+            double valor
+            java.time.LocalDate vencimento
+            - StatusCobranca status
+            - List<AplicacaoDesconto> descontos
+            - List<Pagamento> pagamentos
+        }
+        Entity Pagamento {
+            int id
+            double valor
+            java.time.LocalDate data
+            String comprovante
+        }
+        Entity Contestacao {
+            int id
+            String motivo
+            java.time.LocalDate data
+        }
+        Entity AplicacaoDesconto {
+            int id
+            - TipoDesconto tipo
+            double percentual
+        }
+        Service CobrancaServico {
+            void gerar(@EstudanteId estudanteId, double valor, java.time.LocalDate vencimento);
+            void registrarPagamento(int cobrancaId, double valor, java.time.LocalDate data, String comprovante);
+            void aplicarDesconto(int cobrancaId, @TipoDesconto tipo, double percentual);
+            void contestar(int cobrancaId, String motivo);
+            void cancelarPagamento(int cobrancaId, int pagamentoId);
+        }
+    }
+}
+
+/* ─────────────────────────────────────────────
+   ESTÁGIOS CONTEXT — F-14 (Clara) · Decorator
+   ───────────────────────────────────────────── */
+
+BoundedContext EstagiosContext implements ServicosAcademicosSubdomain {
+    domainVisionStatement "Centro de estágios e oportunidades: publicação de vagas por empresas parceiras, candidatura, formalização do estágio e relatórios"
+    type FEATURE
+
+    Aggregate Oportunidade {
+        enum StatusOportunidade { ABERTA, ENCERRADA, CANCELADA }
+
+        Entity Oportunidade {
+            aggregateRoot
+            int id
+            String empresaId
+            String titulo
+            String descricao
+            - StatusOportunidade status
+        }
+        Service OportunidadeServico {
+            void publicar(@Oportunidade oportunidade);
+            void candidatar(int oportunidadeId, @EstudanteId estudanteId);
+            void confirmarCandidatura(int oportunidadeId, @EstudanteId estudanteId);
+        }
+    }
+
+    Aggregate Estagio {
+        enum StatusEstagio { EM_ANDAMENTO, ENCERRADO, CANCELADO }
+
+        Entity Estagio {
+            aggregateRoot
+            int id
+            - EstudanteId estudanteId
+            int oportunidadeId
+            String empresaId
+            - StatusEstagio status
+            - List<Relatorio> relatorios
+        }
+        Entity Relatorio {
+            int id
+            String descricao
+            java.time.LocalDate dataEntrega
+            boolean aprovado
+        }
+        Service EstagioServico {
+            void submeterRelatorio(int estagioId, @Relatorio relatorio);
+            void encerrar(int estagioId);
+        }
+    }
+}
+
+/* ─────────────────────────────────────────────
+   CONTEXT MAP
+   ───────────────────────────────────────────── */
+
+ContextMap AcadLab {
+    contains CompartilhadoContext
+    contains CurriculoContext
+    contains OfertaAcademicaContext
+    contains MatriculaContext
+    contains GestaoPedagogicaContext
+    contains HistoricoAcademicoContext
+    contains SecretariaVirtualContext
+    contains IntegralizacaoContext
+    contains AtividadesComplementaresContext
+    contains PermanenciaAcademicaContext
+    contains ApoioPsicopedagogicoContext
+    contains MobilidadeAcademicaContext
+    contains GestaoFinanceiraContext
+    contains EstagiosContext
+
+    /* Shared Kernel — CompartilhadoContext com todos */
+    CompartilhadoContext [SK] <-> [SK] CurriculoContext
+    CompartilhadoContext [SK] <-> [SK] OfertaAcademicaContext
+    CompartilhadoContext [SK] <-> [SK] MatriculaContext
+    CompartilhadoContext [SK] <-> [SK] GestaoPedagogicaContext
+    CompartilhadoContext [SK] <-> [SK] HistoricoAcademicoContext
+    CompartilhadoContext [SK] <-> [SK] SecretariaVirtualContext
+    CompartilhadoContext [SK] <-> [SK] IntegralizacaoContext
+    CompartilhadoContext [SK] <-> [SK] AtividadesComplementaresContext
+    CompartilhadoContext [SK] <-> [SK] PermanenciaAcademicaContext
+    CompartilhadoContext [SK] <-> [SK] ApoioPsicopedagogicoContext
+    CompartilhadoContext [SK] <-> [SK] MobilidadeAcademicaContext
+    CompartilhadoContext [SK] <-> [SK] GestaoFinanceiraContext
+    CompartilhadoContext [SK] <-> [SK] EstagiosContext
+
+    /* Cadeia acadêmica principal */
+    CurriculoContext [U, OHS, PL] -> [D, ACL] OfertaAcademicaContext {
+        implementationTechnology "Java"
+        exposedAggregates MatrizCurricular
+    }
+
+    CurriculoContext [U, OHS, PL] -> [D, ACL] MatriculaContext {
+        implementationTechnology "Java"
+        exposedAggregates MatrizCurricular
+    }
+
+    OfertaAcademicaContext [U, OHS, PL] -> [D, ACL] MatriculaContext {
+        implementationTechnology "Java"
+        exposedAggregates OfertaTurmas, PeriodoLetivo
+    }
+
+    OfertaAcademicaContext [U, OHS, PL] -> [D, ACL] GestaoPedagogicaContext {
+        implementationTechnology "Java"
+        exposedAggregates OfertaTurmas, PeriodoLetivo
+    }
+
+    MatriculaContext [U, OHS, PL] -> [D, ACL] GestaoPedagogicaContext {
+        implementationTechnology "Java"
+        exposedAggregates Matricula
+    }
+
+    GestaoPedagogicaContext [U, OHS, PL] -> [D, ACL] HistoricoAcademicoContext {
+        implementationTechnology "Java"
+        exposedAggregates DiarioTurma
+    }
+
+    /* Histórico alimenta análises de conclusão */
+    HistoricoAcademicoContext [U, OHS, PL] -> [D, ACL] IntegralizacaoContext {
+        implementationTechnology "Java"
+        exposedAggregates HistoricoAcademico
+    }
+
+    AtividadesComplementaresContext [U, OHS, PL] -> [D, ACL] IntegralizacaoContext {
+        implementationTechnology "Java"
+        exposedAggregates AtividadeComplementar
+    }
+
+    /* Mobilidade registra resultados no histórico */
+    MobilidadeAcademicaContext [U, OHS, PL] -> [D, ACL] HistoricoAcademicoContext {
+        implementationTechnology "Java"
+        exposedAggregates MobilidadeAcademica
+    }
+
+    /* Matrícula dispara cobrança financeira */
+    MatriculaContext [U, OHS, PL] -> [D, ACL] GestaoFinanceiraContext {
+        implementationTechnology "Java"
+        exposedAggregates Matricula
+    }
+
+    /* Benefício de permanência pode impactar cobrança */
+    PermanenciaAcademicaContext [U, OHS, PL] -> [D, ACL] GestaoFinanceiraContext {
+        implementationTechnology "Java"
+        exposedAggregates Beneficio
+    }
+}
