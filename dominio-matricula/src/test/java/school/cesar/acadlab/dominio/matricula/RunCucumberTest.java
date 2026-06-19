@@ -1,11 +1,11 @@
 package school.cesar.acadlab.dominio.matricula;
 
-import org.junit.platform.suite.api.IncludeEngines;
-import org.junit.platform.suite.api.SelectPackages;
-import org.junit.platform.suite.api.Suite;
+import org.junit.platform.suite.api.*;
+import static io.cucumber.junit.platform.engine.Constants.*;
 
 @Suite
 @IncludeEngines("cucumber")
 @SelectPackages("school.cesar.acadlab.dominio.matricula")
+@ConfigurationParameter(key = PLUGIN_PROPERTY_NAME, value = "pretty")
 public class RunCucumberTest {
 }
