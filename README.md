@@ -1,84 +1,282 @@
-# AcadLab - Sistema de Gerenciamento Universitário
+# AcadLab — Sistema de Gerenciamento Universitário
 
-> [cite_start]**Versão:** 1.0 [cite: 2]
-> **Contexto:** Projeto acadêmico para gerenciamento do ecossistema e processos de uma Instituição de Ensino Superior (IES).
-
----
-
-## 1. Visão Geral do Domínio
-
-[cite_start]O AcadLab é um sistema de gerenciamento universitário desenvolvido para representar e controlar os processos que compõem a vida acadêmica de uma instituição de ensino superior, desde a definição do currículo de um curso até a conclusão formal de um estudante[cite: 5, 6]. 
-
-[cite_start]O domínio encapsula as regras que determinam as permissões e restrições de cada momento da vida acadêmica: quem pode se matricular, quando notas podem ser lançadas, quais disciplinas estão bloqueadas e se um estudante está apto a se formar[cite: 7]. [cite_start]Cada operação do sistema é governada por essas regras e pelo momento em que é realizada[cite: 8].
-
-[cite_start]O sistema se organiza em torno de três eixos principais[cite: 9]:
-* [cite_start]**Estrutura do curso:** O currículo define quais disciplinas existem, a ordem em que devem ser cursadas, quais são obrigatórias, optativas e a carga horária que o estudante precisa cumprir[cite: 10]. [cite_start]Esta estrutura é a base para a existência de matrículas, históricos e conclusões[cite: 11].
-* [cite_start]**Trajetória do estudante:** Registrada no histórico acadêmico, inclui as disciplinas cursadas, notas, frequência, aproveitamentos, trancamentos e a situação acadêmica atual, servindo como a fonte de verdade do sistema[cite: 12, 13, 14].
-* [cite_start]**Operação do período letivo:** Define datas e janelas semestrais específicas para registros de aulas, notas, matrículas e ajustes[cite: 15, 16]. [cite_start]Fora dessas janelas, as operações são bloqueadas[cite: 17].
+> Sistema acadêmico completo para Instituições de Ensino Superior — da estrutura curricular à conclusão formal do estudante — construído com Domain-Driven Design, Arquitetura Limpa, persistência JPA, API REST e testes BDD em Cucumber.
 
 ---
 
-## 2. Atores do Sistema e Papéis
+## Para o professor
 
-[cite_start]O ecossistema é composto por múltiplos perfis com responsabilidades bem delimitadas[cite: 19]:
-
-| Ator | Papel e Responsabilidades |
-| :--- | :--- |
-| **Estudante** | Sujeito central da vida acadêmica. [cite_start]Realiza matrículas, recebe avaliações, acumula histórico e progride em direção à conclusão do curso. [cite: 19] |
-| **Professor** | Conduz a turma durante o período letivo. [cite_start]Registra aulas, frequência, avaliações e o resultado final dos estudantes. [cite: 19] |
-| **Coordenador Acadêmico** | Define e mantém o currículo do curso. [cite_start]Analisa casos excepcionais, autoriza operações que exigem aprovação e libera estudantes para a colação de grau. [cite: 19] |
-| **Secretaria Acadêmica** | [cite_start]Opera os processos formais da instituição: matrículas, períodos letivos, protocolos acadêmicos, históricos e integralização. [cite: 19] |
-| **Setor Financeiro** | [cite_start]Gerencia cobranças, descontos, bolsas e comprovantes de pagamento do estudante. [cite: 19] |
-| **Assistência Estudantil** | [cite_start]Cuida dos programas de permanência, bolsas institucionais e suporte ao estudante em situação de vulnerabilidade. [cite: 19] |
-| **Psicopedagogo** | [cite_start]Realiza triagem, agendamento e acompanhamento psicopedagógico dos estudantes. [cite: 19] |
-| **Empresa Parceira** | [cite_start]Publica oportunidades de estágio e vagas profissionais para os estudantes da instituição. [cite: 19] |
+As seções [Mapa por Integrante](#mapa-por-integrante) e [Padrões de Projeto — Mapa de Arquivos](#padrões-de-projeto--mapa-de-arquivos) foram criadas para localizar rapidamente, por aluno, os arquivos de cada funcionalidade e os arquivos onde cada padrão de projeto está implementado.
 
 ---
 
-## 3. Linguagem Onipresente (Dicionário de Termos)
+## Visão Geral
 
-[cite_start]Para garantir a coesão entre o time de desenvolvimento e os requisitos de negócio, os termos abaixo são usados com o mesmo significado por todos os envolvidos no projeto, sem variações ou sinônimos informais[cite: 21, 22].
+O AcadLab gerencia o ciclo de vida acadêmico de uma IES: da definição do currículo à colação de grau. O domínio encapsula as regras que determinam quem pode se matricular, quando notas podem ser lançadas, quais disciplinas estão bloqueadas e se um estudante está apto a se formar. Cada operação é governada por essas regras e pelo momento em que é realizada.
 
-### Termos Proibidos (Evite Ambiguidades)
-* [cite_start]**Não usar Aluno:** Use **Estudante** [cite: 176]
-* [cite_start]**Não usar Grade curricular:** Use **Matriz Curricular** [cite: 176]
-* [cite_start]**Não usar Status (genérico):** Use **Situação** (discente, da disciplina) ou **Estado** (da turma, da solicitação), sempre qualificado [cite: 177]
-* [cite_start]**Não usar Histórico (genérico):** Use **Histórico Acadêmico** quando referente à trajetória formal do estudante [cite: 177]
-* [cite_start]**Não usar Aprovação (genérico):** Qualificar sempre como aprovado na disciplina, deferimento da solicitação ou aptidão para colação [cite: 177]
-* [cite_start]**Não usar Matrícula (genérico):** Use **Matrícula Institucional** para o identificador do estudante e **Matrícula** para o vínculo com uma turma [cite: 177, 178]
+O sistema se organiza em três eixos:
 
-### Conceitos por Áreas Temáticas
-
-#### Currículo e Estrutura do Curso
-* [cite_start]**Matriz Curricular:** Estrutura formal que define o conjunto de disciplinas, cargas horárias, pré-requisitos, correquisitos e equivalências exigidos para a conclusão de um curso em uma versão específica[cite: 26].
-* **Matriz Ativa:** Versão da matriz curricular vigente, utilizada para novas matrículas. [cite_start]Apenas uma versão pode estar ativa por curso em um mesmo momento[cite: 30, 31].
-* **Ciclo de Pré-requisito:** Configuração inválida em que disciplinas formam uma cadeia circular de dependência. [cite_start]O sistema rejeita qualquer configuração que gere esse ciclo[cite: 41, 42].
-
-#### Período Letivo e Calendário
-* **Janela Acadêmica:** Intervalo de datas dentro do período letivo durante o qual uma operação específica é permitida. [cite_start]Fora da janela, a operação é bloqueada[cite: 46, 47].
-* **Período Encerrado:** Estado do período letivo após o encerramento formal. [cite_start]Os registros tornam-se imutáveis sem um processo formal de reabertura autorizado[cite: 54, 55].
-
-#### Matrícula e Gestão Pedagógica
-* **Plano de Matrícula:** Seleção provisória de turmas feita pelo estudante antes da confirmação. [cite_start]Não gera vínculo acadêmico[cite: 68].
-* [cite_start]**Reprovação por Frequência:** Resultado atribuído ao estudante cujo percentual de presença ficou abaixo da frequência mínima, independentemente da média obtida nas avaliações[cite: 83].
-* [cite_start]**Sigilo de Atendimento:** Princípio que proíbe o acesso de qualquer perfil, exceto o psicopedagogo e o próprio estudante, aos dados individuais de atendimento psicopedagógico[cite: 147].
+- **Estrutura do curso** — o currículo define quais disciplinas existem, a ordem em que devem ser cursadas e a carga horária necessária para a conclusão.
+- **Trajetória do estudante** — registrada no histórico acadêmico com notas, frequência, aproveitamentos e situação discente; é a fonte de verdade do sistema.
+- **Operação do período letivo** — janelas acadêmicas habilitam ou bloqueiam operações (matrícula, lançamento de notas, ajustes) por intervalo de datas.
 
 ---
 
-## 4. Tecnologias Utilizadas
+## Mapa por Integrante
 
-*(Substitua os itens abaixo pelas tecnologias reais do seu projeto)*
-
-* **Backend:** Node.js (TypeScript) / Java Spring Boot / C# .NET
-* **Banco de Dados:** PostgreSQL / MySQL
-* **Autenticação:** JWT com controle de acesso baseado em papéis (RBAC) para os Atores
-* **Infraestrutura:** Docker / AWS / GitHub Actions
+| Integrante | Funcionalidades | Padrão de Projeto | Módulo(s) |
+|---|---|---|---|
+| **Julia** | F-01 · Gestão Curricular · F-06 · Histórico Acadêmico | Iterator | `dominio-curriculo` · `dominio-historico-academico` |
+| **Neto** | F-02 · Período Letivo · F-05 · Gestão Pedagógica | Template Method | `dominio-oferta-academica` · `dominio-gestao-pedagogica` |
+| **Clara** | F-03 · Oferta de Turmas · F-14 · Estágios | Decorator | `dominio-oferta-academica` · `dominio-estagios` |
+| **Vinicius** | F-04 · Matrícula · F-12 · Mobilidade Acadêmica | Strategy | `dominio-matricula` · `dominio-mobilidade-academica` |
+| **Bernardo** | F-07 · Secretaria Virtual · F-08 · Integralização | Proxy | `dominio-secretaria-virtual` · `dominio-integralizacao-curricular` |
+| **Matheus** | F-10 · Permanência Acadêmica · F-11 · Apoio Psicopedagógico | Observer | `dominio-permanencia-academica` |
+| **Jera** | F-09 · Atividades Complementares · F-13 · Gestão Financeira | Observer | `dominio-atividades-complementares` · `dominio-gestao-financeira` |
 
 ---
 
-## 5. Fluxo de Trabalho e DevOps (Git e Branches)
+## Padrões de Projeto — Mapa de Arquivos
 
-Este repositório adota políticas de Branch Rulesets para garantir a integridade do código do projeto:
+São **6 padrões distintos** implementados. Observer aparece em dois contextos independentes, totalizando 7 implementações.
 
-* **Branch `develop` (Integração):** Exige Pull Request obrigatório com pelo menos 1 aprovação pertencente ao time de revisores (`Team Aprovadores Develop`), utilizando a validação do arquivo `.github/CODEOWNERS` na raiz.
-* **Branch `main` (Produção):** Pushes diretos são bloqueados por meio da regra `Restrict updates`. A aprovação e merge de Pull Requests nesta branch é permitida exclusivamente para o Tech Lead configurado na lista de exceções (`Bypass list`).
+| Padrão | Integrante | Arquivos | Camada |
+|---|---|---|---|
+| **Iterator** | Julia | `IteradorHistorico<T>` · `IteradorRegistrosDisciplina` · `ConsultaHistoricoServico` | Domínio |
+| **Template Method** | Neto | Fluxo de abertura → aulas → frequência → avaliações → resultado em `DiarioTurmaServico` | Domínio |
+| **Decorator** | Clara | `TurmaComListaEspera`, `TurmaOnline` sobre `OfertaTurmaServico`; Decorator sobre `Oportunidade` | Domínio |
+| **Strategy** | Vinicius | Estratégias de elegibilidade para matrícula (regular, por exceção, por mobilidade) em `MatriculaServico` | Domínio |
+| **Proxy** | Bernardo | `SolicitacaoServicoProxy` · `IntegralizacaoServicoProxy` — controle de permissões e pré-condições | Domínio |
+| **Observer** | Matheus | `EventoObservador` em benefícios de permanência e mudanças de estado em casos psicopedagógicos | Domínio |
+| **Observer** | Jera | Eventos financeiros (pagamento confirmado, cobrança vencida) e deferimento de atividades complementares | Domínio |
+
+---
+
+## Funcionalidades
+
+| F | Funcionalidade | Responsável | Padrão | Resumo |
+|---|---|---|---|---|
+| **F-01** | Gestão Curricular do Curso | Julia | Iterator | Criar e versionar matriz curricular com disciplinas, pré-requisitos, correquisitos e ciclo de vida ativo/inativo |
+| **F-02** | Planejamento do Período Letivo | Neto | Template Method | Definir semestre acadêmico com janelas que habilitam ou bloqueiam operações por intervalo de datas |
+| **F-03** | Oferta de Turmas | Clara | Decorator | Configurar turmas com professor, sala e horário; adicionar comportamentos dinâmicos sem alterar a classe base |
+| **F-04** | Montagem e Ajuste de Matrícula | Vinicius | Strategy | Plano de matrícula, confirmação, ajustes e trancamento com validação de elegibilidade por estratégia intercambiável |
+| **F-05** | Gestão Pedagógica da Turma | Neto | Template Method | Diário de turma: registro de aulas, frequência, avaliações, notas e resultado final com recuperação |
+| **F-06** | Gestão do Histórico Acadêmico | Julia | Iterator | Consolidação de resultados, aproveitamentos externos, retificações e acompanhamentos; histórico oficial via Iterator |
+| **F-07** | Secretaria Virtual Acadêmica | Bernardo | Proxy | Abertura e tramitação de protocolos acadêmicos com controle de permissões via Proxy |
+| **F-08** | Validação de Integralização e Colação | Bernardo | Proxy | Análise de cumprimento de requisitos curriculares e registro formal da colação de grau |
+| **F-09** | Atividades Complementares | Jera | Observer | Submissão e análise de horas extracurriculares; eventos de deferimento notificam outros contextos |
+| **F-10** | Permanência Acadêmica e Bolsas | Matheus | Observer | Editais, inscrições, análise e gestão de benefícios com notificação automática de mudanças de estado |
+| **F-11** | Apoio Psicopedagógico | Matheus | Observer | Solicitação, triagem, atendimentos e encerramento de caso com sigilo de atendimento |
+| **F-12** | Mobilidade Acadêmica | Vinicius | Strategy | Intercâmbio externo com plano de estudos, equivalências e registro de resultados no histórico |
+| **F-13** | Gestão Financeira Acadêmica | Jera | Observer | Cobranças, pagamentos, descontos, contestações e comprovantes; eventos de pagamento notificam outros contextos |
+| **F-14** | Centro de Estágios e Oportunidades | Clara | Decorator | Publicação de vagas, candidatura, formalização do estágio e entrega de relatórios |
+
+<details>
+<summary><strong>Regras de negócio selecionadas por funcionalidade</strong></summary>
+
+### F-01 — Gestão Curricular (Julia)
+- A mesma disciplina não pode aparecer mais de uma vez na mesma matriz curricular
+- A matriz só pode ser ativada se a carga horária e os créditos das disciplinas forem suficientes para o mínimo exigido
+- Apenas uma versão da matriz pode estar ativa por curso ao mesmo tempo
+- Pré-requisitos cíclicos são rejeitados — o sistema percorre o grafo e detecta caminhos circulares
+- Correquisitos devem pertencer à mesma matriz curricular
+
+### F-02 — Período Letivo (Neto)
+- Janela acadêmica define o intervalo em que uma operação é permitida; fora da janela, a operação é bloqueada
+- O período encerrado torna os registros imutáveis sem reabertura formal autorizada
+
+### F-04 — Matrícula (Vinicius)
+- O plano de matrícula é provisório — não gera vínculo acadêmico até a confirmação
+- A elegibilidade é verificada por estratégia (regular, exceção, mobilidade), sem alterar o serviço principal
+
+### F-05 — Gestão Pedagógica (Neto)
+- Reprovação por frequência é aplicada quando a presença fica abaixo do mínimo, independentemente da média
+
+### F-06 — Histórico Acadêmico (Julia)
+- Apenas resultados de turmas encerradas podem ser consolidados (RN-1)
+- O histórico oficial retorna somente registros consolidados de períodos encerrados, via Iterator (RN-10)
+- Retificação exige responsável, justificativa e registra trilha de auditoria
+
+### F-11 — Apoio Psicopedagógico (Matheus)
+- Sigilo de atendimento: apenas o psicopedagogo e o próprio estudante acessam dados individuais de sessão
+- Estudante com caso ativo não pode abrir nova solicitação
+
+</details>
+
+---
+
+## Estrutura de Módulos
+
+```
+acadlab-pai/
+│
+├── dominio-compartilhado/            ← Shared Kernel — EstudanteId, CursoId, eventos de domínio
+├── dominio-curriculo/                ← F-01 (Julia)
+├── dominio-oferta-academica/         ← F-02 (Neto) + F-03 (Clara) — sub-pacotes separados
+├── dominio-matricula/                ← F-04 (Vinicius)
+├── dominio-gestao-pedagogica/        ← F-05 (Neto)
+├── dominio-historico-academico/      ← F-06 (Julia)
+├── dominio-secretaria-virtual/       ← F-07 (Bernardo)
+├── dominio-integralizacao-curricular/← F-08 (Bernardo)
+├── dominio-atividades-complementares/← F-09 (Jera)
+├── dominio-permanencia-academica/    ← F-10 + F-11 (Matheus) — dois bounded contexts
+├── dominio-mobilidade-academica/     ← F-12 (Vinicius)
+├── dominio-gestao-financeira/        ← F-13 (Jera)
+├── dominio-estagios/                 ← F-14 (Clara)
+│
+├── aplicacao/                        ← Orquestração cross-domínio e DTOs (*Resumo)
+├── infraestrutura/                   ← JPA, adaptadores de persistência
+├── apresentacao-backend/             ← Controllers REST (Spring Boot)
+└── apresentacao-frontend/            ← React + Vite
+```
+
+> Os módulos `dominio-*` não possuem dependências de framework — apenas Java puro. Nenhum módulo de domínio importa outro: comunicação cross-domínio ocorre exclusivamente via camada `aplicacao`.
+
+---
+
+## Atores do Sistema
+
+| Ator | Papel |
+|---|---|
+| **Estudante** | Sujeito central. Realiza matrículas, recebe avaliações, acumula histórico e progride até a conclusão. |
+| **Professor** | Conduz a turma. Registra aulas, frequência, avaliações e resultado final dos estudantes. |
+| **Coordenador Acadêmico** | Define e mantém o currículo. Autoriza exceções e libera estudantes para colação. |
+| **Secretaria Acadêmica** | Opera os processos formais: matrículas, períodos letivos, protocolos e integralização. |
+| **Setor Financeiro** | Gerencia cobranças, descontos, bolsas e comprovantes de pagamento. |
+| **Assistência Estudantil** | Cuida dos programas de permanência e suporte ao estudante em vulnerabilidade. |
+| **Psicopedagogo** | Realiza triagem, agendamento e acompanhamento psicopedagógico. |
+| **Empresa Parceira** | Publica oportunidades de estágio e vagas profissionais. |
+
+---
+
+## Testes BDD
+
+Todo o domínio é coberto por testes comportamentais em **português** com Cucumber + JUnit 6.
+
+```bash
+mvn test
+```
+
+### Mapeamento: Funcionalidade → Features BDD
+
+| Funcionalidade | Features |
+|---|---|
+| F-01 · Gestão Curricular | `criar_matriz_curricular` · `configurar_prerequisitos` · `gerenciar_disciplinas_matriz` · `gerenciar_status_matriz` |
+| F-02 · Período Letivo | `us01_cadastrar_periodo_letivo` · `us02_definir_janelas_academicas` · `us03_encerrar_periodo_letivo` · `us05_editar_periodo_letivo` · `us06_cancelar_periodo_letivo` |
+| F-03 · Oferta de Turmas | `us01_gerenciar_salas` · `us02_gerenciar_professores` · `us03_ofertar_turma` · `us04_definir_professor_horario_sala` · `us_turma_decorator` |
+| F-04 · Matrícula | `montar_plano_matricula` · `confirmar_matricula` · `ajustar_matricula` · `trancar_disciplina` · `solicitar_excecao` |
+| F-05 · Gestão Pedagógica | `us01_registrar_aulas` · `us02_registrar_frequencia` · `us03_gerenciar_avaliacoes` · `us04_lancar_notas` · `us07_nota_recuperacao` |
+| F-06 · Histórico Acadêmico | `us01_consolidar_resultados` · `us02_consultar_historico_oficial` · `us03_registrar_acompanhamento` · `us04_atualizar_situacao_discente` · `us05_registrar_aproveitamento` · `us06_retificar_resultado` |
+| F-07 · Secretaria Virtual | `us01_abrir_solicitacao` · `us02_analisar_solicitacao` · `us03_complementar_solicitacao` · `us04_acompanhar_solicitacoes` · `us05_cancelar_solicitacao` |
+| F-08 · Integralização | `us01_solicitar_analise` · `us02_analisar_integralizacao` · `us03_aprovar_aptidao` · `us04_registrar_colacao` |
+| F-09 · Atividades Complementares | `us01_submeter_atividade` · `us02_analisar_atividade` · `us03_solicitar_revisao` · `us04_saldo_horas` · `us05_cancelar_atividade` |
+| F-10 · Permanência Acadêmica | `criar_edital` · `inscrever` · `analisar_inscricao` · `publicar_resultado` · `beneficio` · `registrar_acao_permanencia` |
+| F-11 · Apoio Psicopedagógico | `solicitar_apoio` · `realizar_triagem` · `registrar_atendimento` · `consultar_casos` · `encerrar_caso` |
+| F-12 · Mobilidade Acadêmica | `solicitar_mobilidade` · `analisar_plano_estudos` · `registrar_resultado_mobilidade` · `cancelar_mobilidade` |
+| F-13 · Gestão Financeira | `us01_contestar_cobranca` · `us02_gerar_cobranca` · `us03_aplicar_desconto` · `us04_registrar_pagamento` · `us05_extrato_comprovante` · `us07_cancelar_pagamento` |
+| F-14 · Estágios | `candidatar_oportunidade` · `confirmar_candidatura` · `encerrar_estagio` · `submeter_relatorio` |
+
+---
+
+## Arquitetura
+
+O projeto segue **Arquitetura Limpa** com módulos Maven separados por camada:
+
+```
+┌──────────────────────────────────────────────────────────┐
+│  apresentacao-backend (Spring Boot REST)                 │
+│  apresentacao-frontend (React + Vite)                    │
+└────────────────────────┬─────────────────────────────────┘
+                         │
+┌────────────────────────▼─────────────────────────────────┐
+│                    infraestrutura                        │  ← JPA, @Entity, *RepositorioImpl
+└────────────────────────┬─────────────────────────────────┘
+                         │
+┌────────────────────────▼─────────────────────────────────┐
+│                     aplicacao                            │  ← *ServicoAplicacao, DTOs (*Resumo)
+└────────────────────────┬─────────────────────────────────┘
+                         │
+┌────────────────────────▼─────────────────────────────────┐
+│  dominio-curriculo  dominio-matricula  dominio-historico  │
+│  dominio-oferta-academica  dominio-gestao-pedagogica      │  ← Java puro, sem framework
+│  dominio-secretaria-virtual  dominio-integralizacao       │
+│  dominio-permanencia-academica  dominio-estagios  ...     │
+└──────────────────────────────────────────────────────────┘
+                         ↑
+┌────────────────────────┴─────────────────────────────────┐
+│                dominio-compartilhado                     │  ← Shared Kernel (IDs, eventos)
+└──────────────────────────────────────────────────────────┘
+```
+
+**Regra de dependência:** camadas externas dependem das internas. Entidades `@Entity` ficam exclusivamente em `infraestrutura`. Módulos de domínio não se importam entre si — cross-domain só via `aplicacao`.
+
+---
+
+## Linguagem Onipresente
+
+Termos com significado fixo no projeto — sem variações ou sinônimos informais:
+
+| ✅ Usar | ❌ Evitar | Motivo |
+|---|---|---|
+| **Estudante** | Aluno | Linguagem ubíqua do domínio |
+| **Matriz Curricular** | Grade curricular | Precisão do conceito |
+| **Situação** (discente, da disciplina) | Status (genérico) | Sempre qualificar |
+| **Histórico Acadêmico** | Histórico (genérico) | Refere-se à trajetória formal |
+| **Deferimento / Aptidão para colação** | Aprovação (genérico) | Contexto sempre qualificado |
+| **Matrícula Institucional** (ID) vs **Matrícula** (vínculo com turma) | Matrícula (genérico) | São conceitos distintos |
+
+---
+
+## Tecnologias
+
+| Camada | Tecnologia |
+|---|---|
+| Linguagem | Java 17 |
+| Framework Web | Spring Boot 4.0.5 |
+| Persistência | Spring Data JPA / Hibernate |
+| Banco de dados | PostgreSQL (Docker) |
+| Testes BDD | Cucumber 7.34.3 + JUnit 6.0.3 + Mockito 5.23.0 |
+| Build | Maven multi-módulo |
+| Utilitários | Apache Commons Lang3 |
+| Containerização | JIB Maven Plugin 3.5.1 (`eclipse-temurin:17-jre`) |
+| Frontend | React + Vite |
+
+---
+
+## Como Rodar
+
+**Pré-requisitos:** Java 17+, Maven 3.8+, Docker
+
+```bash
+# 1. Build de todos os módulos
+mvn install -DskipTests
+
+# 2. Subir o backend
+cd apresentacao-backend
+mvn spring-boot:run
+
+# 3. Executar todos os testes BDD
+mvn test
+```
+
+> Para desenvolvimento local, crie `apresentacao-backend/src/main/resources/application-desenvolvimento.properties` com a URL do banco local e use `BackendDesenvolvimentoAplicacao` como entry point (perfil `desenvolvimento`).
+
+---
+
+## Equipe
+
+| Integrante | Funcionalidades | Padrão |
+|---|---|---|
+| Julia Teixeira | F-01 · Gestão Curricular · F-06 · Histórico Acadêmico | Iterator |
+| Matheus Veríssimo | F-10 · Permanência Acadêmica · F-11 · Apoio Psicopedagógico | Observer |
+| Vinicius | F-04 · Matrícula · F-12 · Mobilidade Acadêmica | Strategy |
+| Bernardo | F-07 · Secretaria Virtual · F-08 · Integralização e Colação | Proxy |
+| Clara | F-03 · Oferta de Turmas · F-14 · Estágios | Decorator |
+| Neto | F-02 · Período Letivo · F-05 · Gestão Pedagógica | Template Method |
+| Jera | F-09 · Atividades Complementares · F-13 · Gestão Financeira | Observer |
+
+**Professor:** Saulo Meira Araujo — Disciplina de Requisitos, Projeto de Software e Validação · CESAR School
+
+---
+
+*Projeto acadêmico — CESAR School, 2026.1*
