@@ -40,15 +40,83 @@ O sistema se organiza em três eixos:
 
 São **6 padrões distintos** implementados. Observer aparece em dois contextos independentes, totalizando 7 implementações.
 
-| Padrão | Integrante | Arquivos | Camada |
-|---|---|---|---|
-| **Iterator** | Julia | `IteradorHistorico<T>` · `IteradorRegistrosDisciplina` · `ConsultaHistoricoServico` | Domínio |
-| **Template Method** | Neto | Fluxo de abertura → aulas → frequência → avaliações → resultado em `DiarioTurmaServico` | Domínio |
-| **Decorator** | Clara | `TurmaComListaEspera`, `TurmaOnline` sobre `OfertaTurmaServico`; Decorator sobre `Oportunidade` | Domínio |
-| **Strategy** | Vinicius | Estratégias de elegibilidade para matrícula (regular, por exceção, por mobilidade) em `MatriculaServico` | Domínio |
-| **Proxy** | Bernardo | `SolicitacaoServicoProxy` · `IntegralizacaoServicoProxy` — controle de permissões e pré-condições | Domínio |
-| **Observer** | Matheus | `EventoObservador` em benefícios de permanência e mudanças de estado em casos psicopedagógicos | Domínio |
-| **Observer** | Jera | Eventos financeiros (pagamento confirmado, cobrança vencida) e deferimento de atividades complementares | Domínio |
+### Iterator — Julia Teixeira
+
+Percorre os registros do histórico acadêmico sem expor a estrutura interna da coleção.
+
+| Papel no padrão | Arquivo `.java` |
+|---|---|
+| Interface do iterador | `dominio-historico-academico/.../iterador/IteradorHistorico.java` |
+| Iterador concreto | `dominio-historico-academico/.../iterador/IteradorRegistrosDisciplina.java` |
+| Agregado iterável | `dominio-historico-academico/.../historico/HistoricoAcademico.java` |
+| Serviço consumidor | `dominio-historico-academico/.../ConsultaHistoricoServico.java` |
+
+### Template Method — Neto
+
+Define o esqueleto do fluxo pedagógico — abertura → aulas → frequência → avaliações → resultado — fixando a sequência no serviço base e delegando os passos específicos ao diário de turma.
+
+| Papel no padrão | Arquivo `.java` |
+|---|---|
+| Template (sequência fixa de passos) | `dominio-gestao-pedagogica/.../DiarioTurmaServico.java` |
+| Entidade com operações de cada passo | `dominio-gestao-pedagogica/.../diario/DiarioTurma.java` |
+
+### Decorator — Clara
+
+Adiciona comportamentos dinâmicos à Turma — lista de espera e modalidade online — sem alterar a classe base, através de wrappers que estendem a interface `TurmaOferecida`.
+
+| Papel no padrão | Arquivo `.java` |
+|---|---|
+| Interface componente | `dominio-oferta-academica/.../turma/decorator/TurmaOferecida.java` |
+| Decorador abstrato | `dominio-oferta-academica/.../turma/decorator/TurmaDecorador.java` |
+| Decorador concreto: lista de espera | `dominio-oferta-academica/.../turma/decorator/TurmaComListaEspera.java` |
+| Decorador concreto: turma online | `dominio-oferta-academica/.../turma/decorator/TurmaOnline.java` |
+| Serviço que usa os decoradores | `dominio-oferta-academica/.../OfertaTurmaServico.java` |
+
+### Strategy — Vinicius
+
+Encapsula as regras de elegibilidade para matrícula em estratégias intercambiáveis, permitindo trocar a política de validação sem modificar o serviço principal.
+
+| Papel no padrão | Arquivo `.java` |
+|---|---|
+| Interface da estratégia | `dominio-matricula/.../matricula/EstrategiaMatricula.java` |
+| Estratégia concreta: matrícula regular | `dominio-matricula/.../matricula/ValidacaoRegular.java` |
+| Estratégia concreta: matrícula por exceção | `dominio-matricula/.../matricula/ValidacaoExcecao.java` |
+| Contexto (usa a estratégia) | `dominio-matricula/.../MatriculaServico.java` |
+
+### Proxy — Bernardo
+
+Interpõe uma camada de pré-condições e controle de acesso antes de delegar às operações reais, tanto na secretaria virtual quanto na integralização curricular.
+
+| Papel no padrão | Arquivo `.java` |
+|---|---|
+| Interface sujeito — secretaria | `dominio-secretaria-virtual/.../SolicitacaoServico.java` |
+| Proxy — secretaria | `dominio-secretaria-virtual/.../SolicitacaoServicoProxy.java` |
+| Sujeito real — secretaria | `dominio-secretaria-virtual/.../SolicitacaoServicoReal.java` |
+| Interface sujeito — integralização | `dominio-integralizacao-curricular/.../IntegralizacaoOperacoes.java` |
+| Proxy — integralização | `dominio-integralizacao-curricular/.../IntegralizacaoServicoProxy.java` |
+| Sujeito real — integralização | `dominio-integralizacao-curricular/.../IntegralizacaoServico.java` |
+
+### Observer — Matheus Veríssimo
+
+Notifica automaticamente outros componentes quando o estado de benefícios de permanência ou de casos psicopedagógicos muda, via barramento de eventos do shared kernel.
+
+| Papel no padrão | Arquivo `.java` |
+|---|---|
+| Interface publicador de eventos | `dominio-compartilhado/.../evento/EventoBarramento.java` |
+| Interface observador (subscriber) | `dominio-compartilhado/.../evento/EventoObservador.java` |
+| Publisher: benefícios de permanência | `dominio-permanencia-academica/.../permanenciaacademica/BeneficioServico.java` |
+| Publisher: apoio psicopedagógico | `dominio-permanencia-academica/.../apoiopsicopedagogico/ApoioServico.java` |
+
+### Observer — Jera
+
+Notifica outros contextos quando cobranças são geradas ou liquidadas e quando atividades complementares são deferidas, via o mesmo barramento de eventos do shared kernel.
+
+| Papel no padrão | Arquivo `.java` |
+|---|---|
+| Interface publicador de eventos | `dominio-compartilhado/.../evento/EventoBarramento.java` |
+| Interface observador (subscriber) | `dominio-compartilhado/.../evento/EventoObservador.java` |
+| Publisher: gestão financeira | `dominio-gestao-financeira/.../CobrancaServico.java` |
+| Publisher: atividades complementares | `dominio-atividades-complementares/.../AtividadeComplementarServico.java` |
 
 ---
 
