@@ -1,4 +1,5 @@
-#language: pt
+# language: pt
+
 Funcionalidade: Cancelar Submissão de Atividade Complementar
 
   Cenário: Cancelar atividade com status pendente de análise
@@ -9,4 +10,4 @@ Funcionalidade: Cancelar Submissão de Atividade Complementar
   Cenário: Rejeitar cancelamento de atividade já analisada
     Dado uma atividade complementar com status deferida aguardando cancelamento
     Quando o estudante tenta solicitar o cancelamento da submissão
-    Então deve ser lançada uma exceção de cancelamento inválido
+    Então o sistema deve rejeitar informando "atividade já analisada não pode ser cancelada"

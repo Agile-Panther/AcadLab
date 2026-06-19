@@ -1,4 +1,5 @@
-#language: pt
+# language: pt
+
 Funcionalidade: Gerar Cobrança e Nova Versão
 
   Cenário: Gerar cobrança para estudante com matrícula confirmada
@@ -9,7 +10,7 @@ Funcionalidade: Gerar Cobrança e Nova Versão
   Cenário: Rejeitar geração de cobrança sem matrícula confirmada
     Dado o estudante 4 não possui matrícula confirmada no período letivo 1
     Quando tento gerar uma cobrança para o estudante 4 no contrato 3 com valor 1500.00
-    Então deve ser lançada uma exceção de matrícula não confirmada
+    Então o sistema deve rejeitar informando "estudante não possui matrícula confirmada no período"
 
   Cenário: Gerar nova versão de cobrança existente
     Dado o estudante 5 possui matrícula confirmada no período letivo 1

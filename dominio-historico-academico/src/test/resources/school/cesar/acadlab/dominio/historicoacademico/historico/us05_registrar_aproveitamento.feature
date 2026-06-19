@@ -1,4 +1,5 @@
-#language: pt
+# language: pt
+
 Funcionalidade: Registrar aproveitamento de disciplinas externas
 
   Cenário: Aproveitamento com carga horária compatível é registrado com sucesso
@@ -9,4 +10,4 @@ Funcionalidade: Registrar aproveitamento de disciplinas externas
   Cenário: Aproveitamento com carga horária insuficiente é rejeitado
     Dado um histórico de estudante para registro de aproveitamento
     Quando a secretaria tenta registrar aproveitamento com carga horária insuficiente
-    Então o sistema rejeita o aproveitamento informando RN-7
+    Então o sistema deve rejeitar informando "carga horária externa insuficiente para aproveitamento"

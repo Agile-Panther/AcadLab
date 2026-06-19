@@ -1,4 +1,5 @@
-#language: pt
+# language: pt
+
 Funcionalidade: Comportamentos dinâmicos de turma via Decorator
 
   Cenário: Estudante entra na lista de espera de uma turma
@@ -10,7 +11,7 @@ Funcionalidade: Comportamentos dinâmicos de turma via Decorator
     Dado uma turma ofertada com lista de espera habilitada
     Quando o estudante de id 1 entra na lista de espera
     E o estudante de id 1 tenta entrar novamente
-    Então o sistema rejeita a entrada duplicada na lista de espera
+    Então o sistema deve rejeitar informando "estudante já está na lista de espera desta turma"
 
   Cenário: Turma online recebe link de acesso válido
     Dado uma turma EAD com decorator online

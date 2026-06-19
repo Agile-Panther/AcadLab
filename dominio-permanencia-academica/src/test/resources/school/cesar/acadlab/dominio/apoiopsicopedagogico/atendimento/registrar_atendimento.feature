@@ -1,4 +1,5 @@
-#language: pt
+# language: pt
+
 Funcionalidade: Registrar atendimento em caso psicopedagógico
 
   Cenário: Atendimento registrado com sucesso
@@ -9,4 +10,4 @@ Funcionalidade: Registrar atendimento em caso psicopedagógico
   Cenário: Registrar atendimento em caso inexistente falha
     Dado um caso psicopedagógico que não existe no sistema
     Quando o psicopedagogo tenta registrar um atendimento no caso inexistente
-    Então o sistema informa que o caso não foi encontrado
+    Então o sistema deve rejeitar informando "caso psicopedagógico não encontrado"

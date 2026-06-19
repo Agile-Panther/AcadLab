@@ -1,4 +1,5 @@
-#language: pt
+# language: pt
+
 Funcionalidade: Gerenciar cadastro de salas
 
   Cenário: Secretaria inativa uma sala ativa
@@ -9,4 +10,4 @@ Funcionalidade: Gerenciar cadastro de salas
   Cenário: Secretaria tenta reduzir capacidade da sala abaixo de turma vinculada
     Dado uma sala ativa cadastrada com capacidade para trinta pessoas
     Quando a secretaria tenta reduzir a capacidade da sala para vinte pessoas havendo turma com trinta vagas
-    Então o sistema rejeita a redução de capacidade da sala
+    Então o sistema deve rejeitar informando "capacidade não pode ser reduzida abaixo do número de vagas da turma vinculada"

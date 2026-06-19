@@ -1,4 +1,5 @@
-#language: pt
+# language: pt
+
 Funcionalidade: Registrar aulas no diário de turma
 
   Cenário: Professor registra aula dentro do período letivo
@@ -9,7 +10,7 @@ Funcionalidade: Registrar aulas no diário de turma
   Cenário: Professor não responsável não pode registrar aula
     Dado um diário de turma com professor responsável cadastrado
     Quando outro professor tenta registrar uma aula
-    Então o sistema rejeita o registro informando RN-1
+    Então o sistema deve rejeitar informando "professor não é o responsável pelo diário"
 
   Cenário: Professor corrige o conteúdo de uma aula com diário aberto
     Dado um diário de turma com um registro de aula existente
@@ -19,4 +20,4 @@ Funcionalidade: Registrar aulas no diário de turma
   Cenário: Correção de aula com diário fechado é rejeitada
     Dado um registro de aula com diário explicitamente fechado
     Quando o professor tenta corrigir o conteúdo com diário fechado
-    Então o sistema rejeita a correção informando RN-10
+    Então o sistema deve rejeitar informando "diário de turma está fechado"

@@ -1,9 +1,6 @@
-#language: pt
+# language: pt
 
 Funcionalidade: Aprovar aptidão para colação de grau
-  Como coordenador acadêmico
-  Quero aprovar formalmente a aptidão de um estudante para colação de grau
-  Para liberar oficialmente a conclusão do curso
 
   Cenário: Coordenador aprova aptidão de estudante que cumpriu todos os requisitos
     Dado uma integralização com resultado apto e requisitos cumpridos
@@ -13,9 +10,9 @@ Funcionalidade: Aprovar aptidão para colação de grau
   Cenário: Coordenador tenta aprovar aptidão sem cumprimento dos requisitos
     Dado uma integralização com resultado apto mas requisitos não cumpridos
     Quando o coordenador tenta aprovar a aptidão para colação de grau
-    Então o sistema rejeita a aprovação por requisitos não cumpridos
+    Então o sistema deve rejeitar informando "requisitos curriculares não foram cumpridos"
 
   Cenário: Tentativa de aprovar aptidão com resultado inapto
     Dado uma integralização com resultado inapto
     Quando o coordenador tenta aprovar a aptidão para colação de grau
-    Então o sistema rejeita a aprovação por resultado não apto
+    Então o sistema deve rejeitar informando "resultado da análise de integralização é inapto"

@@ -1,4 +1,5 @@
-#language: pt
+# language: pt
+
 Funcionalidade: Candidatar-se a uma oportunidade de estágio
 
   Cenário: Estudante se candidata a oportunidade aberta com sucesso
@@ -9,9 +10,9 @@ Funcionalidade: Candidatar-se a uma oportunidade de estágio
   Cenário: Candidatura rejeitada quando oportunidade não está aberta
     Dado uma oportunidade de estágio já encaminhada
     Quando o estudante de id 20 tenta se candidatar à oportunidade encaminhada
-    Então o sistema rejeita a candidatura com mensagem sobre RN-1
+    Então o sistema deve rejeitar informando "oportunidade não está disponível para candidaturas"
 
   Cenário: Candidatura rejeitada quando oportunidade já possui candidato
     Dado uma oportunidade de estágio aberta com candidato de id 20
     Quando o estudante de id 99 tenta se candidatar à oportunidade com candidato
-    Então o sistema rejeita a candidatura com mensagem sobre RN-2
+    Então o sistema deve rejeitar informando "oportunidade já possui um candidato"

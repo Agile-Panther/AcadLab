@@ -1,4 +1,5 @@
-#language: pt
+# language: pt
+
 Funcionalidade: Analisar integralização curricular e registrar resultado
 
   Cenário: Secretaria analisa integralização com todos os requisitos cumpridos e registra resultado apto

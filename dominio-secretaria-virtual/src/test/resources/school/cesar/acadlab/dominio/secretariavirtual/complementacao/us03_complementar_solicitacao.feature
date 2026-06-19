@@ -1,4 +1,5 @@
-#language: pt
+# language: pt
+
 Funcionalidade: Complementar solicitação com pendências
 
   Cenário: Estudante complementa solicitação pendente de complementação
@@ -9,9 +10,9 @@ Funcionalidade: Complementar solicitação com pendências
   Cenário: Estudante tenta complementar solicitação concluída
     Dado uma solicitação com status "CONCLUIDA"
     Quando o estudante tenta complementar a solicitação
-    Então o sistema rejeita a complementação
+    Então o sistema deve rejeitar informando "solicitação concluída não pode ser complementada"
 
   Cenário: Estudante tenta complementar solicitação indeferida
     Dado uma solicitação com status "INDEFERIDA"
     Quando o estudante tenta complementar a solicitação
-    Então o sistema rejeita a complementação
+    Então o sistema deve rejeitar informando "solicitação indeferida não pode ser complementada"

@@ -1,4 +1,5 @@
-#language: pt
+# language: pt
+
 Funcionalidade: Cancelar Pagamento de Cobrança
 
   Cenário: Cancelar pagamento confirmado e reativar cobrança
@@ -10,4 +11,4 @@ Funcionalidade: Cancelar Pagamento de Cobrança
   Cenário: Rejeitar cancelamento de pagamento já cancelado
     Dado uma cobrança com pagamento já cancelado no contrato 41
     Quando o operador tenta cancelar o pagamento já cancelado
-    Então deve ser lançada uma exceção de pagamento não cancelável
+    Então o sistema deve rejeitar informando "pagamento já cancelado não pode ser cancelado novamente"
