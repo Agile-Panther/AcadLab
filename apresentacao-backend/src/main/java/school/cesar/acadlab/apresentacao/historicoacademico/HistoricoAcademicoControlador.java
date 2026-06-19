@@ -53,6 +53,20 @@ class HistoricoAcademicoControlador {
                         "Histórico não encontrado para estudante: " + estudanteId));
     }
 
+    @RequestMapping(method = GET, path = "estudante/{estudanteId}/oficial")
+    java.util.List<RegistroOficialResponse> buscarHistoricoOficial(@PathVariable int estudanteId) {
+        return consultaServico.obterHistoricoOficial(new EstudanteId(estudanteId))
+                .stream()
+                .map(r -> new RegistroOficialResponse(
+                        r.getId().getId(),
+                        r.getDisciplinaId().getId(),
+                        r.getTurmaId().getId(),
+                        r.getPeriodoLetivoId().getId(),
+                        r.getNota(), r.getFrequencia(),
+                        r.getSituacao().name()))
+                .toList();
+    }
+
     @RequestMapping(method = POST)
     void criarHistorico(@RequestBody CriarHistoricoRequest req) {
         servico.criarHistorico(new EstudanteId(req.estudanteId()),
@@ -131,4 +145,7 @@ class HistoricoAcademicoControlador {
 
     record RetificarRegistroRequest(String novaSituacao, int responsavelId,
                                     String justificativa, LocalDate data) {}
+
+    record RegistroOficialResponse(int id, int disciplinaId, int turmaId, int periodoLetivoId,
+                                   double nota, double frequencia, String situacao) {}
 }
