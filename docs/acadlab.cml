@@ -79,7 +79,7 @@ BoundedContext CurriculoContext implements AcademicoSubdomain {
 /* OFERTA ACADÊMICA CONTEXT — F-02 (Claudia) + F-03 (Clara) */
 
 BoundedContext OfertaAcademicaContext implements AcademicoSubdomain {
-    domainVisionStatement "Planejamento do período letivo com janelas acadêmicas (Neto) e oferta de turmas com professor, sala e horário (Clara)"
+    domainVisionStatement "Planejamento do período letivo com janelas acadêmicas (Claudia) e oferta de turmas com professor, sala e horário (Clara)"
     type FEATURE
 
     Aggregate PeriodoLetivo {
