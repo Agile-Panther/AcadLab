@@ -6,6 +6,11 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
 
 import school.cesar.acadlab.aplicacao.apoiopsicopedagogico.ApoioPsicopedagogicoRepositorioAplicacao;
+import school.cesar.acadlab.aplicacao.historicoacademico.HistoricoAcademicoRepositorioAplicacao;
+import school.cesar.acadlab.aplicacao.historicoacademico.HistoricoAcademicoServicoAplicacao;
+import school.cesar.acadlab.dominio.historicoacademico.ConsultaHistoricoServico;
+import school.cesar.acadlab.dominio.historicoacademico.HistoricoAcademicoServico;
+import school.cesar.acadlab.dominio.historicoacademico.historico.HistoricoAcademicoRepositorio;
 import school.cesar.acadlab.aplicacao.apoiopsicopedagogico.ApoioPsicopedagogicoServicoAplicacao;
 import school.cesar.acadlab.aplicacao.atividadescomplementares.AtividadeComplementarRepositorioAplicacao;
 import school.cesar.acadlab.aplicacao.atividadescomplementares.AtividadeComplementarServicoAplicacao;
@@ -286,6 +291,24 @@ public class BackendAplicacao {
     ApoioPsicopedagogicoServicoAplicacao apoioPsicopedagogicoServicoAplicacao(
             ApoioPsicopedagogicoRepositorioAplicacao repositorio) {
         return new ApoioPsicopedagogicoServicoAplicacao(repositorio);
+    }
+
+    /* ===== Histórico Acadêmico ===== */
+
+    @Bean
+    HistoricoAcademicoServico historicoAcademicoServico(HistoricoAcademicoRepositorio repositorio) {
+        return new HistoricoAcademicoServico(repositorio);
+    }
+
+    @Bean
+    ConsultaHistoricoServico consultaHistoricoServico(HistoricoAcademicoRepositorio repositorio) {
+        return new ConsultaHistoricoServico(repositorio);
+    }
+
+    @Bean
+    HistoricoAcademicoServicoAplicacao historicoAcademicoServicoAplicacao(
+            HistoricoAcademicoRepositorioAplicacao repositorio) {
+        return new HistoricoAcademicoServicoAplicacao(repositorio);
     }
 
     public static void main(String[] args) {
