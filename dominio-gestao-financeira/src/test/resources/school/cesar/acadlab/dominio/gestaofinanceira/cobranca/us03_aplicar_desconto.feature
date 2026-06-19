@@ -1,12 +1,13 @@
-Feature: Aplicar Desconto em Cobrança
+#language: pt
+Funcionalidade: Aplicar Desconto em Cobrança
 
-  Scenario: Aplicar desconto com autorização válida
-    Given uma cobrança aberta de 1500.00 para o estudante 10
-    And a autorização "AUTH-VALID-001" é válida
-    When aplico um desconto de 10 por cento com autorização "AUTH-VALID-001"
-    Then o valor atual da cobrança deve ser 1350.00
+  Cenário: Aplicar desconto com autorização válida
+    Dado uma cobrança aberta de 1500.00 para o estudante 10
+    E a autorização "AUTH-VALID-001" é válida
+    Quando aplico um desconto de 10 por cento com autorização "AUTH-VALID-001"
+    Então o valor atual da cobrança deve ser 1350.00
 
-  Scenario: Rejeitar desconto com autorização inválida
-    Given uma cobrança aberta de 1500.00 para o estudante 11
-    When tento aplicar um desconto de 10 por cento com autorização "AUTH-INVALIDA"
-    Then deve ser lançada uma exceção de autorização inválida
+  Cenário: Rejeitar desconto com autorização inválida
+    Dado uma cobrança aberta de 1500.00 para o estudante 11
+    Quando tento aplicar um desconto de 10 por cento com autorização "AUTH-INVALIDA"
+    Então deve ser lançada uma exceção de autorização inválida

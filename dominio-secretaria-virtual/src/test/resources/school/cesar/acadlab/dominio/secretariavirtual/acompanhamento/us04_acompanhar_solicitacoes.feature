@@ -1,11 +1,12 @@
-Feature: Acompanhar status das solicitações
+#language: pt
+Funcionalidade: Acompanhar status das solicitações
 
-  Scenario: Estudante consulta suas solicitações acadêmicas
-    Given um estudante com solicitações cadastradas
-    When o estudante consulta suas solicitações
-    Then o sistema retorna a lista de solicitações do estudante
+  Cenário: Estudante consulta suas solicitações acadêmicas
+    Dado um estudante com solicitações cadastradas
+    Quando o estudante consulta suas solicitações
+    Então o sistema retorna a lista de solicitações do estudante
 
-  Scenario: Estudante sem solicitações consulta suas solicitações
-    Given um estudante sem solicitações cadastradas
-    When o estudante consulta suas solicitações
-    Then o sistema retorna uma lista vazia
+  Cenário: Estudante sem solicitações consulta suas solicitações
+    Dado um estudante sem solicitações cadastradas
+    Quando o estudante consulta suas solicitações
+    Então o sistema retorna uma lista vazia

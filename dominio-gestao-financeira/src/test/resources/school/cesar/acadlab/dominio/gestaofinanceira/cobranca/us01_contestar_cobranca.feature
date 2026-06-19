@@ -1,17 +1,18 @@
-Feature: Contestar Cobrança
+#language: pt
+Funcionalidade: Contestar Cobrança
 
-  Scenario: Estudante contesta sua própria cobrança
-    Given uma cobrança aberta para o estudante 1 no contrato 1
-    When o estudante 1 contesta a cobrança com justificativa "Valor diverge do contrato"
-    Then a cobrança deve ter status CONTESTADA
+  Cenário: Estudante contesta sua própria cobrança
+    Dado uma cobrança aberta para o estudante 1 no contrato 1
+    Quando o estudante 1 contesta a cobrança com justificativa "Valor diverge do contrato"
+    Então a cobrança deve ter status CONTESTADA
 
-  Scenario: Rejeitar contestação de cobrança de outro estudante
-    Given uma cobrança aberta para o estudante 1 no contrato 1
-    When o estudante 2 tenta contestar a cobrança do estudante 1
-    Then deve ser lançada uma exceção de contestação indevida
+  Cenário: Rejeitar contestação de cobrança de outro estudante
+    Dado uma cobrança aberta para o estudante 1 no contrato 1
+    Quando o estudante 2 tenta contestar a cobrança do estudante 1
+    Então deve ser lançada uma exceção de contestação indevida
 
-  Scenario: Rejeitar segunda contestação pendente
-    Given uma cobrança aberta para o estudante 1 no contrato 1
-    And o estudante 1 já contestou a cobrança anteriormente
-    When o estudante 1 tenta contestar a cobrança novamente
-    Then deve ser lançada uma exceção de contestação duplicada
+  Cenário: Rejeitar segunda contestação pendente
+    Dado uma cobrança aberta para o estudante 1 no contrato 1
+    E o estudante 1 já contestou a cobrança anteriormente
+    Quando o estudante 1 tenta contestar a cobrança novamente
+    Então deve ser lançada uma exceção de contestação duplicada
