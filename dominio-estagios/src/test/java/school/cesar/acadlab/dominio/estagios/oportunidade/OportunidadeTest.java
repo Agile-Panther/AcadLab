@@ -8,90 +8,82 @@ class OportunidadeTest {
 
     private OportunidadeId id;
     private EmpresaId empresaId;
-    private EstudanteId estudanteId;
-    private CoordenadorId coordenadorId;
+    private SetorEstagiosId setorId;
 
     @BeforeEach
     void setUp() {
         id = new OportunidadeId(1);
         empresaId = new EmpresaId(10);
-        estudanteId = new EstudanteId(20);
-        coordenadorId = new CoordenadorId(30);
+        setorId = new SetorEstagiosId(1);
     }
 
     @Test
-    void deveCriarOportunidadeAberta() {
+    void deveCriarOportunidadeCadastrada() {
         var oportunidade = new Oportunidade(id, empresaId, "Estágio em TI", 480);
-        assertEquals(StatusOportunidade.ABERTA, oportunidade.getStatus());
-        assertNull(oportunidade.getCandidato());
+        assertEquals(StatusOportunidade.CADASTRADA, oportunidade.getStatus());
     }
 
     @Test
-    void deveCandidatarEstudante() {
+    void devePublicarOportunidade() {
         var oportunidade = new Oportunidade(id, empresaId, "Estágio em TI", 480);
-        oportunidade.candidatar(estudanteId);
-        assertEquals(estudanteId, oportunidade.getCandidato());
+        oportunidade.publicar(setorId);
+        assertEquals(StatusOportunidade.PUBLICADA, oportunidade.getStatus());
     }
 
     @Test
-    void deveRejeitarCandidaturaEmOportunidadeNaoAberta() {
+    void deveRejeitarPublicacaoDeOportunidadeJaPublicada() {
         var oportunidade = new Oportunidade(id, empresaId, "Estágio em TI", 480);
-        oportunidade.candidatar(estudanteId);
-        oportunidade.encaminhar(coordenadorId);
-        var ex = assertThrows(IllegalStateException.class,
-                () -> oportunidade.candidatar(new EstudanteId(99)));
-        assertTrue(ex.getMessage().contains("RN-1"));
+        oportunidade.publicar(setorId);
+        var ex = assertThrows(IllegalStateException.class, () -> oportunidade.publicar(setorId));
+        assertTrue(ex.getMessage().contains("publicação só pode ser realizada em oportunidades cadastradas"));
     }
 
     @Test
-    void deveRejeitarSegundaCandidatura() {
+    void deveEncerrarOportunidadePublicada() {
         var oportunidade = new Oportunidade(id, empresaId, "Estágio em TI", 480);
-        oportunidade.candidatar(estudanteId);
-        var ex = assertThrows(IllegalStateException.class,
-                () -> oportunidade.candidatar(new EstudanteId(99)));
-        assertTrue(ex.getMessage().contains("RN-2"));
+        oportunidade.publicar(setorId);
+        oportunidade.encerrar(MotivoEncerramento.VAGAS_PREENCHIDAS);
+        assertEquals(StatusOportunidade.ENCERRADA, oportunidade.getStatus());
     }
 
     @Test
-    void deveEncaminharComCandidato() {
-        var oportunidade = new Oportunidade(id, empresaId, "Estágio em TI", 480);
-        oportunidade.candidatar(estudanteId);
-        oportunidade.encaminhar(coordenadorId);
-        assertEquals(StatusOportunidade.ENCAMINHADA, oportunidade.getStatus());
-    }
-
-    @Test
-    void deveRejeitarEncaminhamentoSemCandidato() {
+    void deveRejeitarEncerrarOportunidadeNaoPublicada() {
         var oportunidade = new Oportunidade(id, empresaId, "Estágio em TI", 480);
         var ex = assertThrows(IllegalStateException.class,
-                () -> oportunidade.encaminhar(coordenadorId));
-        assertTrue(ex.getMessage().contains("RN-4"));
+                () -> oportunidade.encerrar(MotivoEncerramento.DECISAO_ADMINISTRATIVA));
+        assertTrue(ex.getMessage().contains("somente oportunidades publicadas podem ser encerradas"));
     }
 
     @Test
-    void deveConfirmarCandidatura() {
+    void deveRejeitarCandidaturaEmOportunidadeNaoPublicada() {
         var oportunidade = new Oportunidade(id, empresaId, "Estágio em TI", 480);
-        oportunidade.candidatar(estudanteId);
-        oportunidade.encaminhar(coordenadorId);
-        oportunidade.confirmar(empresaId);
-        assertEquals(StatusOportunidade.CONFIRMADA, oportunidade.getStatus());
-    }
-
-    @Test
-    void deveRecusarCandidatura() {
-        var oportunidade = new Oportunidade(id, empresaId, "Estágio em TI", 480);
-        oportunidade.candidatar(estudanteId);
-        oportunidade.encaminhar(coordenadorId);
-        oportunidade.recusar(empresaId);
-        assertEquals(StatusOportunidade.RECUSADA, oportunidade.getStatus());
-    }
-
-    @Test
-    void deveRejeitarConfirmarSemEncaminhar() {
-        var oportunidade = new Oportunidade(id, empresaId, "Estágio em TI", 480);
-        oportunidade.candidatar(estudanteId);
         var ex = assertThrows(IllegalStateException.class,
-                () -> oportunidade.confirmar(empresaId));
-        assertTrue(ex.getMessage().contains("RN-5"));
+                () -> oportunidade.validarCandidatura(new EstudanteId(20)));
+        assertTrue(ex.getMessage().contains("oportunidade não está disponível para candidaturas"));
+    }
+
+    @Test
+    void devePermitirCandidaturaEmOportunidadePublicada() {
+        var oportunidade = new Oportunidade(id, empresaId, "Estágio em TI", 480);
+        oportunidade.publicar(setorId);
+        assertDoesNotThrow(() -> oportunidade.validarCandidatura(new EstudanteId(20)));
+    }
+
+    @Test
+    void deveDefinirCriteriosAntesDePublicar() {
+        var oportunidade = new Oportunidade(id, empresaId, "Estágio em TI", 480);
+        var criterio = new CriterioElegibilidade("Sistemas de Informação", 4, true);
+        oportunidade.definirCriterios(setorId, criterio);
+        assertNotNull(oportunidade.getCriterioElegibilidade());
+    }
+
+    @Test
+    void deveRejeitarAlteracaoDeCriteriosAposPublicacao() {
+        var oportunidade = new Oportunidade(id, empresaId, "Estágio em TI", 480);
+        oportunidade.publicar(setorId);
+        var criterio = new CriterioElegibilidade("Sistemas de Informação", 4, true);
+        var ex = assertThrows(IllegalStateException.class,
+                () -> oportunidade.definirCriterios(setorId, criterio));
+        assertTrue(ex.getMessage().contains("critérios não podem ser alterados após a publicação"));
     }
 }

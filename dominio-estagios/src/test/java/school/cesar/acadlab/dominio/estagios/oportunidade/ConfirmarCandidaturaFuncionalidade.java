@@ -1,70 +1,69 @@
 package school.cesar.acadlab.dominio.estagios.oportunidade;
 
 import static org.junit.jupiter.api.Assertions.*;
-import io.cucumber.java.en.Given;
-import io.cucumber.java.en.Then;
-import io.cucumber.java.en.When;
+import io.cucumber.java.pt.Dado;
+import io.cucumber.java.pt.Então;
+import io.cucumber.java.pt.Quando;
+import java.time.LocalDate;
 import school.cesar.acadlab.dominio.estagios.EstagiosFuncionalidade;
+import school.cesar.acadlab.dominio.estagios.candidatura.StatusCandidatura;
 import school.cesar.acadlab.dominio.estagios.estagio.StatusEstagio;
 
-public class ConfirmarCandidaturaFuncionalidade extends EstagiosFuncionalidade {
+public class ConfirmarCandidaturaFuncionalidade {
 
+    private final EstagiosFuncionalidade ctx;
     private OportunidadeId oportunidadeId;
+    private final SetorEstagiosId setorId = new SetorEstagiosId(1);
 
-    @Given("uma oportunidade encaminhada com candidato de id {int}")
-    public void uma_oportunidade_encaminhada_com_candidato(int estudanteId) {
-        oportunidadeId = servico.cadastrarOportunidade(new EmpresaId(10), "Estágio em TI", 480);
-        servico.candidatar(oportunidadeId, new EstudanteId(estudanteId));
-        servico.encaminhar(oportunidadeId, new CoordenadorId(30));
+    public ConfirmarCandidaturaFuncionalidade(EstagiosFuncionalidade ctx) {
+        this.ctx = ctx;
     }
 
-    @When("a empresa de id {int} confirma a candidatura")
-    public void a_empresa_confirma(int empresaId) {
-        estagioId = servico.confirmar(oportunidadeId, new EmpresaId(empresaId));
+    @Dado("uma candidatura em análise para o estudante de id {int}")
+    public void uma_candidatura_em_analise(int estudanteId) {
+        oportunidadeId = ctx.servico.cadastrarOportunidade(new EmpresaId(10), "Estágio em TI", 480);
+        ctx.servico.publicarOportunidade(oportunidadeId, setorId);
+        ctx.candidaturaId = ctx.servico.registrarCandidatura(oportunidadeId, new EstudanteId(estudanteId),
+                LocalDate.now());
     }
 
-    @Then("o estágio é criado com status EM_ANDAMENTO")
+    @Quando("o setor de estágios defere a candidatura")
+    public void o_setor_defere_a_candidatura() {
+        ctx.servico.deferir(ctx.candidaturaId);
+    }
+
+    @Quando("a empresa confirma a candidatura deferida")
+    public void a_empresa_confirma_candidatura_deferida() {
+        ctx.estagioId = ctx.servico.encaminharEConfirmar(ctx.candidaturaId, new EmpresaId(10));
+    }
+
+    @Então("o estágio é criado com status EM_ANDAMENTO")
     public void o_estagio_e_criado_em_andamento() {
-        var estagio = estagioRepositorio.buscarPorId(estagioId).orElseThrow();
+        var estagio = ctx.estagioRepositorio.buscarPorId(ctx.estagioId).orElseThrow();
         assertEquals(StatusEstagio.EM_ANDAMENTO, estagio.getStatus());
     }
 
-    @Then("o estágio possui o estudante de id {int}")
-    public void o_estagio_possui_estudante(int estudanteId) {
-        var estagio = estagioRepositorio.buscarPorId(estagioId).orElseThrow();
-        assertEquals(new EstudanteId(estudanteId), estagio.getEstudanteId());
-    }
-
-    @When("a empresa de id {int} recusa a candidatura")
-    public void a_empresa_recusa(int empresaId) {
-        servico.recusar(oportunidadeId, new EmpresaId(empresaId));
-    }
-
-    @Then("a oportunidade fica com status RECUSADA")
-    public void a_oportunidade_fica_recusada() {
-        var oportunidade = oportunidadeRepositorio.buscarPorId(oportunidadeId).orElseThrow();
-        assertEquals(StatusOportunidade.RECUSADA, oportunidade.getStatus());
-    }
-
-    @Given("uma oportunidade aberta com candidato de id {int}")
-    public void uma_oportunidade_aberta_com_candidato_bdd(int estudanteId) {
-        oportunidadeId = servico.cadastrarOportunidade(new EmpresaId(10), "Estágio em TI", 480);
-        servico.candidatar(oportunidadeId, new EstudanteId(estudanteId));
-    }
-
-    @When("a empresa tenta confirmar sem encaminhamento")
-    public void a_empresa_tenta_confirmar_sem_encaminhamento() {
+    @Quando("a empresa tenta confirmar candidatura não deferida")
+    public void a_empresa_tenta_confirmar_nao_deferida() {
         try {
-            servico.confirmar(oportunidadeId, new EmpresaId(10));
+            ctx.servico.encaminharEConfirmar(ctx.candidaturaId, new EmpresaId(10));
         } catch (RuntimeException e) {
-            excecao = e;
+            ctx.excecao = e;
         }
     }
 
-    @Then("o sistema rejeita a confirmação com mensagem sobre RN-5")
-    public void sistema_rejeita_confirmacao_rn5() {
-        assertNotNull(excecao);
-        assertInstanceOf(IllegalStateException.class, excecao);
-        assertTrue(excecao.getMessage().contains("RN-5"));
+    @Dado("uma candidatura deferida para o estudante de id {int}")
+    public void uma_candidatura_deferida(int estudanteId) {
+        oportunidadeId = ctx.servico.cadastrarOportunidade(new EmpresaId(10), "Estágio em TI", 480);
+        ctx.servico.publicarOportunidade(oportunidadeId, setorId);
+        ctx.candidaturaId = ctx.servico.registrarCandidatura(oportunidadeId, new EstudanteId(estudanteId),
+                LocalDate.now());
+        ctx.servico.deferir(ctx.candidaturaId);
+    }
+
+    @Então("a candidatura possui status DEFERIDA")
+    public void a_candidatura_possui_status_deferida() {
+        var candidatura = ctx.candidaturaRepositorio.buscarPorId(ctx.candidaturaId).orElseThrow();
+        assertEquals(StatusCandidatura.DEFERIDA, candidatura.getStatus());
     }
 }
