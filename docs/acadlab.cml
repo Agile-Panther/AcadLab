@@ -22,9 +22,7 @@ Domain AcadLabDomain {
     }
 }
 
-/* ─────────────────────────────────────────────
-   SHARED KERNEL
-   ───────────────────────────────────────────── */
+/* SHARED KERNEL */
 
 BoundedContext CompartilhadoContext implements CompartilhadoSubdomain {
     domainVisionStatement "Value objects de identidade e contratos de evento usados por todos os bounded contexts"
@@ -40,9 +38,7 @@ BoundedContext CompartilhadoContext implements CompartilhadoSubdomain {
     }
 }
 
-/* ─────────────────────────────────────────────
-   CURRÍCULO CONTEXT — F-01 (Julia) · Iterator
-   ───────────────────────────────────────────── */
+/* CURRÍCULO CONTEXT — F-01 (Julia) · Iterator */
 
 BoundedContext CurriculoContext implements AcademicoSubdomain {
     domainVisionStatement "Define a estrutura formal do curso: disciplinas, cargas horárias, pré-requisitos, correquisitos e ciclo de vida da matriz curricular"
@@ -80,9 +76,7 @@ BoundedContext CurriculoContext implements AcademicoSubdomain {
     }
 }
 
-/* ─────────────────────────────────────────────
-   OFERTA ACADÊMICA CONTEXT — F-02 (Neto) + F-03 (Clara)
-   ───────────────────────────────────────────── */
+/* OFERTA ACADÊMICA CONTEXT — F-02 (Claudia) + F-03 (Clara) */
 
 BoundedContext OfertaAcademicaContext implements AcademicoSubdomain {
     domainVisionStatement "Planejamento do período letivo com janelas acadêmicas (Neto) e oferta de turmas com professor, sala e horário (Clara)"
@@ -146,9 +140,7 @@ BoundedContext OfertaAcademicaContext implements AcademicoSubdomain {
     }
 }
 
-/* ─────────────────────────────────────────────
-   MATRÍCULA CONTEXT — F-04 (Vinicius) · Strategy
-   ───────────────────────────────────────────── */
+/* MATRÍCULA CONTEXT — F-04 (Vinicius) · Strategy */
 
 BoundedContext MatriculaContext implements AcademicoSubdomain {
     domainVisionStatement "Montagem do plano de matrícula do estudante, confirmação, ajustes e trancamento de disciplinas com validação de elegibilidade por estratégia"
@@ -181,9 +173,7 @@ BoundedContext MatriculaContext implements AcademicoSubdomain {
     }
 }
 
-/* ─────────────────────────────────────────────
-   GESTÃO PEDAGÓGICA CONTEXT — F-05 (Neto) · Template Method
-   ───────────────────────────────────────────── */
+/* GESTÃO PEDAGÓGICA CONTEXT — F-05 (Claudia) · Template Method */
 
 BoundedContext GestaoPedagogicaContext implements AcademicoSubdomain {
     domainVisionStatement "Gestão pedagógica da turma pelo professor: registro de aulas, frequência, avaliações, notas e resultado final do estudante"
@@ -225,9 +215,7 @@ BoundedContext GestaoPedagogicaContext implements AcademicoSubdomain {
     }
 }
 
-/* ─────────────────────────────────────────────
-   HISTÓRICO ACADÊMICO CONTEXT — F-06 (Julia) · Iterator
-   ───────────────────────────────────────────── */
+/* HISTÓRICO ACADÊMICO CONTEXT — F-06 (Julia) · Iterator */
 
 BoundedContext HistoricoAcademicoContext implements AcademicoSubdomain {
     domainVisionStatement "Fonte de verdade da trajetória acadêmica do estudante: consolidação de resultados, aproveitamentos, retificações e acompanhamentos"
@@ -292,9 +280,7 @@ BoundedContext HistoricoAcademicoContext implements AcademicoSubdomain {
     }
 }
 
-/* ─────────────────────────────────────────────
-   SECRETARIA VIRTUAL CONTEXT — F-07 (Bernardo) · Proxy
-   ───────────────────────────────────────────── */
+/* SECRETARIA VIRTUAL CONTEXT — F-07 (Bernardo) · Proxy */
 
 BoundedContext SecretariaVirtualContext implements ServicosAcademicosSubdomain {
     domainVisionStatement "Protocolo e tramitação de solicitações acadêmicas formais: abertura, análise, complementação, deferimento e indeferimento"
@@ -329,9 +315,7 @@ BoundedContext SecretariaVirtualContext implements ServicosAcademicosSubdomain {
     }
 }
 
-/* ─────────────────────────────────────────────
-   INTEGRALIZAÇÃO CURRICULAR CONTEXT — F-08 (Bernardo) · Proxy
-   ───────────────────────────────────────────── */
+/* INTEGRALIZAÇÃO CURRICULAR CONTEXT — F-08 (Bernardo) · Proxy */
 
 BoundedContext IntegralizacaoContext implements ServicosAcademicosSubdomain {
     domainVisionStatement "Verificação do cumprimento de todos os requisitos curriculares para conclusão do curso e registro formal da colação de grau"
@@ -371,9 +355,7 @@ BoundedContext IntegralizacaoContext implements ServicosAcademicosSubdomain {
     }
 }
 
-/* ─────────────────────────────────────────────
-   ATIVIDADES COMPLEMENTARES CONTEXT — F-09 (Jera) · Observer
-   ───────────────────────────────────────────── */
+/* ATIVIDADES COMPLEMENTARES CONTEXT — F-09 (Jera) · Observer */
 
 BoundedContext AtividadesComplementaresContext implements ServicosAcademicosSubdomain {
     domainVisionStatement "Submissão e análise de atividades complementares para integralização da carga horária extracurricular"
@@ -404,9 +386,7 @@ BoundedContext AtividadesComplementaresContext implements ServicosAcademicosSubd
     }
 }
 
-/* ─────────────────────────────────────────────
-   PERMANÊNCIA ACADÊMICA CONTEXT — F-10 (Matheus) · Observer
-   ───────────────────────────────────────────── */
+/* PERMANÊNCIA ACADÊMICA CONTEXT — F-10 (Matheus) · Observer */
 
 BoundedContext PermanenciaAcademicaContext implements PermanenciaSubdomain {
     domainVisionStatement "Programas de permanência estudantil: publicação de editais, inscrições, análise e gestão de benefícios com notificação automática via Observer"
@@ -467,9 +447,7 @@ BoundedContext PermanenciaAcademicaContext implements PermanenciaSubdomain {
     }
 }
 
-/* ─────────────────────────────────────────────
-   APOIO PSICOPEDAGÓGICO CONTEXT — F-11 (Matheus) · Observer
-   ───────────────────────────────────────────── */
+/* APOIO PSICOPEDAGÓGICO CONTEXT — F-11 (Matheus) · Observer */
 
 BoundedContext ApoioPsicopedagogicoContext implements PermanenciaSubdomain {
     domainVisionStatement "Acompanhamento psicopedagógico individual com sigilo de atendimento: solicitação, triagem, sessões e encerramento de caso"
@@ -517,9 +495,7 @@ BoundedContext ApoioPsicopedagogicoContext implements PermanenciaSubdomain {
     }
 }
 
-/* ─────────────────────────────────────────────
-   MOBILIDADE ACADÊMICA CONTEXT — F-12 (Vinicius) · Strategy
-   ───────────────────────────────────────────── */
+/* MOBILIDADE ACADÊMICA CONTEXT — F-12 (Vinicius) · Strategy */
 
 BoundedContext MobilidadeAcademicaContext implements ServicosAcademicosSubdomain {
     domainVisionStatement "Programa de mobilidade internacional ou nacional do estudante: solicitação, plano de estudos com equivalências e registro de resultados externos"
@@ -555,9 +531,7 @@ BoundedContext MobilidadeAcademicaContext implements ServicosAcademicosSubdomain
     }
 }
 
-/* ─────────────────────────────────────────────
-   GESTÃO FINANCEIRA CONTEXT — F-13 (Jera) · Observer
-   ───────────────────────────────────────────── */
+/* GESTÃO FINANCEIRA CONTEXT — F-13 (Jera) · Observer */
 
 BoundedContext GestaoFinanceiraContext implements FinanceiroSubdomain {
     domainVisionStatement "Cobranças acadêmicas do estudante: geração, pagamento, descontos, contestação e comprovantes"
@@ -603,9 +577,7 @@ BoundedContext GestaoFinanceiraContext implements FinanceiroSubdomain {
     }
 }
 
-/* ─────────────────────────────────────────────
-   ESTÁGIOS CONTEXT — F-14 (Clara) · Decorator
-   ───────────────────────────────────────────── */
+/* ESTÁGIOS CONTEXT — F-14 (Clara) · Decorator */
 
 BoundedContext EstagiosContext implements ServicosAcademicosSubdomain {
     domainVisionStatement "Centro de estágios e oportunidades: publicação de vagas por empresas parceiras, candidatura, formalização do estágio e relatórios"
@@ -654,9 +626,7 @@ BoundedContext EstagiosContext implements ServicosAcademicosSubdomain {
     }
 }
 
-/* ─────────────────────────────────────────────
-   CONTEXT MAP
-   ───────────────────────────────────────────── */
+/* CONTEXT MAP */
 
 ContextMap AcadLab {
     contains CompartilhadoContext
