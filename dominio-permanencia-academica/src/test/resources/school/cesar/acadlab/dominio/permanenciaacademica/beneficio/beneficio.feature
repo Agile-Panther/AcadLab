@@ -1,23 +1,24 @@
-Feature: Gerenciar benefício de permanência acadêmica
+#language: pt
+Funcionalidade: Gerenciar benefício de permanência acadêmica
 
-  Scenario: Estudante solicita renovação dentro do prazo
-    Given um estudante possui um benefício ativo com prazo de renovação futuro
-    When o estudante solicita a renovação do benefício
-    Then o sistema registra a solicitação de renovação
+  Cenário: Estudante solicita renovação dentro do prazo
+    Dado um estudante possui um benefício ativo com prazo de renovação futuro
+    Quando o estudante solicita a renovação do benefício
+    Então o sistema registra a solicitação de renovação
 
-  Scenario: Renovação falha quando fora do prazo
-    Given um estudante possui um benefício ativo com prazo de renovação já vencido
-    When o estudante tenta solicitar a renovação do benefício
-    Then o sistema informa que o prazo de renovação já encerrou
+  Cenário: Renovação falha quando fora do prazo
+    Dado um estudante possui um benefício ativo com prazo de renovação já vencido
+    Quando o estudante tenta solicitar a renovação do benefício
+    Então o sistema informa que o prazo de renovação já encerrou
 
-  Scenario: Benefício suspenso por não cumprimento dos critérios mínimos
-    Given um estudante possui um benefício ativo
-    When o sistema suspende o benefício por não cumprimento dos critérios
-    Then o status do benefício é atualizado para suspenso
-    And um evento de suspensão é publicado no barramento
+  Cenário: Benefício suspenso por não cumprimento dos critérios mínimos
+    Dado um estudante possui um benefício ativo
+    Quando o sistema suspende o benefício por não cumprimento dos critérios
+    Então o status do benefício é atualizado para suspenso
+    E um evento de suspensão é publicado no barramento
 
-  Scenario: Benefício cancelado por não cumprimento dos critérios mínimos
-    Given um estudante possui um benefício ativo
-    When o sistema cancela o benefício por não cumprimento dos critérios
-    Then o status do benefício é atualizado para cancelado
-    And um evento de cancelamento é publicado no barramento
+  Cenário: Benefício cancelado por não cumprimento dos critérios mínimos
+    Dado um estudante possui um benefício ativo
+    Quando o sistema cancela o benefício por não cumprimento dos critérios
+    Então o status do benefício é atualizado para cancelado
+    E um evento de cancelamento é publicado no barramento

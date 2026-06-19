@@ -1,17 +1,18 @@
-Feature: Analisar integralização curricular e registrar resultado
+#language: pt
+Funcionalidade: Analisar integralização curricular e registrar resultado
 
-  Scenario: Secretaria analisa integralização com todos os requisitos cumpridos e registra resultado apto
-    Given uma solicitação de análise de integralização iniciada
-    When a secretaria gera o checklist com todos os requisitos cumpridos
-    Then a integralização é registrada com resultado apto
+  Cenário: Secretaria analisa integralização com todos os requisitos cumpridos e registra resultado apto
+    Dado uma solicitação de análise de integralização iniciada
+    Quando a secretaria gera o checklist com todos os requisitos cumpridos
+    Então a integralização é registrada com resultado apto
 
-  Scenario: Secretaria analisa integralização com pendências e registra resultado inapto
-    Given uma solicitação de análise de integralização iniciada
-    When a secretaria gera o checklist com pendências e registra resultado inapto
-    Then a integralização é registrada com resultado inapto
+  Cenário: Secretaria analisa integralização com pendências e registra resultado inapto
+    Dado uma solicitação de análise de integralização iniciada
+    Quando a secretaria gera o checklist com pendências e registra resultado inapto
+    Então a integralização é registrada com resultado inapto
 
-  Scenario: Coordenador aprova aptidão do estudante com resultado apto
-    Given uma solicitação de análise de integralização iniciada
-    When a secretaria gera o checklist com todos os requisitos cumpridos
-    And o coordenador aprova a aptidão do estudante
-    Then a aptidão do estudante é formalmente aprovada
+  Cenário: Coordenador aprova aptidão do estudante com resultado apto
+    Dado uma solicitação de análise de integralização iniciada
+    Quando a secretaria gera o checklist com todos os requisitos cumpridos
+    E o coordenador aprova a aptidão do estudante
+    Então a aptidão do estudante é formalmente aprovada

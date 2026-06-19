@@ -1,35 +1,36 @@
-Feature: Abrir e submeter solicitação acadêmica
+#language: pt
+Funcionalidade: Abrir e submeter solicitação acadêmica
 
-  Scenario: Estudante abre solicitação dentro do prazo com documentos obrigatórios
-    Given um estudante sem solicitação aberta do tipo "APROVEITAMENTO_DISCIPLINA"
-    And os documentos obrigatórios estão anexados
-    And o prazo do calendário acadêmico está vigente
-    When o estudante abre a solicitação acadêmica
-    Then o sistema registra a solicitação com sucesso
-    And a solicitação é criada com status "PENDENTE_ANALISE"
-    And um protocolo é gerado para a solicitação
+  Cenário: Estudante abre solicitação dentro do prazo com documentos obrigatórios
+    Dado um estudante sem solicitação aberta do tipo "APROVEITAMENTO_DISCIPLINA"
+    E os documentos obrigatórios estão anexados
+    E o prazo do calendário acadêmico está vigente
+    Quando o estudante abre a solicitação acadêmica
+    Então o sistema registra a solicitação com sucesso
+    E a solicitação é criada com status "PENDENTE_ANALISE"
+    E um protocolo é gerado para a solicitação
 
-  Scenario: Estudante tenta abrir solicitação fora do prazo do calendário
-    Given um estudante sem solicitação aberta do tipo "TRANCAMENTO_DISCIPLINA"
-    And o prazo do calendário acadêmico está encerrado
-    When o estudante abre a solicitação acadêmica
-    Then o sistema rejeita a abertura por prazo expirado
+  Cenário: Estudante tenta abrir solicitação fora do prazo do calendário
+    Dado um estudante sem solicitação aberta do tipo "TRANCAMENTO_DISCIPLINA"
+    E o prazo do calendário acadêmico está encerrado
+    Quando o estudante abre a solicitação acadêmica
+    Então o sistema rejeita a abertura por prazo expirado
 
-  Scenario: Estudante tenta abrir solicitação duplicada do mesmo tipo no período
-    Given um estudante com solicitação aberta do tipo "TRANCAMENTO_DISCIPLINA"
-    And o prazo do calendário acadêmico está vigente
-    When o estudante abre a solicitação acadêmica
-    Then o sistema rejeita a abertura por duplicidade
+  Cenário: Estudante tenta abrir solicitação duplicada do mesmo tipo no período
+    Dado um estudante com solicitação aberta do tipo "TRANCAMENTO_DISCIPLINA"
+    E o prazo do calendário acadêmico está vigente
+    Quando o estudante abre a solicitação acadêmica
+    Então o sistema rejeita a abertura por duplicidade
 
-  Scenario: Estudante abre múltiplas solicitações de revisão de nota no período
-    Given um estudante com solicitação aberta do tipo "REVISAO_DE_NOTA"
-    And o prazo do calendário acadêmico está vigente
-    When o estudante abre outra solicitação de revisão de nota
-    Then o sistema registra a solicitação com sucesso
+  Cenário: Estudante abre múltiplas solicitações de revisão de nota no período
+    Dado um estudante com solicitação aberta do tipo "REVISAO_DE_NOTA"
+    E o prazo do calendário acadêmico está vigente
+    Quando o estudante abre outra solicitação de revisão de nota
+    Então o sistema registra a solicitação com sucesso
 
-  Scenario: Estudante tenta abrir solicitação sem documentos obrigatórios
-    Given um estudante sem solicitação aberta do tipo "APROVEITAMENTO_DISCIPLINA"
-    And os documentos obrigatórios não estão anexados
-    And o prazo do calendário acadêmico está vigente
-    When o estudante abre a solicitação acadêmica
-    Then o sistema rejeita a abertura por documentação incompleta
+  Cenário: Estudante tenta abrir solicitação sem documentos obrigatórios
+    Dado um estudante sem solicitação aberta do tipo "APROVEITAMENTO_DISCIPLINA"
+    E os documentos obrigatórios não estão anexados
+    E o prazo do calendário acadêmico está vigente
+    Quando o estudante abre a solicitação acadêmica
+    Então o sistema rejeita a abertura por documentação incompleta

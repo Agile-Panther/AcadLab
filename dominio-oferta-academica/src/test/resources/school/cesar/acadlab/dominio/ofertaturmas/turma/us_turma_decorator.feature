@@ -1,4 +1,4 @@
-# language: pt
+#language: pt
 Funcionalidade: Comportamentos dinâmicos de turma via Decorator
 
   Cenário: Estudante entra na lista de espera de uma turma

@@ -1,4 +1,4 @@
-# language: pt
+#language: pt
 
 Funcionalidade: Aprovar aptidão para colação de grau
   Como coordenador acadêmico
