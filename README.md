@@ -133,7 +133,7 @@ Notifica outros contextos quando cobranças são geradas ou liquidadas e quando 
 | **F-07** | Secretaria Virtual Acadêmica | Bernardo | Proxy | Abertura e tramitação de protocolos acadêmicos com controle de permissões via Proxy |
 | **F-08** | Validação de Integralização e Colação | Bernardo | Proxy | Análise de cumprimento de requisitos curriculares e registro formal da colação de grau |
 | **F-09** | Atividades Complementares | Jera | Observer | Submissão e análise de horas extracurriculares; eventos de deferimento notificam outros contextos |
-| **F-10** | Permanência Acadêmica e Bolsas | Matheus | Observer | Editais, inscrições, análise e gestão de benefícios com notificação automática de mudanças de estado |
+| **F-10** | Permanência Acadêmica e Bolsas | Matheus | Observer | Editais, inscrições, análise, gestão de benefícios e registro de ações de permanência com notificação automática de mudanças de estado |
 | **F-11** | Apoio Psicopedagógico | Matheus | Observer | Solicitação, triagem, atendimentos e encerramento de caso com sigilo de atendimento |
 | **F-12** | Mobilidade Acadêmica | Vinicius | Strategy | Intercâmbio externo com plano de estudos, equivalências e registro de resultados no histórico |
 | **F-13** | Gestão Financeira Acadêmica | Jera | Observer | Cobranças, pagamentos, descontos, contestações e comprovantes; eventos de pagamento notificam outros contextos |
