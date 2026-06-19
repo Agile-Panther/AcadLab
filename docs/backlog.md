@@ -1328,6 +1328,29 @@ Cada integrante deve implementar o padrão de projeto designado em ao menos uma 
 | Consultas | Verificar se o resultado final do edital já foi publicado antes de permitir o encerramento. |
 | Complexidade | Baixa |
 
+---
+
+#### US09 — Registrar ações de permanência com base em indicadores agregados
+*Como Coordenação, quero registrar ações institucionais de permanência acadêmica com base em indicadores agregados dos atendimentos, para atuar sobre problemas recorrentes sem acessar dados sigilosos individuais dos estudantes.*
+
+**RN 13 — Ação de permanência sem identificação de estudantes individuais**
+
+| | |
+|---|---|
+| Título | Ação de permanência sem identificação de estudantes individuais |
+| Descrição | A ação de permanência não pode conter identificação de estudantes ou dados individuais de atendimento; deve basear-se apenas em indicadores agregados. |
+| Consultas | Verificar se os indicadores utilizados são dados agregados, sem referência a identificadores individuais de estudantes ou atendimentos. |
+| Complexidade | Média |
+
+**RN 14 — Ação de permanência registrada apenas pela Coordenação**
+
+| | |
+|---|---|
+| Título | Ação de permanência registrada apenas pela Coordenação |
+| Descrição | A ação de permanência só pode ser registrada por usuário com perfil de Coordenação. |
+| Consultas | Verificar o perfil do usuário logado antes de permitir o registro da ação de permanência. |
+| Complexidade | Baixa |
+
 ### Protótipos da Interface com o Usuário
 
 *(A preencher)*
@@ -1395,33 +1418,10 @@ Cada integrante deve implementar o padrão de projeto designado em ao menos uma 
 
 ---
 
-#### US04 — Registrar ações de permanência baseadas em indicadores agregados
-*Como Coordenação, quero registrar ações institucionais de permanência acadêmica com base em indicadores agregados dos atendimentos, para atuar sobre problemas recorrentes sem acessar dados sigilosos individuais dos estudantes.*
-
-**RN 5 — Ação de permanência sem identificação de estudantes individuais**
-
-| | |
-|---|---|
-| Título | Ação de permanência sem identificação de estudantes individuais |
-| Descrição | A ação de permanência não pode conter identificação de estudantes ou dados individuais de atendimento; deve basear-se apenas em indicadores agregados. |
-| Consultas | Verificar se os indicadores utilizados são dados agregados, sem referência a identificadores individuais de estudantes ou atendimentos. |
-| Complexidade | Média |
-
-**RN 6 — Ação de permanência registrada apenas pela Coordenação**
-
-| | |
-|---|---|
-| Título | Ação de permanência registrada apenas pela Coordenação |
-| Descrição | A ação de permanência só pode ser registrada por usuário com perfil de Coordenação. |
-| Consultas | Verificar o perfil do usuário logado antes de permitir o registro da ação de permanência. |
-| Complexidade | Baixa |
-
----
-
-#### US05 — Encerrar caso psicopedagógico
+#### US04 — Encerrar caso psicopedagógico
 *Como Psicopedagogo, quero registrar o encerramento formal de um caso de acompanhamento psicopedagógico, para documentar a conclusão do processo e liberar o estudante do acompanhamento ativo.*
 
-**RN 7 — Encerramento exige registro de conclusão ou encaminhamento final**
+**RN 5 — Encerramento exige registro de conclusão ou encaminhamento final**
 
 | | |
 |---|---|
@@ -1432,10 +1432,10 @@ Cada integrante deve implementar o padrão de projeto designado em ao menos uma 
 
 ---
 
-#### US06 — Consultar histórico de casos acompanhados
+#### US05 — Consultar histórico de casos acompanhados
 *Como Psicopedagogo, quero consultar o histórico de casos que estou acompanhando ou que acompanhei, para ter uma visão consolidada das demandas atendidas e apoiar a continuidade e qualidade dos atendimentos.*
 
-**RN 8 — Consulta restrita ao profissional responsável pelo caso**
+**RN 6 — Consulta restrita ao profissional responsável pelo caso**
 
 | | |
 |---|---|
