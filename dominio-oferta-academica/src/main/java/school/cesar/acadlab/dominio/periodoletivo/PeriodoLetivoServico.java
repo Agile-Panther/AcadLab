@@ -30,7 +30,7 @@ public class PeriodoLetivoServico {
         notNull(dataInicio, "A data de início não pode ser nula");
         notNull(dataFim, "A data de fim não pode ser nula");
         if (repositorio.existeSobreposicao(cursoId, dataInicio, dataFim)) {
-            throw new IllegalStateException("RN1: Já existe período letivo com datas sobrepostas para este curso");
+            throw new IllegalStateException("datas se sobrepõem a período letivo já existente");
         }
         var id = repositorio.proximoId();
         var periodo = new PeriodoLetivo(id, cursoId, ano, semestre, dataInicio, dataFim);
@@ -52,7 +52,7 @@ public class PeriodoLetivoServico {
     public void encerrar(PeriodoLetivoId periodoId) {
         notNull(periodoId, "O período não pode ser nulo");
         if (verificadorPendencias.possuiPendencias(periodoId)) {
-            throw new IllegalStateException("RN3: Não é possível encerrar período com pendências abertas");
+            throw new IllegalStateException("período letivo possui pendências abertas que impedem o encerramento");
         }
         var periodo = repositorio.obter(periodoId);
         periodo.encerrar();
@@ -82,7 +82,7 @@ public class PeriodoLetivoServico {
     public void cancelar(PeriodoLetivoId periodoId) {
         notNull(periodoId, "O período não pode ser nulo");
         if (verificadorMatriculas.possuiMatriculasConfirmadas(periodoId)) {
-            throw new IllegalStateException("RN5: Não é possível cancelar período com matrículas confirmadas");
+            throw new IllegalStateException("período letivo possui matrículas confirmadas e não pode ser cancelado");
         }
         var periodo = repositorio.obter(periodoId);
         periodo.cancelar();

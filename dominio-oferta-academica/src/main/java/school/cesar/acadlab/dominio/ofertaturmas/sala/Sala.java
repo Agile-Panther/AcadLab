@@ -35,7 +35,7 @@ public class Sala {
         if (novaCapacidade <= 0) throw new IllegalArgumentException("A capacidade deve ser positiva");
         if (novaCapacidade < maiorCapacidadeTurmaVinculada) {
             throw new IllegalStateException(
-                    "RN2: A nova capacidade é inferior à capacidade de uma turma vinculada à sala");
+                    "capacidade não pode ser reduzida abaixo do número de vagas da turma vinculada");
         }
         this.capacidade = novaCapacidade;
         return new CapacidadeAlteradaEvento(this);

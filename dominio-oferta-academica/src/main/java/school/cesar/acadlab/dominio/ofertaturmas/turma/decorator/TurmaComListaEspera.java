@@ -16,7 +16,7 @@ public class TurmaComListaEspera extends TurmaDecorador {
     public void entrarListaEspera(EstudanteId estudanteId) {
         notNull(estudanteId, "O estudante não pode ser nulo");
         if (listaEspera.contains(estudanteId))
-            throw new IllegalStateException("Estudante já está na lista de espera");
+            throw new IllegalStateException("estudante já está na lista de espera desta turma");
         listaEspera.add(estudanteId);
     }
 
