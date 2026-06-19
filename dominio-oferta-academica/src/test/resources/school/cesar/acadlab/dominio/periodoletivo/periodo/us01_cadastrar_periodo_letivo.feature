@@ -1,4 +1,5 @@
-#language: pt
+# language: pt
+
 Funcionalidade: Cadastrar período letivo
 
   Cenário: Secretaria cadastra período letivo com datas válidas sem sobreposição
@@ -9,4 +10,4 @@ Funcionalidade: Cadastrar período letivo
   Cenário: Secretaria tenta cadastrar período com datas sobrepostas ao período existente
     Dado que já existe um período letivo com datas sobrepostas para o mesmo curso
     Quando a secretaria tenta cadastrar um período letivo com datas sobrepostas
-    Então o sistema rejeita o cadastro informando sobreposição de datas
+    Então o sistema deve rejeitar informando "datas se sobrepõem a período letivo já existente"

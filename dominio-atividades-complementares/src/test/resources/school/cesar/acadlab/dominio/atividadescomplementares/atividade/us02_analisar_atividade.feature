@@ -1,4 +1,5 @@
-#language: pt
+# language: pt
+
 Funcionalidade: Analisar Atividade Complementar
 
   Cenário: Deferir atividade dentro do limite da categoria
@@ -11,7 +12,7 @@ Funcionalidade: Analisar Atividade Complementar
     Dado uma atividade complementar pendente cadastrada para análise
     E o deferimento excede o limite da categoria
     Quando o coordenador tenta deferir a atividade com 30 horas
-    Então deve ser lançada uma exceção de limite de categoria excedido
+    Então o sistema deve rejeitar informando "horas aprovadas excedem o limite da categoria"
 
   Cenário: Indeferir atividade complementar
     Dado uma atividade complementar pendente cadastrada para análise

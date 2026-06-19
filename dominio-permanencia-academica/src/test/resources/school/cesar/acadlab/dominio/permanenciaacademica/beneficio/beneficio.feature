@@ -1,4 +1,5 @@
-#language: pt
+# language: pt
+
 Funcionalidade: Gerenciar benefício de permanência acadêmica
 
   Cenário: Estudante solicita renovação dentro do prazo
@@ -9,7 +10,7 @@ Funcionalidade: Gerenciar benefício de permanência acadêmica
   Cenário: Renovação falha quando fora do prazo
     Dado um estudante possui um benefício ativo com prazo de renovação já vencido
     Quando o estudante tenta solicitar a renovação do benefício
-    Então o sistema informa que o prazo de renovação já encerrou
+    Então o sistema deve rejeitar informando "prazo de renovação já encerrou"
 
   Cenário: Benefício suspenso por não cumprimento dos critérios mínimos
     Dado um estudante possui um benefício ativo

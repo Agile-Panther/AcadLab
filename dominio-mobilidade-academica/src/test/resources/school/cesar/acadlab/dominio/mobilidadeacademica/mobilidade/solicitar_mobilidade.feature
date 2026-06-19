@@ -1,4 +1,5 @@
-#language: pt
+# language: pt
+
 Funcionalidade: Solicitar mobilidade acadêmica
 
   Cenário: Estudante solicita mobilidade e coordenador autoriza
@@ -9,6 +10,6 @@ Funcionalidade: Solicitar mobilidade acadêmica
     Então a mobilidade tem status AUTORIZADA
 
   Cenário: Autorizar uma mobilidade já autorizada é rejeitado
-    Dado uma mobilidade académica já autorizada para o estudante com id 2
+    Dado uma mobilidade acadêmica já autorizada para o estudante com id 2
     Quando o coordenador com id 1 tenta autorizar a mobilidade já autorizada
-    Então o sistema rejeita a autorização com mensagem sobre RN-1
+    Então o sistema deve rejeitar informando "mobilidade já se encontra autorizada"

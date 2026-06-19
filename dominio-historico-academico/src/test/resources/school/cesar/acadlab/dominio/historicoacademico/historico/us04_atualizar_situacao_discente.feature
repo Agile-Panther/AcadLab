@@ -1,4 +1,5 @@
-#language: pt
+# language: pt
+
 Funcionalidade: Atualizar situação acadêmica do estudante
 
   Cenário: Secretaria atualiza situação acadêmica com registro de auditoria
@@ -10,4 +11,4 @@ Funcionalidade: Atualizar situação acadêmica do estudante
   Cenário: Atualização da situação sem justificativa é rejeitada
     Dado um histórico de estudante para atualização de situação discente
     Quando a secretaria tenta atualizar a situação sem informar justificativa
-    Então o sistema rejeita a atualização de situação
+    Então o sistema deve rejeitar informando "justificativa obrigatória para alteração de situação"

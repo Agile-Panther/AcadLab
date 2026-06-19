@@ -1,4 +1,5 @@
-#language: pt
+# language: pt
+
 Funcionalidade: Aplicar Desconto em Cobrança
 
   Cenário: Aplicar desconto com autorização válida
@@ -10,4 +11,4 @@ Funcionalidade: Aplicar Desconto em Cobrança
   Cenário: Rejeitar desconto com autorização inválida
     Dado uma cobrança aberta de 1500.00 para o estudante 11
     Quando tento aplicar um desconto de 10 por cento com autorização "AUTH-INVALIDA"
-    Então deve ser lançada uma exceção de autorização inválida
+    Então o sistema deve rejeitar informando "autorização inválida para aplicação de desconto"

@@ -1,20 +1,21 @@
-#language: pt
-Funcionalidade: Definir professor, horario e sala da turma com verificacao de conflito
+# language: pt
 
-  Cenário: Coordenacao vincula professor sem conflito de horario
-    Dado uma turma planejada com horario segunda 08h as 10h no periodo 1
-    E um professor sem turmas no mesmo periodo
-    Quando a coordenacao adiciona o horario e vincula o professor a turma
-    Então o professor e vinculado com sucesso
+Funcionalidade: Definir professor, horário e sala da turma com verificação de conflito
 
-  Cenário: Coordenacao tenta vincular professor com conflito de horario
-    Dado uma turma planejada com horario segunda 08h as 10h no periodo 1
-    E o professor ja tem turma com horario segunda 09h as 11h no mesmo periodo
-    Quando a coordenacao tenta vincular o professor com conflito
-    Então o sistema rejeita a vinculacao informando conflito de horario do professor
+  Cenário: Coordenação vincula professor sem conflito de horário
+    Dado uma turma planejada com horário segunda 08h às 10h no período 1
+    E um professor sem turmas no mesmo período
+    Quando a coordenação adiciona o horário e vincula o professor à turma
+    Então o professor é vinculado com sucesso
 
-  Cenário: Coordenacao tenta vincular sala com conflito de horario
-    Dado uma turma planejada com horario segunda 08h as 10h no periodo 1
-    E a sala ja esta alocada em turma com horario segunda 09h as 11h no mesmo periodo
-    Quando a coordenacao tenta vincular a sala com conflito
-    Então o sistema rejeita a vinculacao informando conflito de horario da sala
+  Cenário: Coordenação tenta vincular professor com conflito de horário
+    Dado uma turma planejada com horário segunda 08h às 10h no período 1
+    E o professor já tem turma com horário segunda 09h às 11h no mesmo período
+    Quando a coordenação tenta vincular o professor com conflito
+    Então o sistema deve rejeitar informando conflito de horário do professor
+
+  Cenário: Coordenação tenta vincular sala com conflito de horário
+    Dado uma turma planejada com horário segunda 08h às 10h no período 1
+    E a sala já está alocada em turma com horário segunda 09h às 11h no mesmo período
+    Quando a coordenação tenta vincular a sala com conflito
+    Então o sistema deve rejeitar informando conflito de horário da sala

@@ -1,4 +1,5 @@
-#language: pt
+# language: pt
+
 Funcionalidade: Extrato e Comprovante de Pagamento
 
   Cenário: Consultar extrato com múltiplas cobranças do contrato
@@ -14,4 +15,4 @@ Funcionalidade: Extrato e Comprovante de Pagamento
   Cenário: Rejeitar emissão de comprovante sem pagamento
     Dado uma cobrança aberta sem pagamento para o contrato 32
     Quando solicito o comprovante da cobrança sem pagamento
-    Então deve ser lançada uma exceção de comprovante indisponível
+    Então o sistema deve rejeitar informando "comprovante indisponível sem pagamento confirmado"

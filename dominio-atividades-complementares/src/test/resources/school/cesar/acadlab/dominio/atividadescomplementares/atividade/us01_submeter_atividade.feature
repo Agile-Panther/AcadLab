@@ -1,4 +1,5 @@
-#language: pt
+# language: pt
+
 Funcionalidade: Submeter Atividade Complementar
 
   Cenário: Submeter atividade com vínculo ativo e certificado único
@@ -10,10 +11,10 @@ Funcionalidade: Submeter Atividade Complementar
   Cenário: Rejeitar atividade realizada fora do período de vínculo
     Dado um estudante sem vínculo ativo na data de realização
     Quando o estudante tenta submeter a atividade da categoria 1 com 40 horas realizada em "15/03/2025" com certificado "CERT-002"
-    Então deve ser lançada uma exceção de vínculo inativo
+    Então o sistema deve rejeitar informando "estudante não possui vínculo ativo na data da atividade"
 
   Cenário: Rejeitar atividade com certificado já utilizado
     Dado um estudante com vínculo ativo no período de realização da atividade
     E o certificado "CERT-003" já foi utilizado anteriormente
     Quando o estudante tenta submeter a atividade da categoria 1 com 40 horas realizada em "15/03/2025" com certificado "CERT-003"
-    Então deve ser lançada uma exceção de certificado duplicado
+    Então o sistema deve rejeitar informando "certificado já utilizado em outra atividade"

@@ -1,4 +1,5 @@
-#language: pt
+# language: pt
+
 Funcionalidade: Ofertar turma de uma disciplina
 
   Cenário: Coordenação oferta turma com dados válidos
@@ -14,4 +15,4 @@ Funcionalidade: Ofertar turma de uma disciplina
   Cenário: Coordenação vincula sala com capacidade insuficiente à turma
     Dado um período letivo e uma disciplina disponíveis
     Quando a coordenação vincula uma sala com capacidade insuficiente à turma
-    Então o sistema rejeita a vinculação informando capacidade insuficiente
+    Então o sistema deve rejeitar informando "capacidade da sala é insuficiente para a turma"

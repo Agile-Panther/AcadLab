@@ -1,4 +1,5 @@
-#language: pt
+# language: pt
+
 Funcionalidade: Lançar notas e fechar resultado final
 
   Cenário: Professor fecha resultado final com nota aprovada
@@ -14,7 +15,7 @@ Funcionalidade: Lançar notas e fechar resultado final
   Cenário: Alteração de nota após fechamento é rejeitada
     Dado um diário com estudante cujo resultado já está fechado
     Quando o professor tenta alterar a nota após o fechamento
-    Então o sistema rejeita a alteração informando RN-8
+    Então o sistema deve rejeitar informando "resultado já está fechado"
 
   Cenário: Estudante solicita revisão de nota dentro da janela
     Dado um diário com estudante matriculado para revisão de nota
@@ -24,4 +25,4 @@ Funcionalidade: Lançar notas e fechar resultado final
   Cenário: Solicitação de revisão fora da janela é rejeitada
     Dado um diário com estudante matriculado para revisão de nota
     Quando o estudante solicita revisão de nota após o fim da janela
-    Então o sistema rejeita a revisão informando RN-9
+    Então o sistema deve rejeitar informando "janela de revisão de nota encerrada"

@@ -1,4 +1,5 @@
-#language: pt
+# language: pt
+
 Funcionalidade: Visualizar Saldo de Horas Complementares
 
   Cenário: Saldo considera apenas atividades deferidas por categoria

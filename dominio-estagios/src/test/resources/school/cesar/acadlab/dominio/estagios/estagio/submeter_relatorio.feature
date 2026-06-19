@@ -1,4 +1,5 @@
-#language: pt
+# language: pt
+
 Funcionalidade: Submeter relatório de estágio
 
   Cenário: Estudante submete relatório com sucesso
@@ -9,7 +10,7 @@ Funcionalidade: Submeter relatório de estágio
   Cenário: Submissão rejeitada com número duplicado
     Dado um estágio com relatório número 1 já submetido
     Quando o estudante tenta submeter novamente o relatório número 1
-    Então o sistema rejeita a submissão com mensagem sobre RN-8
+    Então o sistema deve rejeitar informando "relatório com este número já foi submetido"
 
   Cenário: Coordenador aprova relatório
     Dado um estágio com relatório número 1 pendente

@@ -1,4 +1,5 @@
-#language: pt
+# language: pt
+
 Funcionalidade: Cancelar mobilidade acadêmica
 
   Cenário: Estudante cancela mobilidade antes do início do período externo
@@ -10,9 +11,9 @@ Funcionalidade: Cancelar mobilidade acadêmica
   Cenário: Cancelar mobilidade após o período já iniciado é rejeitado
     Dado uma mobilidade em andamento para estudante id 9 iniciada em "2025-03-01"
     Quando o estudante tenta cancelar a mobilidade em andamento em "2025-03-15"
-    Então o sistema rejeita o cancelamento com mensagem sobre RN-7
+    Então o sistema deve rejeitar informando "mobilidade não pode ser cancelada após o início do período externo"
 
   Cenário: Confirmar cancelamento sem justificativa prévia é rejeitado
     Dado uma mobilidade solicitada para estudante id 10 sem justificativa de cancelamento
     Quando o coordenador tenta confirmar cancelamento sem justificativa prévia
-    Então o sistema rejeita a confirmação com mensagem sobre RN-8
+    Então o sistema deve rejeitar informando "não há justificativa de cancelamento registrada"

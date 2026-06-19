@@ -1,4 +1,5 @@
-#language: pt
+# language: pt
+
 Funcionalidade: Acompanhar status das solicitações
 
   Cenário: Estudante consulta suas solicitações acadêmicas

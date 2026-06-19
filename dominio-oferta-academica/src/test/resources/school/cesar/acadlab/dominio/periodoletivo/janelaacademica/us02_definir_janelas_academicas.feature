@@ -1,4 +1,5 @@
-#language: pt
+# language: pt
+
 Funcionalidade: Definir janelas acadêmicas do período letivo
 
   Cenário: Secretaria define janela de matrícula com datas válidas

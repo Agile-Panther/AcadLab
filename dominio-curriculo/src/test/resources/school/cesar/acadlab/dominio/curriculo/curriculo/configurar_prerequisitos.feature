@@ -1,23 +1,24 @@
-#language: pt
+# language: pt
+
 Funcionalidade: Configurar pré-requisitos e correquisitos
 
-  Cenário: Adding a prerequisite between disciplines works
-    Dado a curricular matrix with two disciplines with ids 1 and 2
-    Quando the coordinator adds discipline 1 as a prerequisite for discipline 2
-    Então discipline 2 should have discipline 1 as a prerequisite
+  Cenário: Adicionar pré-requisito entre disciplinas com sucesso
+    Dado uma matriz curricular com duas disciplinas de ids 1 e 2
+    Quando o coordenador define a disciplina 1 como pré-requisito da disciplina 2
+    Então a disciplina 2 deve ter a disciplina 1 como pré-requisito
 
-  Cenário: Adding a cyclic prerequisite is rejected
-    Dado a curricular matrix with two disciplines with ids 1 and 2
-    E discipline 1 is already a prerequisite for discipline 2
-    Quando the coordinator tries to add discipline 2 as a prerequisite for discipline 1
-    Então the system rejects the prerequisite with message containing "RN-3"
+  Cenário: Adicionar pré-requisito cíclico é rejeitado
+    Dado uma matriz curricular com duas disciplinas de ids 1 e 2
+    E a disciplina 1 já é pré-requisito da disciplina 2
+    Quando o coordenador tenta definir a disciplina 2 como pré-requisito da disciplina 1
+    Então o sistema deve rejeitar informando "relação de pré-requisito cíclica detectada"
 
-  Cenário: Adding a corequisite from same matrix works
-    Dado a curricular matrix with two disciplines with ids 1 and 2
-    Quando the coordinator adds discipline 2 as a corequisite for discipline 1
-    Então discipline 1 should have discipline 2 as a corequisite
+  Cenário: Adicionar correquisito da mesma matriz com sucesso
+    Dado uma matriz curricular com duas disciplinas de ids 1 e 2
+    Quando o coordenador define a disciplina 2 como correquisito da disciplina 1
+    Então a disciplina 1 deve ter a disciplina 2 como correquisito
 
-  Cenário: Adding a corequisite from outside the matrix is rejected
-    Dado a curricular matrix with one discipline with id 1
-    Quando the coordinator tries to add discipline 99 as a corequisite for discipline 1
-    Então the system rejects the corequisite with message containing "RN-4"
+  Cenário: Adicionar correquisito de fora da matriz é rejeitado
+    Dado uma matriz curricular com uma disciplina de id 1
+    Quando o coordenador tenta definir a disciplina 99 como correquisito da disciplina 1
+    Então o sistema deve rejeitar informando "disciplina correquisito não pertence à matriz curricular"

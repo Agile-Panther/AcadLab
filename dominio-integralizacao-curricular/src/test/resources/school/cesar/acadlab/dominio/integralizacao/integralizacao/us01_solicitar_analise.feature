@@ -1,9 +1,6 @@
-#language: pt
+# language: pt
 
 Funcionalidade: Solicitar análise de conclusão de curso
-  Como estudante
-  Quero solicitar a análise de conclusão do meu curso
-  Para iniciar formalmente o processo de verificação de aptidão para colação de grau
 
   Cenário: Estudante solicita análise com último período encerrado e sem pendências
     Dado um estudante com último período letivo encerrado e sem pendências
@@ -14,9 +11,9 @@ Funcionalidade: Solicitar análise de conclusão de curso
   Cenário: Estudante com período letivo não encerrado não pode solicitar análise
     Dado um estudante com período letivo ainda em andamento
     Quando o estudante tenta solicitar análise de conclusão de curso
-    Então o sistema rejeita a solicitação por período não encerrado
+    Então o sistema deve rejeitar informando "período letivo ainda não foi encerrado"
 
   Cenário: Estudante com pendências acadêmicas não pode solicitar análise
     Dado um estudante com pendências acadêmicas registradas
     Quando o estudante tenta solicitar análise de conclusão de curso
-    Então o sistema rejeita a solicitação por pendências existentes
+    Então o sistema deve rejeitar informando "estudante possui pendências acadêmicas"

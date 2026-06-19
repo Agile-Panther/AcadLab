@@ -1,4 +1,5 @@
-#language: pt
+# language: pt
+
 Funcionalidade: Encerrar período letivo
 
   Cenário: Secretaria encerra período letivo sem pendências
@@ -11,9 +12,9 @@ Funcionalidade: Encerrar período letivo
     Dado um período letivo cadastrado pronto para encerramento
     E com pendências que impedem o encerramento
     Quando a secretaria tenta encerrar o período letivo
-    Então o sistema rejeita o encerramento informando pendências
+    Então o sistema deve rejeitar informando "período letivo possui pendências abertas que impedem o encerramento"
 
   Cenário: Sistema rejeita encerramento de período já encerrado
     Dado um período letivo já encerrado anteriormente
     Quando a secretaria tenta encerrar o período letivo
-    Então o sistema rejeita o encerramento informando status inválido
+    Então o sistema deve rejeitar informando "período letivo já está encerrado"

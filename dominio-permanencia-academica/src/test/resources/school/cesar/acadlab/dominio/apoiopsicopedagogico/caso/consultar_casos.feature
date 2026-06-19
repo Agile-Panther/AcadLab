@@ -1,4 +1,5 @@
-#language: pt
+# language: pt
+
 Funcionalidade: Consultar histórico de casos psicopedagógicos
 
   Cenário: Psicopedagogo consulta seus próprios casos

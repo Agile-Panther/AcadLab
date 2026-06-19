@@ -1,4 +1,5 @@
-#language: pt
+# language: pt
+
 Funcionalidade: Registrar Pagamento de Cobrança
 
   Cenário: Registrar pagamento de cobrança aberta

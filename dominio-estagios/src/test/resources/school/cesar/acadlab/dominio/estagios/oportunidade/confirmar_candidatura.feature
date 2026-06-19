@@ -1,4 +1,5 @@
-#language: pt
+# language: pt
+
 Funcionalidade: Confirmar ou recusar candidatura de estágio
 
   Cenário: Empresa confirma candidatura e estágio é criado
@@ -15,4 +16,4 @@ Funcionalidade: Confirmar ou recusar candidatura de estágio
   Cenário: Confirmação rejeitada sem encaminhamento prévio
     Dado uma oportunidade aberta com candidato de id 20
     Quando a empresa tenta confirmar sem encaminhamento
-    Então o sistema rejeita a confirmação com mensagem sobre RN-5
+    Então o sistema deve rejeitar informando "candidatura não foi encaminhada para confirmação"
