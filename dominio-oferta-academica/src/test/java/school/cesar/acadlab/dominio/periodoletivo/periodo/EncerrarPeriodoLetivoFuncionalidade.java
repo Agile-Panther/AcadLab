@@ -10,15 +10,19 @@ import school.cesar.acadlab.dominio.periodoletivo.PeriodoLetivoId;
 import school.cesar.acadlab.dominio.periodoletivo.StatusPeriodoLetivo;
 import school.cesar.acadlab.dominio.periodoletivo.curso.CursoId;
 
-public class EncerrarPeriodoLetivoFuncionalidade extends PeriodoLetivoFuncionalidade {
+public class EncerrarPeriodoLetivoFuncionalidade {
 
+    private final PeriodoLetivoFuncionalidade ctx;
     private final CursoId cursoId = new CursoId(1);
     private PeriodoLetivoId periodoId;
-    private RuntimeException excecao;
+
+    public EncerrarPeriodoLetivoFuncionalidade(PeriodoLetivoFuncionalidade ctx) {
+        this.ctx = ctx;
+    }
 
     @Dado("um período letivo cadastrado pronto para encerramento")
     public void periodo_pronto_para_encerramento() {
-        var periodo = periodoLetivoServico.cadastrar(
+        var periodo = ctx.periodoLetivoServico.cadastrar(
                 cursoId, 2025, 1,
                 LocalDate.of(2025, 3, 1), LocalDate.of(2025, 6, 30));
         periodoId = periodo.getId();
@@ -26,53 +30,41 @@ public class EncerrarPeriodoLetivoFuncionalidade extends PeriodoLetivoFuncionali
 
     @Dado("um período letivo já encerrado anteriormente")
     public void periodo_ja_encerrado() {
-        var periodo = periodoLetivoServico.cadastrar(
+        var periodo = ctx.periodoLetivoServico.cadastrar(
                 cursoId, 2025, 1,
                 LocalDate.of(2025, 3, 1), LocalDate.of(2025, 6, 30));
         periodoId = periodo.getId();
-        verificadorPendencias.setPendencias(false);
-        periodoLetivoServico.encerrar(periodoId);
+        ctx.verificadorPendencias.setPendencias(false);
+        ctx.periodoLetivoServico.encerrar(periodoId);
     }
 
     @Dado("sem pendências que impedem o encerramento")
     public void sem_pendencias() {
-        verificadorPendencias.setPendencias(false);
+        ctx.verificadorPendencias.setPendencias(false);
     }
 
     @Dado("com pendências que impedem o encerramento")
     public void com_pendencias() {
-        verificadorPendencias.setPendencias(true);
+        ctx.verificadorPendencias.setPendencias(true);
     }
 
     @Quando("a secretaria encerra o período letivo")
     public void encerrar_periodo() {
-        periodoLetivoServico.encerrar(periodoId);
+        ctx.periodoLetivoServico.encerrar(periodoId);
     }
 
     @Quando("a secretaria tenta encerrar o período letivo")
     public void tentar_encerrar_periodo() {
         try {
-            periodoLetivoServico.encerrar(periodoId);
+            ctx.periodoLetivoServico.encerrar(periodoId);
         } catch (RuntimeException e) {
-            excecao = e;
+            ctx.excecao = e;
         }
     }
 
     @Entao("o período letivo deve ter status encerrado")
     public void periodo_deve_ter_status_encerrado() {
-        var periodo = repositorio.obter(periodoId);
+        var periodo = ctx.repositorio.obter(periodoId);
         assertEquals(StatusPeriodoLetivo.ENCERRADO, periodo.getStatus());
-    }
-
-    @Entao("o sistema rejeita o encerramento informando pendências")
-    public void sistema_rejeita_encerramento_por_pendencias() {
-        assertNotNull(excecao);
-        assertInstanceOf(IllegalStateException.class, excecao);
-    }
-
-    @Entao("o sistema rejeita o encerramento informando status inválido")
-    public void sistema_rejeita_encerramento_por_status() {
-        assertNotNull(excecao);
-        assertInstanceOf(IllegalStateException.class, excecao);
     }
 }

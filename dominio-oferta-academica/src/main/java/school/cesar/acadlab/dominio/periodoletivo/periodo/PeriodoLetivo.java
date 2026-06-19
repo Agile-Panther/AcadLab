@@ -66,8 +66,14 @@ public class PeriodoLetivo {
     public PeriodoLetivoEditadoEvento editar(LocalDate novaDataInicio, LocalDate novaDataFim) {
         notNull(novaDataInicio, "A nova data de início não pode ser nula");
         notNull(novaDataFim, "A nova data de fim não pode ser nula");
+        if (status == StatusPeriodoLetivo.ENCERRADO) {
+            throw new IllegalStateException("período letivo encerrado não pode ser editado");
+        }
+        if (status == StatusPeriodoLetivo.EM_ANDAMENTO) {
+            throw new IllegalStateException("período letivo em andamento não pode ser editado");
+        }
         if (status != StatusPeriodoLetivo.NAO_INICIADO) {
-            throw new IllegalStateException("RN4: Apenas períodos letivos não iniciados podem ser editados");
+            throw new IllegalStateException("período letivo não pode ser editado no status atual");
         }
         if (!novaDataFim.isAfter(novaDataInicio)) {
             throw new IllegalArgumentException("A data de fim deve ser posterior ao início");
@@ -88,8 +94,14 @@ public class PeriodoLetivo {
 
     // US06 - RN5: cancelamento restrito a períodos não iniciados sem matrículas (verificação externa)
     public PeriodoLetivoCanceladoEvento cancelar() {
+        if (status == StatusPeriodoLetivo.ENCERRADO) {
+            throw new IllegalStateException("período letivo encerrado não pode ser cancelado");
+        }
+        if (status == StatusPeriodoLetivo.EM_ANDAMENTO) {
+            throw new IllegalStateException("período letivo em andamento não pode ser cancelado");
+        }
         if (status != StatusPeriodoLetivo.NAO_INICIADO) {
-            throw new IllegalStateException("RN5: Apenas períodos letivos não iniciados podem ser cancelados");
+            throw new IllegalStateException("período letivo não pode ser cancelado no status atual");
         }
         this.status = StatusPeriodoLetivo.CANCELADO;
         return new PeriodoLetivoCanceladoEvento(this);
@@ -97,8 +109,11 @@ public class PeriodoLetivo {
 
     // US03 - RN3: ausência de pendências verificada externamente antes da chamada
     public PeriodoLetivoEncerradoEvento encerrar() {
-        if (status == StatusPeriodoLetivo.ENCERRADO || status == StatusPeriodoLetivo.CANCELADO) {
-            throw new IllegalStateException("Período já encerrado ou cancelado");
+        if (status == StatusPeriodoLetivo.ENCERRADO) {
+            throw new IllegalStateException("período letivo já está encerrado");
+        }
+        if (status == StatusPeriodoLetivo.CANCELADO) {
+            throw new IllegalStateException("período letivo cancelado não pode ser encerrado");
         }
         this.status = StatusPeriodoLetivo.ENCERRADO;
         return new PeriodoLetivoEncerradoEvento(this);

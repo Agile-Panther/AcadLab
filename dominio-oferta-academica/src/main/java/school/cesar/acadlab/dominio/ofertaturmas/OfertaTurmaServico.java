@@ -46,7 +46,7 @@ public class OfertaTurmaServico {
         notNull(professorId, "O id do professor não pode ser nulo");
         var professor = professorRepositorio.obter(professorId);
         if (!professor.isAtivo()) {
-            throw new IllegalStateException("RN3: Professor inativo não pode ser vinculado a turma");
+            throw new IllegalStateException("professor está inativo e não pode ser vinculado à turma");
         }
         var turma = turmaRepositorio.obter(turmaId);
         var turmasProfessor = turmaRepositorio.pesquisarPorProfessorEPeriodo(professorId, turma.getPeriodoLetivoId());

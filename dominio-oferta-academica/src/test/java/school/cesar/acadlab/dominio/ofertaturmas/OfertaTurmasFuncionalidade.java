@@ -1,11 +1,12 @@
 package school.cesar.acadlab.dominio.ofertaturmas;
 
 public class OfertaTurmasFuncionalidade {
-    protected TurmaRepositorioTest turmaRepositorio;
-    protected SalaRepositorioTest salaRepositorio;
-    protected ProfessorRepositorioTest professorRepositorio;
-    protected OfertaTurmaServico ofertaTurmaServico;
-    protected ConsultaTurmaServico consultaTurmaServico;
+    public TurmaRepositorioTest turmaRepositorio;
+    public SalaRepositorioTest salaRepositorio;
+    public ProfessorRepositorioTest professorRepositorio;
+    public OfertaTurmaServico ofertaTurmaServico;
+    public ConsultaTurmaServico consultaTurmaServico;
+    public RuntimeException excecao;
 
     public OfertaTurmasFuncionalidade() {
         turmaRepositorio = new TurmaRepositorioTest();
