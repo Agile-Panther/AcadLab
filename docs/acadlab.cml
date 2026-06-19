@@ -4,22 +4,18 @@ Domain AcadLabDomain {
         type CORE_DOMAIN
         domainVisionStatement "Núcleo da vida acadêmica: currículo, oferta de turmas, matrícula, gestão pedagógica e histórico acadêmico"
     }
-
     Subdomain ServicosAcademicosSubdomain {
         type SUPPORTING_DOMAIN
         domainVisionStatement "Serviços de suporte à trajetória do estudante: secretaria virtual, integralização, atividades complementares, mobilidade e estágios"
     }
-
     Subdomain PermanenciaSubdomain {
         type SUPPORTING_DOMAIN
         domainVisionStatement "Programas de permanência estudantil: bolsas, auxílios e acompanhamento psicopedagógico"
     }
-
     Subdomain FinanceiroSubdomain {
         type GENERIC_SUBDOMAIN
         domainVisionStatement "Gestão de cobranças, pagamentos, descontos e comprovantes financeiros"
     }
-
     Subdomain CompartilhadoSubdomain {
         type GENERIC_SUBDOMAIN
         domainVisionStatement "Primitivos de identidade e eventos de domínio compartilhados entre todos os contextos"
@@ -75,7 +71,7 @@ BoundedContext CurriculoContext implements AcademicoSubdomain {
             - List<Integer> correquisitos
         }
         Service MatrizCurricularServico {
-            void criarMatriz(@MatrizCurricular matriz);
+            @MatrizCurricular criarMatriz(@MatrizCurricular matriz);
             void adicionarDisciplina(int matrizId, @ItemMatriz item);
             void configurarPreRequisito(int matrizId, int disciplinaId, int preRequisitoId);
             void ativar(int matrizId);
@@ -110,7 +106,7 @@ BoundedContext OfertaAcademicaContext implements AcademicoSubdomain {
             java.time.LocalDate fim
         }
         Service PeriodoLetivoServico {
-            void cadastrar(@PeriodoLetivo periodo);
+            @PeriodoLetivo cadastrar(@PeriodoLetivo periodo);
             void definirJanela(int periodoId, @JanelaAcademica janela);
             void iniciar(int periodoId);
             void encerrar(int periodoId);
@@ -144,7 +140,7 @@ BoundedContext OfertaAcademicaContext implements AcademicoSubdomain {
             String matriculaDocente
         }
         Service OfertaTurmaServico {
-            void ofertarTurma(@Turma turma);
+            @Turma ofertarTurma(@Turma turma);
             void definirProfessorHorarioSala(int turmaId, int professorId, int salaId);
         }
     }
@@ -176,7 +172,7 @@ BoundedContext MatriculaContext implements AcademicoSubdomain {
             - StatusItem status
         }
         Service MatriculaServico {
-            void montarPlano(@EstudanteId estudanteId, int periodoLetivoId);
+            @Matricula montarPlano(@EstudanteId estudanteId, int periodoLetivoId);
             void adicionarItem(int matriculaId, int turmaId);
             void confirmar(int matriculaId);
             void trancarDisciplina(int matriculaId, int turmaId);
@@ -284,14 +280,13 @@ BoundedContext HistoricoAcademicoContext implements AcademicoSubdomain {
             java.time.LocalDate data
         }
         Service HistoricoAcademicoServico {
-            void criarHistorico(@EstudanteId estudanteId, int matrizCurricularId);
+            @HistoricoAcademico criarHistorico(@EstudanteId estudanteId, int matrizCurricularId);
             void consolidarRegistro(int historicoId, int disciplinaId, int turmaId, int periodoLetivoId, double nota, double frequencia, @SituacaoAcademica situacao, boolean turmaEncerrada);
             void registrarAproveitamento(int historicoId, int disciplinaEquivalenteId, int cargaHorariaExterna, int cargaHorariaRequerida, String instituicaoOrigem, String disciplinaOrigem);
             void retificarRegistro(int historicoId, int registroId, @SituacaoAcademica novaSituacao, int responsavelId, String justificativa, java.time.LocalDate data);
             void atualizarSituacaoDiscente(int historicoId, @SituacaoDiscente novaSituacao, int responsavelId, String justificativa, java.time.LocalDate data);
         }
         Service ConsultaHistoricoServico {
-            // RN-10: retorna apenas registros consolidados de períodos encerrados via Iterator
             List<@RegistroDisciplina> obterHistoricoOficial(@EstudanteId estudanteId);
         }
     }
@@ -324,8 +319,7 @@ BoundedContext SecretariaVirtualContext implements ServicosAcademicosSubdomain {
             String url
         }
         Service SolicitacaoServico {
-            // acesso via SolicitacaoServicoProxy (Proxy Pattern)
-            void abrir(@EstudanteId estudanteId, @TipoSolicitacao tipo, String descricao);
+            @SolicitacaoAcademica abrir(@EstudanteId estudanteId, @TipoSolicitacao tipo, String descricao);
             void complementar(int solicitacaoId, @Documento documento);
             void cancelar(int solicitacaoId);
             void iniciarAnalise(int solicitacaoId);
@@ -367,8 +361,7 @@ BoundedContext IntegralizacaoContext implements ServicosAcademicosSubdomain {
             String local
         }
         Service IntegralizacaoServico {
-            // acesso via IntegralizacaoServicoProxy (Proxy Pattern)
-            void solicitarAnalise(@EstudanteId estudanteId);
+            @IntegralizacaoCurricular solicitarAnalise(@EstudanteId estudanteId);
             void analisar(int integralizacaoId);
             void aprovarAptidao(int integralizacaoId);
         }
@@ -401,7 +394,7 @@ BoundedContext AtividadesComplementaresContext implements ServicosAcademicosSubd
             - StatusAtividade status
         }
         Service AtividadeComplementarServico {
-            void submeter(@EstudanteId estudanteId, @TipoAtividade tipo, String descricao, int cargaHoraria);
+            @AtividadeComplementar submeter(@EstudanteId estudanteId, @TipoAtividade tipo, String descricao, int cargaHoraria);
             void deferir(int atividadeId, int cargaHorariaAprovada);
             void indeferir(int atividadeId, String justificativa);
             void solicitarRevisao(int atividadeId, String observacao);
@@ -432,7 +425,7 @@ BoundedContext PermanenciaAcademicaContext implements PermanenciaSubdomain {
             java.time.LocalDate dataEncerramento
         }
         Service EditalServico {
-            void criar(@Edital edital);
+            @Edital criar(@Edital edital);
             void publicarResultado(int editalId);
             void encerrar(int editalId);
         }
@@ -450,7 +443,7 @@ BoundedContext PermanenciaAcademicaContext implements PermanenciaSubdomain {
             String justificativa
         }
         Service InscricaoServico {
-            void inscrever(int editalId, @EstudanteId estudanteId, String justificativa);
+            @Inscricao inscrever(int editalId, @EstudanteId estudanteId, String justificativa);
             void deferir(int inscricaoId);
             void indeferir(int inscricaoId, String motivo);
         }
@@ -512,10 +505,10 @@ BoundedContext ApoioPsicopedagogicoContext implements PermanenciaSubdomain {
             String relatorio
         }
         Service ApoioServico {
-            void solicitarApoio(@EstudanteId estudanteId);
+            @Caso solicitarApoio(@EstudanteId estudanteId);
         }
         Service TriagemServico {
-            void realizarTriagem(int casoId, @PrioridadeTriagem prioridade, String observacao);
+            @Triagem realizarTriagem(int casoId, @PrioridadeTriagem prioridade, String observacao);
         }
         Service AtendimentoServico {
             void registrarAtendimento(int casoId, java.time.LocalDate data, String relatorio);
@@ -552,7 +545,7 @@ BoundedContext MobilidadeAcademicaContext implements ServicosAcademicosSubdomain
             String resultado
         }
         Service MobilidadeAcademicaServico {
-            void solicitar(@EstudanteId estudanteId, String instituicaoDestino);
+            @MobilidadeAcademica solicitar(@EstudanteId estudanteId, String instituicaoDestino);
             void autorizar(int mobilidadeId);
             void iniciar(int mobilidadeId);
             void adicionarItemPlano(int mobilidadeId, @ItemPlanoEstudos item);
@@ -601,7 +594,7 @@ BoundedContext GestaoFinanceiraContext implements FinanceiroSubdomain {
             double percentual
         }
         Service CobrancaServico {
-            void gerar(@EstudanteId estudanteId, double valor, java.time.LocalDate vencimento);
+            @Cobranca gerar(@EstudanteId estudanteId, double valor, java.time.LocalDate vencimento);
             void registrarPagamento(int cobrancaId, double valor, java.time.LocalDate data, String comprovante);
             void aplicarDesconto(int cobrancaId, @TipoDesconto tipo, double percentual);
             void contestar(int cobrancaId, String motivo);
@@ -630,7 +623,7 @@ BoundedContext EstagiosContext implements ServicosAcademicosSubdomain {
             - StatusOportunidade status
         }
         Service OportunidadeServico {
-            void publicar(@Oportunidade oportunidade);
+            @Oportunidade publicar(@Oportunidade oportunidade);
             void candidatar(int oportunidadeId, @EstudanteId estudanteId);
             void confirmarCandidatura(int oportunidadeId, @EstudanteId estudanteId);
         }
