@@ -11,7 +11,7 @@
 | Vinicius | F-12 <br>F-04      |
 | Bernado  | F-07 <br>F-08      |
 | Clara    | F-14 <br>F-03      |
-| Neto     | F-02 <br>F-05      |
+| Claudia     | F-02 <br>F-05      |
 | Jera     | F-09 <br>F-13      |
 
 ---
@@ -23,7 +23,7 @@ Cada integrante deve implementar o padrão de projeto designado em ao menos uma 
 | Integrante | Features | Padrão de Projeto | Contexto de Aplicação |
 |------------|----------|-------------------|-----------------------|
 | Julia | F-01, F-06 | **Iterator** | Percorrer disciplinas da matriz curricular (incluindo grafo de pré-requisitos) e registros do histórico acadêmico sem expor a estrutura interna das coleções |
-| Neto | F-02, F-05 | **Template Method** | Definir o esqueleto do fluxo de gestão pedagógica (abertura de período → registro de aulas → frequência → avaliações → resultado final), permitindo que subclasses especializem etapas específicas |
+| Claudia | F-02, F-05 | **Template Method** | Definir o esqueleto do fluxo de gestão pedagógica (abertura de período → registro de aulas → frequência → avaliações → resultado final), permitindo que subclasses especializem etapas específicas |
 | Vinicius | F-04, F-12 | **Strategy** | Trocar estratégias de validação de elegibilidade para matrícula (regular, por exceção, por mobilidade externa) sem alterar o código do serviço principal |
 | Bernardo | F-07, F-08 | **Proxy** | Controlar o acesso às operações de solicitação acadêmica e de integralização curricular, delegando a execução somente após validar permissões e pré-condições do estado atual |
 | Clara | F-03, F-14 | **Decorator** | Adicionar comportamentos dinâmicos à oferta de turmas (ex.: `TurmaComListaEspera`, `TurmaOnline`) e a oportunidades de estágio sem modificar a classe base |
