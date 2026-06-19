@@ -1,19 +1,19 @@
 # language: pt
 
-Funcionalidade: Confirmar ou recusar candidatura de estágio
+Funcionalidade: Deferir e confirmar candidatura
 
-  Cenário: Empresa confirma candidatura e estágio é criado
-    Dado uma oportunidade encaminhada com candidato de id 20
-    Quando a empresa de id 10 confirma a candidatura
+  Cenário: Setor de estágios defere candidatura e empresa confirma gerando estágio
+    Dado uma candidatura em análise para o estudante de id 20
+    Quando o setor de estágios defere a candidatura
+    E a empresa confirma a candidatura deferida
     Então o estágio é criado com status EM_ANDAMENTO
-    E o estágio possui o estudante de id 20
 
-  Cenário: Empresa recusa candidatura
-    Dado uma oportunidade encaminhada com candidato de id 20
-    Quando a empresa de id 10 recusa a candidatura
-    Então a oportunidade fica com status RECUSADA
+  Cenário: Empresa tenta confirmar candidatura que ainda não foi deferida
+    Dado uma candidatura em análise para o estudante de id 20
+    Quando a empresa tenta confirmar candidatura não deferida
+    Então o sistema deve rejeitar informando "candidatura precisa estar deferida para gerar encaminhamento"
 
-  Cenário: Confirmação rejeitada sem encaminhamento prévio
-    Dado uma oportunidade aberta com candidato de id 20
-    Quando a empresa tenta confirmar sem encaminhamento
-    Então o sistema deve rejeitar informando "candidatura não foi encaminhada para confirmação"
+  Cenário: Setor de estágios defere candidatura com sucesso
+    Dado uma candidatura em análise para o estudante de id 20
+    Quando o setor de estágios defere a candidatura
+    Então a candidatura possui status DEFERIDA
