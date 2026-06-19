@@ -1,4 +1,4 @@
-package school.cesar.acadlab.apresentacao;
+package school.cesar.acadlab.apresentacao.matricula;
 
 import java.time.LocalDate;
 import java.util.List;
