@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
 import {
   FeaturePage, StatsRow, DataTable, StatusBadge, RowActionButton, FormField,
   SuccessBanner, SectionTitle, ActionBar, ValidationCallout,
@@ -7,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Building2, Clock, MapPin } from "lucide-react";
+import { api } from "@/lib/api";
 
 export const Route = createFileRoute("/estagios")({
   head: () => ({ meta: [{ title: "Estágios — AcadLab" }] }),
@@ -18,40 +20,46 @@ const candTone: Record<string, any> = {
   "Selecionada": "success", "Não selecionada": "danger",
 };
 
+const oportTone = (s: string) =>
+  s === "ABERTA" ? "success" : s === "ENCERRADA" ? "danger" : "warning";
+
 function Vagas() {
+  const { data = [], isLoading, isError } = useQuery({
+    queryKey: ["oportunidades"],
+    queryFn: () => api.oportunidades.listAll(),
+  });
+
+  const abertas = data.filter((o) => o.status === "ABERTA").length;
+
   return (
     <>
       <StatsRow stats={[
-        { label: "Vagas publicadas", value: 18, tone: "info" },
-        { label: "Minhas candidaturas", value: 4, tone: "success" },
+        { label: "Vagas publicadas", value: isLoading ? "…" : data.length, tone: "info" },
+        { label: "Vagas abertas", value: isLoading ? "…" : abertas, tone: "success" },
         { label: "Encaminhamentos", value: 2, tone: "warning" },
         { label: "Selecionadas", value: 1, tone: "success" },
       ]} />
       <ActionBar searchPlaceholder="Buscar vaga, empresa ou cargo..." primaryLabel="Cadastrar Oportunidade" />
+      {isError && <p className="text-sm text-destructive px-1">Não foi possível conectar ao servidor.</p>}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        {[
-          { empresa: "Acme Tech", cargo: "Desenvolvedor(a) Front-end", bolsa: "R$ 1.800", ch: "30h/semana", local: "Remoto", req: "React, TypeScript" },
-          { empresa: "DataBank Brasil", cargo: "Estagiário(a) em Dados", bolsa: "R$ 2.100", ch: "30h/semana", local: "São Paulo", req: "SQL, Python" },
-          { empresa: "Studio Nova", cargo: "QA Júnior (Estágio)", bolsa: "R$ 1.500", ch: "20h/semana", local: "Híbrido", req: "Cypress, Jest" },
-          { empresa: "Fintech Lúmen", cargo: "Backend Estagiário(a)", bolsa: "R$ 2.000", ch: "30h/semana", local: "Remoto", req: "Node.js, AWS" },
-        ].map((v, i) => (
-          <div key={i} className="flex flex-col gap-3 rounded-xl border bg-card p-5 shadow-card">
+        {data.map((v) => (
+          <div key={v.id} className="flex flex-col gap-3 rounded-xl border bg-card p-5 shadow-card">
             <div className="flex items-start justify-between">
               <div>
-                <p className="text-[14px] font-semibold">{v.cargo}</p>
-                <p className="mt-0.5 flex items-center gap-1.5 text-[12px] text-muted-foreground"><Building2 className="h-3.5 w-3.5" /> {v.empresa}</p>
+                <p className="text-[14px] font-semibold">{v.descricao}</p>
+                <p className="mt-0.5 flex items-center gap-1.5 text-[12px] text-muted-foreground"><Building2 className="h-3.5 w-3.5" /> Empresa {v.empresaId}</p>
               </div>
-              <StatusBadge tone="success">Aberta</StatusBadge>
+              <StatusBadge tone={oportTone(v.status)}>{v.status === "ABERTA" ? "Aberta" : "Encerrada"}</StatusBadge>
             </div>
             <div className="flex flex-wrap gap-3 text-[12px] text-muted-foreground">
-              <span className="flex items-center gap-1"><MapPin className="h-3.5 w-3.5" /> {v.local}</span>
-              <span className="flex items-center gap-1"><Clock className="h-3.5 w-3.5" /> {v.ch}</span>
-              <span>Bolsa: <span className="font-medium text-foreground">{v.bolsa}</span></span>
+              <span className="flex items-center gap-1"><Clock className="h-3.5 w-3.5" /> {v.cargaHorariaTotal}h total</span>
             </div>
-            <p className="text-[12px]"><span className="text-muted-foreground">Requisitos:</span> {v.req}</p>
             <div className="flex justify-end"><Button size="sm">Candidatar-se</Button></div>
           </div>
         ))}
+        {!isLoading && data.length === 0 && (
+          <p className="col-span-2 text-center text-sm text-muted-foreground py-8">Nenhuma vaga disponível.</p>
+        )}
       </div>
     </>
   );

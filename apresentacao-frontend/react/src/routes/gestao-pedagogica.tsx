@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
 import {
   FeaturePage, StatsRow, DataTable, StatusBadge, RowActionButton, FormField,
   ValidationCallout, SuccessBanner, SectionTitle, ProgressRow,
@@ -6,11 +7,44 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
+import { api } from "@/lib/api";
 
 export const Route = createFileRoute("/gestao-pedagogica")({
   head: () => ({ meta: [{ title: "Gestão Pedagógica — AcadLab" }] }),
   component: Page,
 });
+
+const TURMA_ID = 1;
+
+function Painel() {
+  const { data, isLoading, isError } = useQuery({
+    queryKey: ["diario", TURMA_ID],
+    queryFn: () => api.diarios.getByTurma(TURMA_ID),
+  });
+
+  const diarTone = (s: string) =>
+    s === "ABERTO" ? "info" : s === "FECHADO" ? "success" : "warning";
+  const diarLabel = (s: string) =>
+    ({ ABERTO: "Aberto", FECHADO: "Fechado", PENDENTE: "Pendente" }[s] ?? s);
+
+  return (
+    <>
+      <StatsRow stats={[
+        { label: "Status do Diário", value: isLoading ? "…" : diarLabel(data?.status ?? ""), tone: diarTone(data?.status ?? "") },
+        { label: "Turma", value: isLoading ? "…" : data ? `Turma ${data.turmaId}` : "—", tone: "info" },
+        { label: "Média Mínima", value: isLoading ? "…" : data?.mediaMinima ?? "—", tone: "warning" },
+        { label: "Freq. Mínima", value: isLoading ? "…" : data ? `${data.frequenciaMinima}%` : "—", tone: "danger" },
+      ]} />
+      {isError && <p className="text-sm text-destructive px-1">Não foi possível conectar ao servidor.</p>}
+      <div className="rounded-xl border bg-card p-5 shadow-card">
+        <SectionTitle
+          title="Visão Geral do Diário de Turma"
+          subtitle={data ? `Período ${data.dataInicioPeriodo} a ${data.dataFimPeriodo} · Prof. ${data.professorResponsavelId}` : "Carregando..."}
+        />
+      </div>
+    </>
+  );
+}
 
 function RegistrarAula() {
   return (
@@ -175,6 +209,7 @@ function Page() {
       title="Gestão Pedagógica da Turma"
       subtitle="Aulas, frequência, avaliações e fechamento"
       sections={[
+        { value: "painel", label: "Painel", content: <Painel /> },
         { value: "aula", label: "Registrar Aula", content: <RegistrarAula /> },
         { value: "freq", label: "Frequência", content: <Frequencia /> },
         { value: "av", label: "Criar Avaliação", content: <Avaliacao /> },

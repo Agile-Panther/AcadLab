@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
 import {
   FeaturePage, StatsRow, DataTable, StatusBadge, RowActionButton, FormField,
   SuccessBanner, SectionTitle, ActionBar,
@@ -6,11 +7,14 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
+import { api } from "@/lib/api";
 
 export const Route = createFileRoute("/mobilidade")({
   head: () => ({ meta: [{ title: "Mobilidade Acadêmica — AcadLab" }] }),
   component: Page,
 });
+
+const ESTUDANTE_ID = 1;
 
 function Solicitar() {
   return (
@@ -78,29 +82,45 @@ function Resultado() {
   );
 }
 
+const mobTone = (s: string) =>
+  s === "AUTORIZADA" || s === "CONCLUIDA" ? "success" : s === "EM_CURSO" ? "warning" : "info";
+
+const mobLabel = (s: string) =>
+  ({ SOLICITADA: "Solicitada", AUTORIZADA: "Autorizada", EM_CURSO: "Em curso", CONCLUIDA: "Concluída", CANCELADA: "Cancelada" }[s] ?? s);
+
 function Acompanhar() {
+  const { data, isLoading, isError } = useQuery({
+    queryKey: ["mobilidade", ESTUDANTE_ID],
+    queryFn: () => api.mobilidade.getByEstudante(ESTUDANTE_ID),
+  });
+
+  const rows = data ? [{
+    id: `MB-${data.id}`,
+    inst: data.instituicaoDestino,
+    per: "—",
+    status: mobLabel(data.status),
+    _status: data.status,
+  }] : [];
+
   return (
     <>
       <StatsRow stats={[
-        { label: "Solicitadas", value: 4, tone: "info" },
-        { label: "Autorizadas", value: 2, tone: "success" },
-        { label: "Em curso", value: 1, tone: "warning" },
-        { label: "Concluídas", value: 6, tone: "neutral" as any },
+        { label: "Status atual", value: isLoading ? "…" : mobLabel(data?.status ?? ""), tone: mobTone(data?.status ?? "") },
+        { label: "Instituição", value: isLoading ? "…" : data?.instituicaoDestino ?? "—", tone: "info" },
+        { label: "Estudante", value: isLoading ? "…" : data ? `ID ${data.estudanteId}` : "—", tone: "warning" },
+        { label: "Mobilidades", value: isLoading ? "…" : data ? 1 : 0, tone: "neutral" as any },
       ]} />
       <ActionBar searchPlaceholder="Buscar solicitação..." primaryLabel="Nova Mobilidade" />
+      {isError && <p className="text-sm text-destructive px-1">Não foi possível conectar ao servidor.</p>}
       <DataTable
         columns={[
           { key: "id", header: "Protocolo" },
           { key: "inst", header: "Instituição" },
           { key: "per", header: "Período" },
-          { key: "status", header: "Status", render: (r) => <StatusBadge tone={r.tone as any}>{r.status}</StatusBadge> },
+          { key: "status", header: "Status", render: (r) => <StatusBadge tone={mobTone(r._status)}>{r.status}</StatusBadge> },
           { key: "acoes", header: "", render: () => <div className="flex justify-end gap-1.5"><RowActionButton>Ver</RowActionButton><RowActionButton tone="danger">Cancelar</RowActionButton></div>, align: "right" },
         ]}
-        rows={[
-          { id: "MB-2025-018", inst: "U. de Coimbra", per: "2026.1", status: "Solicitada", tone: "info" },
-          { id: "MB-2024-009", inst: "Tec de Monterrey", per: "2025.1", status: "Em curso", tone: "warning" },
-          { id: "MB-2023-014", inst: "U. de Buenos Aires", per: "2024.2", status: "Concluída", tone: "success" },
-        ]}
+        rows={rows}
       />
     </>
   );

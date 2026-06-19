@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
 import {
   FeaturePage, StatsRow, DataTable, StatusBadge, RowActionButton, FormField,
   SuccessBanner, SectionTitle, ValidationCallout, ActionBar,
@@ -7,36 +8,64 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Printer } from "lucide-react";
+import { api } from "@/lib/api";
 
 export const Route = createFileRoute("/historico-academico")({
   head: () => ({ meta: [{ title: "Histórico Acadêmico — AcadLab" }] }),
   component: Page,
 });
 
+const ESTUDANTE_ID = 1;
+
+const situacaoTone = (s: string) =>
+  s === "ATIVO" ? "success" : s === "TRANCADO" ? "warning" : s === "FORMADO" ? "info" : "danger";
+
+const situacaoLabel = (s: string) =>
+  ({ ATIVO: "Ativo", TRANCADO: "Trancado", DESLIGADO: "Desligado", FORMADO: "Formado" }[s] ?? s);
+
+const sitAcaTone = (s: string) =>
+  s === "APROVADO" || s === "APROVADO_POR_APROVEITAMENTO" ? "success" : "danger";
+
 function Painel() {
+  const { data, isLoading, isError } = useQuery({
+    queryKey: ["historico", ESTUDANTE_ID],
+    queryFn: () => api.historico.getByEstudante(ESTUDANTE_ID),
+  });
+
+  const registros = data?.registros ?? [];
+  const aprovados = registros.filter((r) => r.situacao.startsWith("APROVADO")).length;
+  const reprovados = registros.filter((r) => r.situacao.startsWith("REPROVADO")).length;
+
+  const rows = registros.map((r) => ({
+    id: r.id,
+    disciplinaId: `Disciplina ${r.disciplinaId}`,
+    turmaId: `Turma ${r.turmaId}`,
+    nota: r.nota.toFixed(1),
+    freq: `${r.frequencia.toFixed(0)}%`,
+    sit: r.situacao.replace(/_/g, " "),
+    _sit: r.situacao,
+  }));
+
   return (
     <>
       <StatsRow stats={[
-        { label: "Estudantes Ativos", value: "2.184", tone: "info" },
-        { label: "Em risco", value: 47, tone: "warning" },
-        { label: "Aptos a colar grau", value: 86, tone: "success" },
-        { label: "Lançamentos retificados", value: 12, tone: "danger" },
+        { label: "Situação Discente", value: isLoading ? "…" : situacaoLabel(data?.situacaoDiscente ?? ""), tone: situacaoTone(data?.situacaoDiscente ?? "") },
+        { label: "Disciplinas Cursadas", value: isLoading ? "…" : registros.length, tone: "info" },
+        { label: "Aprovações", value: isLoading ? "…" : aprovados, tone: "success" },
+        { label: "Reprovações", value: isLoading ? "…" : reprovados, tone: "danger" },
       ]} />
-      <ActionBar searchPlaceholder="Buscar estudante por matrícula ou nome..." primaryLabel="Consolidar Resultados" />
+      <ActionBar searchPlaceholder="Buscar disciplina..." primaryLabel="Consolidar Resultados" />
+      {isError && <p className="text-sm text-destructive px-1">Não foi possível conectar ao servidor.</p>}
       <DataTable
         columns={[
-          { key: "mat", header: "Matrícula" },
-          { key: "nome", header: "Estudante" },
-          { key: "curso", header: "Curso" },
-          { key: "cr", header: "CR", align: "right" },
-          { key: "sit", header: "Situação", render: (r) => <StatusBadge tone={r.tone as any}>{r.sit}</StatusBadge> },
-          { key: "acoes", header: "Ações", render: () => <RowActionButton>Ver histórico</RowActionButton>, align: "right" },
+          { key: "disciplinaId", header: "Disciplina" },
+          { key: "turmaId", header: "Turma" },
+          { key: "nota", header: "Nota", align: "right" },
+          { key: "freq", header: "Frequência", align: "right" },
+          { key: "sit", header: "Situação", render: (r) => <StatusBadge tone={sitAcaTone(r._sit)}>{r.sit}</StatusBadge> },
+          { key: "acoes", header: "Ações", render: () => <RowActionButton>Detalhes</RowActionButton>, align: "right" },
         ]}
-        rows={[
-          { mat: "2023001", nome: "Maria Santos", curso: "Eng. Software", cr: 8.4, sit: "Regular", tone: "success" },
-          { mat: "2022014", nome: "Pedro Mota", curso: "ADS", cr: 5.2, sit: "Em risco", tone: "warning" },
-          { mat: "2019099", nome: "Lucas Vieira", curso: "Ciência Comp.", cr: 7.9, sit: "Apto a colar", tone: "info" },
-        ]}
+        rows={rows}
       />
     </>
   );

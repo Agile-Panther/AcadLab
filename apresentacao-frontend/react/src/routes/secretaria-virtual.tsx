@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
 import {
   FeaturePage, StatsRow, DataTable, StatusBadge, RowActionButton, FormField,
   SuccessBanner, SectionTitle, ActionBar,
@@ -6,40 +7,58 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
+import { api } from "@/lib/api";
 
 export const Route = createFileRoute("/secretaria-virtual")({
   head: () => ({ meta: [{ title: "Secretaria Virtual — AcadLab" }] }),
   component: Page,
 });
 
-const tone = (s: string) =>
-  s === "Deferida" ? "success" : s === "Indeferida" ? "danger"
-  : s === "Aguardando complemento" ? "warning" : "info";
+const solTone = (s: string) =>
+  s === "DEFERIDA" ? "success" : s === "INDEFERIDA" ? "danger"
+  : s === "AGUARDANDO_COMPLEMENTO" ? "warning" : "info";
+
+const solLabel = (s: string) =>
+  ({ ABERTA: "Em análise", DEFERIDA: "Deferida", INDEFERIDA: "Indeferida", AGUARDANDO_COMPLEMENTO: "Aguardando complemento" }[s] ?? s);
 
 function MinhasSolicitacoes() {
+  const { data = [], isLoading, isError } = useQuery({
+    queryKey: ["solicitacoes", "pendentes"],
+    queryFn: () => api.solicitacoes.listPendentes(),
+  });
+
+  const emAnalise = data.filter((s) => s.status === "ABERTA").length;
+  const aguardando = data.filter((s) => s.status === "AGUARDANDO_COMPLEMENTO").length;
+  const deferidas = data.filter((s) => s.status === "DEFERIDA").length;
+  const indeferidas = data.filter((s) => s.status === "INDEFERIDA").length;
+
+  const rows = data.map((s) => ({
+    id: `SEC-${s.protocoloId}`,
+    tipo: s.tipo,
+    data: s.dataAbertura,
+    status: solLabel(s.status),
+    _status: s.status,
+  }));
+
   return (
     <>
       <StatsRow stats={[
-        { label: "Em análise", value: 2, tone: "info" },
-        { label: "Aguardando complemento", value: 1, tone: "warning" },
-        { label: "Deferidas", value: 8, tone: "success" },
-        { label: "Indeferidas", value: 1, tone: "danger" },
+        { label: "Em análise", value: isLoading ? "…" : emAnalise, tone: "info" },
+        { label: "Aguardando complemento", value: isLoading ? "…" : aguardando, tone: "warning" },
+        { label: "Deferidas", value: isLoading ? "…" : deferidas, tone: "success" },
+        { label: "Indeferidas", value: isLoading ? "…" : indeferidas, tone: "danger" },
       ]} />
       <ActionBar searchPlaceholder="Buscar solicitação..." primaryLabel="Nova Solicitação" />
+      {isError && <p className="text-sm text-destructive px-1">Não foi possível conectar ao servidor.</p>}
       <DataTable
         columns={[
           { key: "id", header: "Protocolo" },
           { key: "tipo", header: "Tipo" },
           { key: "data", header: "Aberta em" },
-          { key: "status", header: "Status", render: (r) => <StatusBadge tone={tone(r.status)}>{r.status}</StatusBadge> },
+          { key: "status", header: "Status", render: (r) => <StatusBadge tone={solTone(r._status)}>{r.status}</StatusBadge> },
           { key: "acoes", header: "", render: () => <div className="flex justify-end gap-1.5"><RowActionButton>Ver</RowActionButton><RowActionButton tone="danger">Cancelar</RowActionButton></div>, align: "right" },
         ]}
-        rows={[
-          { id: "SEC-2025-0192", tipo: "Declaração de matrícula", data: "08/03/2025", status: "Em análise" },
-          { id: "SEC-2025-0188", tipo: "Histórico parcial", data: "06/03/2025", status: "Aguardando complemento" },
-          { id: "SEC-2025-0177", tipo: "Requerimento de trancamento", data: "02/03/2025", status: "Deferida" },
-          { id: "SEC-2025-0150", tipo: "Solicitação de revisão", data: "20/02/2025", status: "Indeferida" },
-        ]}
+        rows={rows}
       />
     </>
   );

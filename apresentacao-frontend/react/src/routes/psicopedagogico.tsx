@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
 import {
   FeaturePage, StatsRow, DataTable, StatusBadge, RowActionButton, FormField,
   SuccessBanner, SectionTitle,
@@ -7,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Lock } from "lucide-react";
+import { api } from "@/lib/api";
 
 export const Route = createFileRoute("/psicopedagogico")({
   head: () => ({ meta: [{ title: "Psicopedagógico — AcadLab" }] }),
@@ -110,29 +112,43 @@ function Encerrar() {
 }
 
 function Historico() {
+  const { data = [], isLoading, isError } = useQuery({
+    queryKey: ["apoio", "casos"],
+    queryFn: () => api.apoio.listCasos(),
+  });
+
+  const ativos = data.filter((c) => c.status === "ABERTO").length;
+  const triagem = data.filter((c) => c.status === "EM_TRIAGEM").length;
+  const encerrados = data.filter((c) => c.status === "ENCERRADO").length;
+
+  const rows = data.map((c) => ({
+    id: `PSI-${c.id}`,
+    tipo: `Caso ${c.id}`,
+    estud: `Estudante ${c.estudanteId}`,
+    resp: c.responsavelId ? `Responsável ${c.responsavelId}` : "Não atribuído",
+    status: c.status === "ABERTO" ? "Aberto" : c.status === "EM_TRIAGEM" ? "Em triagem" : "Encerrado",
+    _status: c.status,
+  }));
+
   return (
     <div className="space-y-4">
       <ConfidentialNote />
       <StatsRow stats={[
-        { label: "Casos ativos", value: 18, tone: "info" },
-        { label: "Em triagem", value: 6, tone: "warning" },
-        { label: "Encaminhamentos", value: 22, tone: "success" },
-        { label: "Encerrados (mês)", value: 9, tone: "neutral" as any },
+        { label: "Casos ativos", value: isLoading ? "…" : ativos, tone: "info" },
+        { label: "Em triagem", value: isLoading ? "…" : triagem, tone: "warning" },
+        { label: "Total de casos", value: isLoading ? "…" : data.length, tone: "success" },
+        { label: "Encerrados", value: isLoading ? "…" : encerrados, tone: "neutral" as any },
       ]} />
+      {isError && <p className="text-sm text-destructive px-1">Não foi possível conectar ao servidor.</p>}
       <DataTable
         columns={[
           { key: "id", header: "Caso" },
-          { key: "tipo", header: "Tipo" },
-          { key: "prior", header: "Prioridade", render: (r) => <StatusBadge tone={r.prior === "Alta" ? "danger" : r.prior === "Média" ? "warning" : "neutral"}>{r.prior}</StatusBadge> },
-          { key: "atend", header: "Último atendimento" },
-          { key: "status", header: "Status", render: (r) => <StatusBadge tone={r.status === "Aberto" ? "info" : "success"}>{r.status}</StatusBadge> },
+          { key: "estud", header: "Estudante" },
+          { key: "resp", header: "Responsável" },
+          { key: "status", header: "Status", render: (r) => <StatusBadge tone={r._status === "ABERTO" ? "info" : r._status === "EM_TRIAGEM" ? "warning" : "success"}>{r.status}</StatusBadge> },
           { key: "acoes", header: "", render: () => <RowActionButton>Ver</RowActionButton>, align: "right" },
         ]}
-        rows={[
-          { id: "PSI-2025-0034", tipo: "Apoio emocional", prior: "Alta", atend: "10/03/2025", status: "Aberto" },
-          { id: "PSI-2025-0021", tipo: "Acompanhamento acadêmico", prior: "Média", atend: "02/03/2025", status: "Aberto" },
-          { id: "PSI-2025-0009", tipo: "Encaminhamento externo", prior: "Baixa", atend: "12/02/2025", status: "Encerrado" },
-        ]}
+        rows={rows}
       />
     </div>
   );
