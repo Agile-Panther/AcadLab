@@ -141,16 +141,16 @@ interface HistoricoAcademicoJpaRepository extends JpaRepository<HistoricoAcademi
     @Query("SELECT COALESCE(MAX(h.id), 0) + 1 FROM HistoricoAcademicoJpa h")
     int proximoHistoricoId();
 
-    @Query("SELECT COALESCE(MAX(r.registroId), 0) + 1 FROM HistoricoAcademicoJpa h JOIN h.registros r")
+    @Query("SELECT COALESCE((SELECT MAX(r.registroId) FROM HistoricoAcademicoJpa h JOIN h.registros r), 0) + 1")
     int proximoRegistroId();
 
-    @Query("SELECT COALESCE(MAX(a.aproveitamentoId), 0) + 1 FROM HistoricoAcademicoJpa h JOIN h.aproveitamentos a")
+    @Query("SELECT COALESCE((SELECT MAX(a.aproveitamentoId) FROM HistoricoAcademicoJpa h JOIN h.aproveitamentos a), 0) + 1")
     int proximoAproveitamentoId();
 
-    @Query("SELECT COALESCE(MAX(r.retificacaoId), 0) + 1 FROM HistoricoAcademicoJpa h JOIN h.retificacoes r")
+    @Query("SELECT COALESCE((SELECT MAX(r.retificacaoId) FROM HistoricoAcademicoJpa h JOIN h.retificacoes r), 0) + 1")
     int proximoRetificacaoId();
 
-    @Query("SELECT COALESCE(MAX(a.acompanhamentoId), 0) + 1 FROM HistoricoAcademicoJpa h JOIN h.acompanhamentos a")
+    @Query("SELECT COALESCE((SELECT MAX(a.acompanhamentoId) FROM HistoricoAcademicoJpa h JOIN h.acompanhamentos a), 0) + 1")
     int proximoAcompanhamentoId();
 }
 
