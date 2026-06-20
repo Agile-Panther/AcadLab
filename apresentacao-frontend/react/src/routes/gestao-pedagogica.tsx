@@ -39,7 +39,7 @@ function Painel() {
       <div className="rounded-xl border bg-card p-5 shadow-card">
         <SectionTitle
           title="Visão Geral do Diário de Turma"
-          subtitle={data ? `Período ${data.dataInicioPeriodo} a ${data.dataFimPeriodo} · Prof. ${data.professorResponsavelId}` : "Carregando..."}
+          subtitle={isLoading ? "Carregando..." : data ? `Período ${data.dataInicioPeriodo} a ${data.dataFimPeriodo} · Prof. ${data.professorResponsavelId}` : "Nenhum diário de turma encontrado"}
         />
       </div>
     </>

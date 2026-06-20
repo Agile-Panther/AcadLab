@@ -21,7 +21,7 @@ const candTone: Record<string, any> = {
 };
 
 const oportTone = (s: string) =>
-  s === "ABERTA" ? "success" : s === "ENCERRADA" ? "danger" : "warning";
+  s === "PUBLICADA" ? "success" : s === "ENCERRADA" ? "danger" : "warning";
 
 function Vagas() {
   const { data = [], isLoading, isError } = useQuery({
@@ -29,7 +29,7 @@ function Vagas() {
     queryFn: () => api.oportunidades.listAll(),
   });
 
-  const abertas = data.filter((o) => o.status === "ABERTA").length;
+  const abertas = data.filter((o) => o.status === "PUBLICADA").length;
 
   return (
     <>
@@ -49,7 +49,7 @@ function Vagas() {
                 <p className="text-[14px] font-semibold">{v.descricao}</p>
                 <p className="mt-0.5 flex items-center gap-1.5 text-[12px] text-muted-foreground"><Building2 className="h-3.5 w-3.5" /> Empresa {v.empresaId}</p>
               </div>
-              <StatusBadge tone={oportTone(v.status)}>{v.status === "ABERTA" ? "Aberta" : "Encerrada"}</StatusBadge>
+              <StatusBadge tone={oportTone(v.status)}>{v.status === "PUBLICADA" ? "Publicada" : v.status === "ENCERRADA" ? "Encerrada" : "Cadastrada"}</StatusBadge>
             </div>
             <div className="flex flex-wrap gap-3 text-[12px] text-muted-foreground">
               <span className="flex items-center gap-1"><Clock className="h-3.5 w-3.5" /> {v.cargaHorariaTotal}h total</span>

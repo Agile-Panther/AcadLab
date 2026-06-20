@@ -50,7 +50,8 @@ class TurmaControlador {
                 new DisciplinaId(req.disciplinaId()),
                 ModalidadeTurma.valueOf(req.modalidade()),
                 req.capacidade());
-        return turmaServico.buscarPorId(turma.getId().getId()).orElseThrow();
+        return turmaServico.buscarPorId(turma.getId().getId())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
     }
 
     @RequestMapping(method = PUT, path = "/{id}/professor")
