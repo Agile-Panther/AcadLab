@@ -2,7 +2,8 @@ import { useEffect, useRef, useState } from "react";
 
 /**
  * CountUp — reactbits-style animated number counter.
- * Smoothly tweens from 0 to `end` using an ease-out curve when it enters the viewport.
+ * Tweens to `end` using an ease-out curve when it enters the viewport, e
+ * re-anima sempre que `end` muda (ex.: quando os dados reais chegam do backend).
  */
 export function CountUp({
   end,
@@ -20,24 +21,18 @@ export function CountUp({
   className?: string;
 }) {
   const [value, setValue] = useState(0);
+  const [visible, setVisible] = useState(false);
   const ref = useRef<HTMLSpanElement | null>(null);
-  const started = useRef(false);
+  const fromRef = useRef(0);
 
+  // Dispara quando o elemento entra na viewport (apenas uma vez).
   useEffect(() => {
-    if (!ref.current || started.current) return;
+    if (!ref.current) return;
     const node = ref.current;
     const io = new IntersectionObserver(
       (entries) => {
-        if (entries.some((e) => e.isIntersecting) && !started.current) {
-          started.current = true;
-          const start = performance.now();
-          const tick = (now: number) => {
-            const t = Math.min(1, (now - start) / duration);
-            const eased = 1 - Math.pow(1 - t, 3);
-            setValue(end * eased);
-            if (t < 1) requestAnimationFrame(tick);
-          };
-          requestAnimationFrame(tick);
+        if (entries.some((e) => e.isIntersecting)) {
+          setVisible(true);
           io.disconnect();
         }
       },
@@ -45,7 +40,29 @@ export function CountUp({
     );
     io.observe(node);
     return () => io.disconnect();
-  }, [end, duration]);
+  }, []);
+
+  // Anima do valor atual até `end` sempre que ficar visível ou o alvo mudar.
+  useEffect(() => {
+    if (!visible) return;
+    const from = fromRef.current;
+    const start = performance.now();
+    let raf = 0;
+    const tick = (now: number) => {
+      const t = Math.min(1, (now - start) / duration);
+      const eased = 1 - Math.pow(1 - t, 3);
+      const current = from + (end - from) * eased;
+      setValue(current);
+      fromRef.current = current;
+      if (t < 1) {
+        raf = requestAnimationFrame(tick);
+      } else {
+        fromRef.current = end;
+      }
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [visible, end, duration]);
 
   const formatted = value.toLocaleString("pt-BR", {
     minimumFractionDigits: decimals,

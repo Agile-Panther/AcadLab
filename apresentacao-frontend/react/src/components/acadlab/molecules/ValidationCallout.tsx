@@ -1,4 +1,4 @@
-import { CheckCircle2, AlertCircle, Info } from "lucide-react";
+import { CheckCircle2, AlertCircle, AlertTriangle, Info } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export function ValidationCallout({
@@ -6,7 +6,7 @@ export function ValidationCallout({
   children,
   className,
 }: {
-  tone?: "success" | "error" | "info";
+  tone?: "success" | "error" | "info" | "warning";
   children: React.ReactNode;
   className?: string;
 }) {
@@ -14,6 +14,7 @@ export function ValidationCallout({
     success: { cls: "bg-success-soft text-success", Icon: CheckCircle2 },
     error: { cls: "bg-destructive-soft text-destructive", Icon: AlertCircle },
     info: { cls: "bg-primary-soft text-primary", Icon: Info },
+    warning: { cls: "bg-warning/10 text-warning", Icon: AlertTriangle },
   } as const;
   const { cls, Icon } = map[tone];
   return (

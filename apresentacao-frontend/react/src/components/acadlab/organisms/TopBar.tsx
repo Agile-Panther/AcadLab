@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
-import { Bell, HelpCircle, Check } from "lucide-react";
+import { Bell, HelpCircle, Check, UserCog } from "lucide-react";
+import { useProfileSwitcherContext } from "../context/ProfileSwitcher";
 import { useRouterState } from "@tanstack/react-router";
 import {
   Popover,
@@ -33,6 +34,9 @@ export function TopBar({
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const help = useMemo(() => getPageHelp(pathname), [pathname]);
 
+  const { profiles, active, setActive } = useProfileSwitcherContext();
+  const activeProfile = profiles.find((p) => p.value === active) ?? null;
+
   const [items, setItems] = useState(seedNotifications);
   const unreadCount = items.filter((n) => n.unread).length;
   const markAllRead = () =>
@@ -63,6 +67,42 @@ export function TopBar({
       </div>
       <div className="flex items-center gap-2">
         {right}
+
+        {profiles.length > 1 && activeProfile && (
+          <Popover>
+            <PopoverTrigger asChild>
+              <button
+                type="button"
+                aria-label="Trocar perfil"
+                className="flex h-9 items-center gap-2 rounded-full border border-border bg-card/60 pl-2 pr-2.5 text-[12.5px] font-medium text-foreground transition-colors hover:bg-muted"
+              >
+                <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-primary">
+                  <UserCog className="h-3.5 w-3.5" />
+                </span>
+                {activeProfile.label}
+              </button>
+            </PopoverTrigger>
+            <PopoverContent align="end" className="w-[260px] p-2">
+              <p className="px-2 py-1.5 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Trocar perfil</p>
+              {profiles.map((p) => (
+                <button
+                  key={p.value}
+                  type="button"
+                  onClick={() => setActive(p.value)}
+                  className={cn(
+                    "flex w-full flex-col rounded-md px-3 py-2 text-left text-[13px] transition-colors hover:bg-muted",
+                    p.value === active && "bg-primary/5 font-semibold text-primary",
+                  )}
+                >
+                  <span>{p.label}</span>
+                  {p.description && (
+                    <span className="text-[11.5px] font-normal text-muted-foreground">{p.description}</span>
+                  )}
+                </button>
+              ))}
+            </PopoverContent>
+          </Popover>
+        )}
 
         <Popover>
           <PopoverTrigger asChild>

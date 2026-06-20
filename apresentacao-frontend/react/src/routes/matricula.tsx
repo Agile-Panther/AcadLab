@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import type { TurmaResumo, ItemMatriculaResumo } from "@/lib/api";
@@ -29,17 +29,6 @@ const DISCIPLINA_EXCECAO_ID = 1;
 const HOJE = new Date().toISOString().split("T")[0];
 // Mapeamento fixo turmaId → disciplinaId (reflete o seed)
 const TURMA_DISC: Record<number, number> = { 1: 101, 2: 201, 3: 301, 4: 401, 5: 501, 6: 601, 7: 701, 8: 801 };
-
-const blocosConfirmados: ClassBlock[] = [
-  { day: 1, start: 8, duration: 2, title: "Algoritmos Avançados", code: "AED301", color: "info" },
-  { day: 1, start: 14, duration: 2, title: "Banco de Dados II", code: "BD302", color: "success" },
-  { day: 2, start: 10, duration: 2, title: "Testes de Software", code: "ES303", color: "warning" },
-  { day: 3, start: 8, duration: 2, title: "Algoritmos Avançados", code: "AED301", color: "info" },
-  { day: 3, start: 16, duration: 2, title: "Gestão de Projetos", code: "GP306", color: "info" },
-  { day: 4, start: 10, duration: 2, title: "Testes de Software", code: "ES303", color: "warning" },
-  { day: 5, start: 14, duration: 2, title: "Redes Avançadas", code: "RC305", color: "danger" },
-  { day: 5, start: 16, duration: 2, title: "Banco de Dados II", code: "BD302", color: "success" },
-];
 
 type Oferta = {
   turmaId: number; disciplinaId: number;
@@ -72,40 +61,29 @@ function restaurarSessaoWizard(): WizardSession | null {
   } catch { return null; }
 }
 
-// ─── Persistência da grade confirmada ────────────────────────────────────────
-const GRADE_KEY = "matricula_grade_v1";
+// ─── Agenda (grade) derivada dos dados reais da matrícula ─────────────────────
 const DIAS: Record<string, number> = { Seg: 1, Ter: 2, Qua: 3, Qui: 4, Sex: 5, Sab: 6, Sáb: 6 };
 const CORES: ClassBlock["color"][] = ["info", "success", "warning", "violet", "danger"];
 
-function ofertasParaBlocos(selecionadas: Oferta[]): ClassBlock[] {
+// Constrói os blocos da agenda a partir dos itens CONFIRMADO da matrícula (fonte real).
+function itensParaBlocos(itens: ItemMatriculaResumo[]): ClassBlock[] {
   const blocos: ClassBlock[] = [];
-  selecionadas.forEach((o, idx) => {
+  itens.forEach((it, idx) => {
+    const d = DISC[it.disciplinaId];
+    if (!d) return;
     const color = CORES[idx % CORES.length];
-    // Formato: "Seg/Qua 08-10" ou "Ter/Qui 10-12" ou "Sex 14-18"
-    const partes = o.horario.split(" ");
-    const diasStr = partes[0] ?? "";
-    const horas = partes[1] ?? "";
+    // Horário no formato "Seg/Qua 08-10" / "Ter/Qui 10-12" / "Sex 14-18"
+    const [diasStr = "", horas = ""] = d.horario.split(" ");
     const [hIni, hFim] = horas.split("-").map(Number);
     const duration = hFim - hIni;
-    diasStr.split("/").forEach((d) => {
-      const day = DIAS[d];
+    diasStr.split("/").forEach((dia) => {
+      const day = DIAS[dia];
       if (day && !isNaN(hIni) && duration > 0) {
-        blocos.push({ day, start: hIni, duration, title: o.nome, code: o.codigo, color });
+        blocos.push({ day, start: hIni, duration, title: d.nome, code: d.codigo, color });
       }
     });
   });
   return blocos;
-}
-
-function salvarGrade(selecionadas: Oferta[]) {
-  localStorage.setItem(GRADE_KEY, JSON.stringify(ofertasParaBlocos(selecionadas)));
-}
-
-function carregarGrade(): ClassBlock[] {
-  try {
-    const raw = localStorage.getItem(GRADE_KEY);
-    return raw ? (JSON.parse(raw) as ClassBlock[]) : blocosConfirmados;
-  } catch { return blocosConfirmados; }
 }
 
 function turmaParaOferta(t: TurmaResumo, matriculadosIds: Set<number>): Oferta {
@@ -142,6 +120,23 @@ function Page() {
   const jaConfirmada = matricula?.status === "CONFIRMADA" || matricula?.status === "AGUARDANDO_SECRETARIA";
   const aguardandoSecretaria = matricula?.status === "AGUARDANDO_SECRETARIA";
 
+  // Dados reais derivados da matrícula (sem mocks). A agenda, contadores e
+  // estados de trancamento vêm dos itens/status retornados pelo backend.
+  const itensConfirmados = useMemo(
+    () => (matricula?.itens ?? []).filter((i) => i.statusItem === "CONFIRMADO"),
+    [matricula]
+  );
+  const itensTrancados = useMemo(
+    () => (matricula?.itens ?? []).filter((i) => i.statusItem === "TRANCADO"),
+    [matricula]
+  );
+  const periodoTrancado = matricula?.status === "TRANCADA_PERIODO";
+  const agenda = useMemo(() => itensParaBlocos(itensConfirmados), [itensConfirmados]);
+  const trancadasLabels = useMemo(
+    () => itensTrancados.map((i) => { const d = DISC[i.disciplinaId]; return d ? `${d.codigo} — ${d.nome}` : `Turma ${i.turmaId}`; }),
+    [itensTrancados]
+  );
+
   // IDs das turmas já adicionadas à matrícula no DB
   const turmasNoDb = useMemo(
     () => new Set((matricula?.itens ?? []).map((i) => i.turmaId)),
@@ -171,24 +166,19 @@ function Page() {
   // Quando DB carrega e não há sessão, sincroniza estado
   const ofertasVisiveis = ofertas.length > 0 ? ofertas : ofertasFromDB;
 
-  const [grade, setGrade] = useState<ClassBlock[]>(() => carregarGrade());
-  const [trancados, setTrancados] = useState<Trancados>(() => carregarTrancados());
-  const [solicitacoes, setSolicitacoes] = useState<SolicitacaoAjuste[]>(() => carregarSolicitacoes());
+  // A fila de solicitações é client-side. Carrega após o mount para não divergir
+  // do HTML do servidor (evita erro de hidratação).
+  const [solicitacoes, setSolicitacoes] = useState<SolicitacaoAjuste[]>([]);
+  useEffect(() => { setSolicitacoes(carregarSolicitacoes()); }, []);
 
-  const decidirSolicitacao = (turmaId: number, aprovado: boolean) => {
-    const sol = solicitacoes.find((s) => s.turmaId === turmaId);
-    const novas = solicitacoes.filter((s) => s.turmaId !== turmaId);
+  // Secretaria decidiu uma solicitação: em ambos os casos sai da fila. Ao deferir,
+  // a SecretariaView já atualizou o backend, então basta re-buscar a matrícula —
+  // a agenda e os contadores se recalculam a partir dos dados reais.
+  const decidirSolicitacao = (sol: SolicitacaoAjuste, aprovado: boolean) => {
+    const novas = solicitacoes.filter((s) => s.id !== sol.id);
     salvarSolicitacoes(novas);
     setSolicitacoes(novas);
-    if (aprovado && sol) {
-      const codigo = DISC[sol.disciplinaId]?.codigo;
-      if (codigo) {
-        const novaGrade = grade.filter((b) => b.code !== codigo);
-        localStorage.setItem(GRADE_KEY, JSON.stringify(novaGrade));
-        setGrade(novaGrade);
-      }
-      refetchMatricula();
-    }
+    if (aprovado) refetchMatricula();
   };
   const selecionadas = ofertasVisiveis.filter((o) => o.status === "Selecionada");
   const creditos = selecionadas.reduce((s, o) => s + o.creditos, 0);
@@ -223,7 +213,7 @@ function Page() {
 
   const subtitle = perfil === "secretaria"
     ? "Visão Secretaria Acadêmica · Exceções e trancamentos"
-    : "Estudante: Maria Santos — 2025.2";
+    : "Estudante: Maria Santos";
 
   return (
     <AppShell title="Matrícula" subtitle={subtitle}>
@@ -233,8 +223,11 @@ function Page() {
           jaConfirmada={jaConfirmada}
           aguardandoSecretaria={aguardandoSecretaria}
           solicitacoes={solicitacoes}
-          grade={grade}
-          trancados={trancados}
+          agenda={agenda}
+          discCount={itensConfirmados.length}
+          credCount={itensConfirmados.reduce((s, i) => s + (DISC[i.disciplinaId]?.creditos ?? 0), 0)}
+          trancadasLabels={trancadasLabels}
+          periodoTrancado={periodoTrancado}
           onNova={() => { setOfertas(ofertasFromDB); salvarSessaoWizard(0, ofertasFromDB); setView({ kind: "wizard", step: 0 }); }}
           onAjuste={() => setView({ kind: "ajuste" })}
           onTrancarDisc={() => setView({ kind: "trancarDisc" })}
@@ -255,15 +248,18 @@ function Page() {
           onStep={irParaStep}
           onCancel={voltarOverview}
           onExcecao={(d) => setView({ kind: "excecao", disciplina: d })}
-          onConfirmada={(sel) => { const blocos = ofertasParaBlocos(sel); salvarGrade(sel); setGrade(blocos); refetchMatricula(); }}
+          onConfirmada={() => refetchMatricula()}
         />
       )}
       {perfil === "estudante" && view.kind === "ajuste" && (
         <Ajuste
           itensMatricula={matricula?.itens ?? []}
+          solicitacoes={solicitacoes}
           onBack={() => setView({ kind: "overview" })}
           onSolicitar={(pendentes) => {
             const novas: SolicitacaoAjuste[] = pendentes.map((p) => ({
+              id: novaSolicitacaoId(),
+              tipo: "cancelamento",
               turmaId: p.turmaId,
               disciplinaId: p.disciplinaId,
               estudante: "Maria Santos",
@@ -279,21 +275,39 @@ function Page() {
       {perfil === "estudante" && view.kind === "trancarDisc" && (
         <TrancarDisciplina
           itensMatricula={matricula?.itens ?? []}
+          solicitacoes={solicitacoes}
           onBack={() => setView({ kind: "overview" })}
-          onTrancou={(disc) => {
-            const novo = { ...trancados, disciplinas: [...trancados.disciplinas, disc] };
-            salvarTrancados(novo);
-            setTrancados(novo);
+          onSolicitar={(turmaId, disciplinaId) => {
+            const nova: SolicitacaoAjuste = {
+              id: novaSolicitacaoId(),
+              tipo: "trancamento-disciplina",
+              turmaId, disciplinaId,
+              estudante: "Maria Santos",
+              dataHora: new Date().toISOString(),
+            };
+            const todas = [...solicitacoes, nova];
+            salvarSolicitacoes(todas);
+            setSolicitacoes(todas);
+            setView({ kind: "overview" });
           }}
         />
       )}
       {perfil === "estudante" && view.kind === "trancarPeriodo" && (
         <TrancarPeriodo
+          jaSolicitado={solicitacoes.some((s) => s.tipo === "trancamento-periodo")}
           onBack={() => setView({ kind: "overview" })}
-          onTrancou={() => {
-            const novo = { ...trancados, periodo: true };
-            salvarTrancados(novo);
-            setTrancados(novo);
+          onSolicitar={() => {
+            const nova: SolicitacaoAjuste = {
+              id: novaSolicitacaoId(),
+              tipo: "trancamento-periodo",
+              turmaId: 0, disciplinaId: 0,
+              estudante: "Maria Santos",
+              dataHora: new Date().toISOString(),
+            };
+            const todas = [...solicitacoes, nova];
+            salvarSolicitacoes(todas);
+            setSolicitacoes(todas);
+            setView({ kind: "overview" });
           }}
         />
       )}
@@ -306,8 +320,20 @@ function Page() {
 
 function SecretariaView({ matriculaId, aguardandoSecretaria, onAprovada, solicitacoes, onDecidiu }: {
   matriculaId: number; aguardandoSecretaria: boolean; onAprovada: () => void;
-  solicitacoes: SolicitacaoAjuste[]; onDecidiu: (turmaId: number, aprovado: boolean) => void;
+  solicitacoes: SolicitacaoAjuste[]; onDecidiu: (sol: SolicitacaoAjuste, aprovado: boolean) => void;
 }) {
+  // Deferir executa a operação no backend conforme o tipo; só então reflete na agenda.
+  const deferirSolicitacao = (s: SolicitacaoAjuste) => {
+    const acao =
+      s.tipo === "cancelamento"
+        ? api.matricula.cancelarItem(matriculaId, s.turmaId, { hoje: HOJE, inicio: HOJE, fim: HOJE })
+        : s.tipo === "trancamento-disciplina"
+        ? api.matricula.trancarDisciplina(matriculaId, s.turmaId, { hoje: HOJE, inicio: HOJE, fim: HOJE })
+        : api.matricula.trancarPeriodo(matriculaId, { hoje: HOJE, inicioTrancamento: HOJE, fimTrancamento: HOJE, totalTrancamentos: 0, limiteTrancamentos: 2 });
+    acao
+      .then(() => { onDecidiu(s, true); toast.success("Solicitação deferida."); })
+      .catch((e: Error) => toast.error(e.message || "Erro ao deferir solicitação."));
+  };
   const [pedidos, setPedidos] = useState<Pedido[]>([
     { id: "MAT-2025-0231", aluno: "Maria Santos", tipo: "Exceção — pré-requisito", aberta: "12/03/2025", status: "Em análise" },
     { id: "MAT-2025-0240", aluno: "Pedro Almeida", tipo: "Trancamento de período", aberta: "15/03/2025", status: "Em análise" },
@@ -334,11 +360,15 @@ function SecretariaView({ matriculaId, aguardandoSecretaria, onAprovada, solicit
       ]} />
       {solicitacoes.length > 0 && (
         <>
-          <SectionTitle title="Solicitações de ajuste" subtitle="Cancelamentos solicitados por estudantes aguardando análise." />
+          <SectionTitle title="Solicitações de ajuste" subtitle="Cancelamentos e trancamentos solicitados por estudantes aguardando deferimento." />
           <DataTable
             columns={[
               { key: "estudante", header: "Estudante" },
+              { key: "tipo", header: "Tipo", render: (r: SolicitacaoAjuste) => (
+                <StatusBadge tone={r.tipo === "cancelamento" ? "info" : r.tipo === "trancamento-disciplina" ? "warning" : "danger"}>{TIPO_LABEL[r.tipo]}</StatusBadge>
+              )},
               { key: "disciplina", header: "Disciplina", render: (r: SolicitacaoAjuste) => {
+                if (r.tipo === "trancamento-periodo") return "Período completo";
                 const d = DISC[r.disciplinaId];
                 return d ? `${d.codigo} — ${d.nome}` : `Turma ${r.turmaId}`;
               }},
@@ -347,12 +377,8 @@ function SecretariaView({ matriculaId, aguardandoSecretaria, onAprovada, solicit
               },
               { key: "acoes", header: "", align: "right" as const, render: (r: SolicitacaoAjuste) => (
                 <div className="flex justify-end gap-2">
-                  <RowActionButton onClick={() => { onDecidiu(r.turmaId, false); toast.success("Cancelamento rejeitado."); }}>Rejeitar</RowActionButton>
-                  <RowActionButton tone="info" onClick={() => {
-                    api.matricula.cancelarItem(matriculaId, r.turmaId, { hoje: HOJE, inicio: HOJE, fim: HOJE })
-                      .then(() => { onDecidiu(r.turmaId, true); toast.success("Cancelamento aprovado."); })
-                      .catch((e: Error) => toast.error(e.message || "Erro ao aprovar."));
-                  }}>Aprovar</RowActionButton>
+                  <RowActionButton onClick={() => { onDecidiu(r, false); toast.success("Solicitação indeferida."); }}>Indeferir</RowActionButton>
+                  <RowActionButton tone="info" onClick={() => deferirSolicitacao(r)}>Deferir</RowActionButton>
                 </div>
               )},
             ]}
@@ -396,15 +422,15 @@ function SecretariaView({ matriculaId, aguardandoSecretaria, onAprovada, solicit
   );
 }
 
-function Overview({ jaConfirmada, aguardandoSecretaria, solicitacoes, grade, trancados, onNova, onAjuste, onTrancarDisc, onTrancarPer, onDestrancarDisc, onDestrancarPer }: {
-  jaConfirmada: boolean; aguardandoSecretaria: boolean; solicitacoes: SolicitacaoAjuste[]; grade: ClassBlock[]; trancados: Trancados;
+function Overview({ jaConfirmada, aguardandoSecretaria, solicitacoes, agenda, discCount, credCount, trancadasLabels, periodoTrancado, onNova, onAjuste, onTrancarDisc, onTrancarPer, onDestrancarDisc, onDestrancarPer }: {
+  jaConfirmada: boolean; aguardandoSecretaria: boolean; solicitacoes: SolicitacaoAjuste[];
+  agenda: ClassBlock[]; discCount: number; credCount: number; trancadasLabels: string[]; periodoTrancado: boolean;
   onNova: () => void; onAjuste: () => void; onTrancarDisc: () => void; onTrancarPer: () => void;
   onDestrancarDisc: () => void; onDestrancarPer: () => void;
 }) {
-  const discCount = grade.reduce((s, b) => { s.add(b.code); return s; }, new Set<string>()).size || (jaConfirmada ? 3 : 5);
-  const credCount = discCount * 4;
-  const temTrancDisc = trancados.disciplinas.length > 0;
-  const temTrancPer = trancados.periodo;
+  const temTrancDisc = trancadasLabels.length > 0;
+  const temTrancPer = periodoTrancado;
+  const pendencias = solicitacoes.length;
   return (
     <div className="space-y-5">
       {aguardandoSecretaria && (
@@ -414,14 +440,13 @@ function Overview({ jaConfirmada, aguardandoSecretaria, solicitacoes, grade, tra
       )}
       {solicitacoes.length > 0 && (
         <ValidationCallout tone="info">
-          <strong>{solicitacoes.length} disciplina(s)</strong> com solicitação de cancelamento aguardando análise da secretaria:{" "}
-          {solicitacoes.map((s) => DISC[s.disciplinaId]?.codigo ?? `Turma ${s.turmaId}`).join(", ")}.
+          <strong>{solicitacoes.length} solicitação(ões)</strong> aguardando deferimento da secretaria:{" "}
+          {solicitacoes.map(descricaoSolicitacao).join("; ")}.
         </ValidationCallout>
       )}
-      {jaConfirmada && !aguardandoSecretaria
-        ? <SuccessBanner title="Matrícula 2026.1 confirmada" description={`${discCount} disciplinas · ${credCount} créditos · janela de ajuste aberta`} />
-        : !aguardandoSecretaria && <SuccessBanner title="Matrícula 2025.2 confirmada" description="5 disciplinas · 18 créditos · janela de ajuste aberta até 23/03" />
-      }
+      {jaConfirmada && !aguardandoSecretaria && (
+        <SuccessBanner title="Matrícula confirmada" description={`${discCount} disciplina(s) · ${credCount} créditos · janela de ajuste aberta`} />
+      )}
       {temTrancPer && (
         <ValidationCallout tone="warning">
           Período trancado. Para solicitar destrancamento,{" "}
@@ -430,19 +455,19 @@ function Overview({ jaConfirmada, aguardandoSecretaria, solicitacoes, grade, tra
       )}
       {temTrancDisc && (
         <ValidationCallout tone="warning">
-          {trancados.disciplinas.length} disciplina(s) trancada(s): {trancados.disciplinas.join(", ")}.{" "}
+          {trancadasLabels.length} disciplina(s) trancada(s): {trancadasLabels.join(", ")}.{" "}
           <button className="underline font-medium" onClick={onDestrancarDisc}>Solicitar destrancamento</button>.
         </ValidationCallout>
       )}
       <StatsRow stats={[
-        { label: "Disciplinas matriculadas", value: jaConfirmada ? discCount : 5, tone: "info" },
-        { label: "Créditos no período", value: jaConfirmada ? credCount : 18, tone: "success" },
-        { label: "Janela de ajuste", value: "11 dias", tone: "warning" },
-        { label: "Pendências", value: temTrancDisc || temTrancPer ? 1 : 0, tone: temTrancDisc || temTrancPer ? "warning" : "success" },
+        { label: "Disciplinas matriculadas", value: discCount, tone: "info" },
+        { label: "Créditos no período", value: credCount, tone: "success" },
+        { label: "Disciplinas trancadas", value: trancadasLabels.length, tone: temTrancDisc ? "warning" : "success" },
+        { label: "Pendências", value: pendencias, tone: pendencias > 0 ? "warning" : "success" },
       ]} />
       <div className="flex flex-wrap gap-2">
         {!jaConfirmada && (
-          <Button onClick={onNova}><Plus className="mr-2 h-4 w-4" /> Iniciar Matrícula 2026.1</Button>
+          <Button onClick={onNova}><Plus className="mr-2 h-4 w-4" /> Iniciar Matrícula</Button>
         )}
         {(() => {
           // Ajuste, Trancar Disciplina e Trancar Período só funcionam com status CONFIRMADA
@@ -475,8 +500,8 @@ function Overview({ jaConfirmada, aguardandoSecretaria, solicitacoes, grade, tra
         })()}
         <Button variant="secondary" onClick={() => toast.success("Grade impressa (PDF gerado).")}><Printer className="mr-2 h-4 w-4" /> Imprimir grade</Button>
       </div>
-      <SectionTitle title="Grade de horários — 2026.1" subtitle={jaConfirmada ? "Disciplinas da matrícula confirmada" : "Matrícula confirmada em 12/01/2025"} />
-      <ScheduleGrid blocks={grade} />
+      <SectionTitle title="Grade de horários" subtitle={jaConfirmada ? "Disciplinas da matrícula confirmada" : "Monte sua matrícula para visualizar a grade"} />
+      <ScheduleGrid blocks={agenda} />
     </div>
   );
 }
@@ -613,24 +638,36 @@ const DISC: Record<number, { codigo: string; nome: string; creditos: number; pro
   801: { codigo: "ES501",  nome: "Eng. de Software III",             creditos: 4, prof: "Carlos Lima",       horario: "Seg/Qua 10-12" },
 };
 
-// ─── Trancamentos persistidos ────────────────────────────────────────────────
-const TRANCADOS_KEY = "matricula_trancados_v1";
-type Trancados = { disciplinas: string[]; periodo: boolean };
+// ─── Solicitações enviadas à secretaria (cancelamento e trancamentos) ─────────
+// Toda solicitação fica pendente até a secretaria deferir/indeferir. Só ao
+// deferir a mudança é efetivada no backend e refletida na agenda (visão geral).
+const AJUSTE_SOL_KEY = "ajuste_solicitacoes_v2";
+type TipoSolicitacao = "cancelamento" | "trancamento-disciplina" | "trancamento-periodo";
+type SolicitacaoAjuste = {
+  id: string;
+  tipo: TipoSolicitacao;
+  turmaId: number;      // 0 para trancamento de período
+  disciplinaId: number; // 0 para trancamento de período
+  estudante: string;
+  dataHora: string;
+};
 
-function carregarTrancados(): Trancados {
-  try {
-    const raw = localStorage.getItem(TRANCADOS_KEY);
-    return raw ? (JSON.parse(raw) as Trancados) : { disciplinas: [], periodo: false };
-  } catch { return { disciplinas: [], periodo: false }; }
+const TIPO_LABEL: Record<TipoSolicitacao, string> = {
+  "cancelamento": "Cancelamento de disciplina",
+  "trancamento-disciplina": "Trancamento de disciplina",
+  "trancamento-periodo": "Trancamento de período",
+};
+
+function novaSolicitacaoId(): string {
+  return `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
-function salvarTrancados(t: Trancados) {
-  localStorage.setItem(TRANCADOS_KEY, JSON.stringify(t));
+function descricaoSolicitacao(s: SolicitacaoAjuste): string {
+  if (s.tipo === "trancamento-periodo") return TIPO_LABEL[s.tipo];
+  const d = DISC[s.disciplinaId];
+  const alvo = d ? `${d.codigo} — ${d.nome}` : `Turma ${s.turmaId}`;
+  return `${TIPO_LABEL[s.tipo]} · ${alvo}`;
 }
-
-// ─── Solicitações de ajuste (cancelamento via secretaria) ────────────────────
-const AJUSTE_SOL_KEY = "ajuste_solicitacoes_v1";
-type SolicitacaoAjuste = { turmaId: number; disciplinaId: number; estudante: string; dataHora: string };
 
 function carregarSolicitacoes(): SolicitacaoAjuste[] {
   try {
@@ -644,8 +681,9 @@ function salvarSolicitacoes(s: SolicitacaoAjuste[]) {
 
 type AjustePendente = { turmaId: number; disciplinaId: number };
 
-function Ajuste({ itensMatricula, onBack, onSolicitar }: {
+function Ajuste({ itensMatricula, solicitacoes, onBack, onSolicitar }: {
   itensMatricula: ItemMatriculaResumo[];
+  solicitacoes: SolicitacaoAjuste[];
   onBack: () => void;
   onSolicitar: (pendentes: AjustePendente[]) => void;
 }) {
@@ -657,13 +695,14 @@ function Ajuste({ itensMatricula, onBack, onSolicitar }: {
 
   const [pendentes, setPendentes] = useState<AjustePendente[]>([]);
 
-  // Apenas itens com statusItem CONFIRMADO podem ser cancelados no ajuste
-  // Exclui os que já estão marcados para cancelar (desaparecem da lista ao marcar)
+  // Apenas itens com statusItem CONFIRMADO podem ser cancelados no ajuste.
+  // Exclui os já marcados nesta sessão e os que já têm solicitação aguardando a secretaria.
   const idsPendentes = new Set(pendentes.map((p) => p.turmaId));
+  const idsComSolicitacao = new Set(solicitacoes.map((s) => s.turmaId));
   const idsConfirmados = new Set(
     itensMatricula.filter((i) => i.statusItem === "CONFIRMADO").map((i) => i.turmaId)
   );
-  const matriculadas = turmas.filter((t) => idsConfirmados.has(t.id) && !idsPendentes.has(t.id));
+  const matriculadas = turmas.filter((t) => idsConfirmados.has(t.id) && !idsPendentes.has(t.id) && !idsComSolicitacao.has(t.id));
 
   const marcarExcluir = (t: typeof turmas[0]) => {
     if (pendentes.some((p) => p.turmaId === t.id)) return;
@@ -676,24 +715,17 @@ function Ajuste({ itensMatricula, onBack, onSolicitar }: {
     toast.success(`Cancelamento de ${d?.codigo ?? turmaId} revertido.`);
   };
 
-  const confirmar = useMutation({
-    mutationFn: () =>
-      Promise.all(
-        pendentes.map((p) =>
-          api.matricula.cancelarItem(MATRICULA_ID, p.turmaId, { hoje: HOJE, inicio: HOJE, fim: HOJE })
-        )
-      ),
-    onSuccess: () => {
-      toast.success(`${pendentes.length} solicitação(es) de cancelamento enviada(s) para a secretaria.`);
-      onSolicitar(pendentes);
-    },
-    onError: (e: Error) => toast.error(e.message || "Erro ao confirmar ajustes."),
-  });
+  // O cancelamento não é efetivado aqui: a solicitação é enviada à secretaria,
+  // que defere ou indefere. A disciplina só sai da agenda após o deferimento.
+  const enviar = () => {
+    toast.success(`${pendentes.length} solicitação(ões) de cancelamento enviada(s) para a secretaria.`);
+    onSolicitar(pendentes);
+  };
 
   return (
     <div className="space-y-5">
       <Button variant="ghost" size="sm" onClick={onBack}><ArrowLeft className="mr-1 h-4 w-4" /> Voltar</Button>
-      <SectionTitle title="Ajuste de matrícula" subtitle="Janela aberta até 23/03/2025. Cancelamentos são imediatos após confirmação." />
+      <SectionTitle title="Ajuste de matrícula" subtitle="Janela aberta até 23/03/2025. Os cancelamentos são enviados à secretaria para deferimento." />
 
       {/* Disciplinas matriculadas */}
       <div>
@@ -737,31 +769,39 @@ function Ajuste({ itensMatricula, onBack, onSolicitar }: {
 
       <div className="flex justify-end gap-2">
         <Button variant="outline" onClick={onBack}>Cancelar</Button>
-        <Button onClick={() => confirmar.mutate()} disabled={confirmar.isPending || pendentes.length === 0}>
-          {confirmar.isPending ? "Enviando…" : `Solicitar cancelamento${pendentes.length > 0 ? ` (${pendentes.length})` : ""}`}
+        <Button onClick={enviar} disabled={pendentes.length === 0}>
+          {`Solicitar cancelamento${pendentes.length > 0 ? ` (${pendentes.length})` : ""}`}
         </Button>
       </div>
     </div>
   );
 }
 
-function TrancarDisciplina({ itensMatricula, onBack, onTrancou }: {
-  itensMatricula: ItemMatriculaResumo[]; onBack: () => void; onTrancou: (disc: string) => void;
+function TrancarDisciplina({ itensMatricula, solicitacoes, onBack, onSolicitar }: {
+  itensMatricula: ItemMatriculaResumo[];
+  solicitacoes: SolicitacaoAjuste[];
+  onBack: () => void;
+  onSolicitar: (turmaId: number, disciplinaId: number) => void;
 }) {
-  // Apenas itens CONFIRMADO podem ser trancados (domínio: item.trancar() exige CONFIRMADO)
+  // Apenas itens CONFIRMADO e sem solicitação pendente podem ser trancados
+  // (domínio: item.trancar() exige CONFIRMADO).
+  const idsComSolicitacao = new Set(solicitacoes.map((s) => s.turmaId));
   const turmasDisponiveis = itensMatricula
-    .filter((i) => i.statusItem === "CONFIRMADO")
-    .map((i) => { const d = DISC[i.disciplinaId]; return { turmaId: i.turmaId, label: d ? `${d.codigo} — ${d.nome}` : `Turma ${i.turmaId}` }; });
+    .filter((i) => i.statusItem === "CONFIRMADO" && !idsComSolicitacao.has(i.turmaId))
+    .map((i) => { const d = DISC[i.disciplinaId]; return { turmaId: i.turmaId, disciplinaId: i.disciplinaId, label: d ? `${d.codigo} — ${d.nome}` : `Turma ${i.turmaId}` }; });
 
   const primeiro = turmasDisponiveis[0];
-  const [turmaId, setTurmaId] = useState<number>(primeiro?.turmaId ?? TURMAS_BASE[0]);
-  const label = turmasDisponiveis.find((t) => t.turmaId === turmaId)?.label ?? `Turma ${turmaId}`;
+  const [turmaId, setTurmaId] = useState<number>(primeiro?.turmaId ?? 0);
+  const selecionada = turmasDisponiveis.find((t) => t.turmaId === turmaId) ?? primeiro;
 
-  const trancar = useMutation({
-    mutationFn: () => api.matricula.trancarDisciplina(MATRICULA_ID, turmaId, { hoje: HOJE, inicio: HOJE, fim: HOJE }),
-    onSuccess: () => { toast.success("Disciplina trancada."); onTrancou(label); onBack(); },
-    onError: (e: Error) => toast.error(e.message || "Erro ao trancar disciplina."),
-  });
+  // O trancamento não é efetivado aqui: a solicitação vai à secretaria, que defere
+  // ou indefere. A disciplina só sai da agenda após o deferimento.
+  const enviar = () => {
+    if (!selecionada) return;
+    toast.success("Solicitação de trancamento enviada para a secretaria.");
+    onSolicitar(selecionada.turmaId, selecionada.disciplinaId);
+    onBack();
+  };
   return (
     <div className="space-y-4">
       <Button variant="ghost" size="sm" onClick={onBack}><ArrowLeft className="mr-1 h-4 w-4" /> Voltar</Button>
@@ -785,11 +825,11 @@ function TrancarDisciplina({ itensMatricula, onBack, onTrancou }: {
             <FormField label="Justificativa" full><Textarea rows={4} /></FormField>
           </div>
         )}
-        <ValidationCallout className="mt-4" tone="info">O trancamento não conta como reprovação, mas impacta o CR.</ValidationCallout>
+        <ValidationCallout className="mt-4" tone="info">O trancamento passa pela análise da secretaria. Não conta como reprovação, mas impacta o CR.</ValidationCallout>
         <div className="mt-4 flex justify-end gap-2">
           <Button variant="outline" onClick={onBack}>Cancelar</Button>
-          <Button variant="destructive" onClick={() => trancar.mutate()} disabled={trancar.isPending || turmasDisponiveis.length === 0}>
-            {trancar.isPending ? "Trancando…" : "Trancar disciplina"}
+          <Button variant="destructive" onClick={enviar} disabled={turmasDisponiveis.length === 0}>
+            Solicitar trancamento
           </Button>
         </div>
       </div>
@@ -797,12 +837,15 @@ function TrancarDisciplina({ itensMatricula, onBack, onTrancou }: {
   );
 }
 
-function TrancarPeriodo({ onBack, onTrancou }: { onBack: () => void; onTrancou: () => void }) {
-  const trancar = useMutation({
-    mutationFn: () => api.matricula.trancarPeriodo(MATRICULA_ID, { hoje: HOJE, inicioTrancamento: HOJE, fimTrancamento: HOJE, totalTrancamentos: 0, limiteTrancamentos: 2 }),
-    onSuccess: () => { toast.success("Período trancado."); onTrancou(); onBack(); },
-    onError: (e: Error) => toast.error(e.message || "Erro ao trancar período."),
-  });
+function TrancarPeriodo({ jaSolicitado, onBack, onSolicitar }: { jaSolicitado: boolean; onBack: () => void; onSolicitar: () => void }) {
+  // O trancamento de período não é efetivado aqui: a solicitação vai à secretaria,
+  // que defere ou indefere. A agenda só é limpa após o deferimento.
+  const enviar = () => {
+    if (jaSolicitado) { toast.info("Já existe uma solicitação de trancamento de período em análise."); return; }
+    toast.success("Solicitação de trancamento de período enviada para a secretaria.");
+    onSolicitar();
+    onBack();
+  };
   return (
     <div className="space-y-4">
       <Button variant="ghost" size="sm" onClick={onBack}><ArrowLeft className="mr-1 h-4 w-4" /> Voltar</Button>
@@ -810,14 +853,14 @@ function TrancarPeriodo({ onBack, onTrancou }: { onBack: () => void; onTrancou: 
         <SectionTitle title="Trancamento do período letivo" />
         <div className="mt-3 flex items-start gap-3 rounded-lg bg-destructive/10 p-3 text-destructive">
           <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0" />
-          <p className="text-[13px]">Você está prestes a trancar <strong>todo o período 2025.2</strong>. Esta ação é irreversível dentro do semestre.</p>
+          <p className="text-[13px]">Você está solicitando o trancamento de <strong>todo o período 2025.2</strong>. A solicitação será analisada pela secretaria antes de ser efetivada.</p>
         </div>
         <FormField className="mt-4" label="Justificativa" required full><Textarea rows={4} /></FormField>
         <ValidationCallout className="mt-4" tone="info">Limite: 2 trancamentos consecutivos permitidos pela matriz.</ValidationCallout>
         <div className="mt-4 flex justify-end gap-2">
           <Button variant="outline" onClick={onBack}>Voltar</Button>
-          <Button variant="destructive" onClick={() => trancar.mutate()} disabled={trancar.isPending}>
-            {trancar.isPending ? "Trancando…" : "Trancar período"}
+          <Button variant="destructive" onClick={enviar} disabled={jaSolicitado}>
+            Solicitar trancamento
           </Button>
         </div>
       </div>
