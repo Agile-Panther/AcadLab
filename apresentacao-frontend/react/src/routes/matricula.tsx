@@ -42,6 +42,7 @@ type View =
   | { kind: "ajuste" }
   | { kind: "trancarDisc" }
   | { kind: "trancarPeriodo" }
+  | { kind: "destrancarDisc" }
   | { kind: "excecao"; disciplina?: string };
 
 // ─── Persistência de sessão do wizard ────────────────────────────────────────
@@ -180,6 +181,22 @@ function Page() {
     setSolicitacoes(novas);
     if (aprovado) refetchMatricula();
   };
+
+  // Enfileira uma ou mais solicitações para a secretaria (cancelamento, trancamento
+  // ou destrancamento) e volta para a visão geral.
+  const enfileirar = (novas: Array<Pick<SolicitacaoAjuste, "tipo" | "turmaId" | "disciplinaId">>) => {
+    const completas: SolicitacaoAjuste[] = novas.map((n) => ({
+      id: novaSolicitacaoId(),
+      estudante: "Maria Santos",
+      dataHora: new Date().toISOString(),
+      ...n,
+    }));
+    const todas = [...solicitacoes, ...completas];
+    salvarSolicitacoes(todas);
+    setSolicitacoes(todas);
+    setView({ kind: "overview" });
+  };
+
   const selecionadas = ofertasVisiveis.filter((o) => o.status === "Selecionada");
   const creditos = selecionadas.reduce((s, o) => s + o.creditos, 0);
   const temConflito = selecionadas.some((o) => o.disciplinaId === 501) && selecionadas.some((o) => o.disciplinaId === 601);
@@ -232,8 +249,15 @@ function Page() {
           onAjuste={() => setView({ kind: "ajuste" })}
           onTrancarDisc={() => setView({ kind: "trancarDisc" })}
           onTrancarPer={() => setView({ kind: "trancarPeriodo" })}
-          onDestrancarDisc={() => setView({ kind: "excecao", disciplina: "Destrancamento de disciplina" })}
-          onDestrancarPer={() => setView({ kind: "excecao", disciplina: "Destrancamento de período" })}
+          onDestrancarDisc={() => setView({ kind: "destrancarDisc" })}
+          onDestrancarPer={() => {
+            if (solicitacoes.some((s) => s.tipo === "destrancamento-periodo")) {
+              toast.info("Já existe uma solicitação de destrancamento de período em análise.");
+              return;
+            }
+            enfileirar([{ tipo: "destrancamento-periodo", turmaId: 0, disciplinaId: 0 }]);
+            toast.success("Solicitação de destrancamento de período enviada para a secretaria.");
+          }}
         />
       )}
       {perfil === "estudante" && view.kind === "wizard" && (
@@ -256,20 +280,9 @@ function Page() {
           itensMatricula={matricula?.itens ?? []}
           solicitacoes={solicitacoes}
           onBack={() => setView({ kind: "overview" })}
-          onSolicitar={(pendentes) => {
-            const novas: SolicitacaoAjuste[] = pendentes.map((p) => ({
-              id: novaSolicitacaoId(),
-              tipo: "cancelamento",
-              turmaId: p.turmaId,
-              disciplinaId: p.disciplinaId,
-              estudante: "Maria Santos",
-              dataHora: new Date().toISOString(),
-            }));
-            const todas = [...solicitacoes, ...novas];
-            salvarSolicitacoes(todas);
-            setSolicitacoes(todas);
-            setView({ kind: "overview" });
-          }}
+          onSolicitar={(pendentes) =>
+            enfileirar(pendentes.map((p) => ({ tipo: "cancelamento", turmaId: p.turmaId, disciplinaId: p.disciplinaId })))
+          }
         />
       )}
       {perfil === "estudante" && view.kind === "trancarDisc" && (
@@ -277,42 +290,30 @@ function Page() {
           itensMatricula={matricula?.itens ?? []}
           solicitacoes={solicitacoes}
           onBack={() => setView({ kind: "overview" })}
-          onSolicitar={(turmaId, disciplinaId) => {
-            const nova: SolicitacaoAjuste = {
-              id: novaSolicitacaoId(),
-              tipo: "trancamento-disciplina",
-              turmaId, disciplinaId,
-              estudante: "Maria Santos",
-              dataHora: new Date().toISOString(),
-            };
-            const todas = [...solicitacoes, nova];
-            salvarSolicitacoes(todas);
-            setSolicitacoes(todas);
-            setView({ kind: "overview" });
-          }}
+          onSolicitar={(turmaId, disciplinaId) =>
+            enfileirar([{ tipo: "trancamento-disciplina", turmaId, disciplinaId }])
+          }
+        />
+      )}
+      {perfil === "estudante" && view.kind === "destrancarDisc" && (
+        <DestrancarDisciplina
+          itensTrancados={itensTrancados}
+          solicitacoes={solicitacoes}
+          onBack={() => setView({ kind: "overview" })}
+          onSolicitar={(turmaId, disciplinaId) =>
+            enfileirar([{ tipo: "destrancamento-disciplina", turmaId, disciplinaId }])
+          }
         />
       )}
       {perfil === "estudante" && view.kind === "trancarPeriodo" && (
         <TrancarPeriodo
           jaSolicitado={solicitacoes.some((s) => s.tipo === "trancamento-periodo")}
           onBack={() => setView({ kind: "overview" })}
-          onSolicitar={() => {
-            const nova: SolicitacaoAjuste = {
-              id: novaSolicitacaoId(),
-              tipo: "trancamento-periodo",
-              turmaId: 0, disciplinaId: 0,
-              estudante: "Maria Santos",
-              dataHora: new Date().toISOString(),
-            };
-            const todas = [...solicitacoes, nova];
-            salvarSolicitacoes(todas);
-            setSolicitacoes(todas);
-            setView({ kind: "overview" });
-          }}
+          onSolicitar={() => enfileirar([{ tipo: "trancamento-periodo", turmaId: 0, disciplinaId: 0 }])}
         />
       )}
       {perfil === "estudante" && view.kind === "excecao" && (
-        <Excecao disciplina={view.disciplina} onBack={() => setView({ kind: "wizard", step: 1 })} />
+        <Excecao disciplina={view.disciplina} onBack={() => setView({ kind: "overview" })} />
       )}
     </AppShell>
   );
@@ -324,22 +325,25 @@ function SecretariaView({ matriculaId, aguardandoSecretaria, onAprovada, solicit
 }) {
   // Deferir executa a operação no backend conforme o tipo; só então reflete na agenda.
   const deferirSolicitacao = (s: SolicitacaoAjuste) => {
-    const acao =
-      s.tipo === "cancelamento"
-        ? api.matricula.cancelarItem(matriculaId, s.turmaId, { hoje: HOJE, inicio: HOJE, fim: HOJE })
-        : s.tipo === "trancamento-disciplina"
-        ? api.matricula.trancarDisciplina(matriculaId, s.turmaId, { hoje: HOJE, inicio: HOJE, fim: HOJE })
-        : api.matricula.trancarPeriodo(matriculaId, { hoje: HOJE, inicioTrancamento: HOJE, fimTrancamento: HOJE, totalTrancamentos: 0, limiteTrancamentos: 2 });
+    const acao = (() => {
+      switch (s.tipo) {
+        case "cancelamento":
+          return api.matricula.cancelarItem(matriculaId, s.turmaId, { hoje: HOJE, inicio: HOJE, fim: HOJE });
+        case "trancamento-disciplina":
+          return api.matricula.trancarDisciplina(matriculaId, s.turmaId, { hoje: HOJE, inicio: HOJE, fim: HOJE });
+        case "trancamento-periodo":
+          return api.matricula.trancarPeriodo(matriculaId, { hoje: HOJE, inicioTrancamento: HOJE, fimTrancamento: HOJE, totalTrancamentos: 0, limiteTrancamentos: 2 });
+        case "destrancamento-disciplina":
+          return api.matricula.destrancarDisciplina(matriculaId, s.turmaId);
+        case "destrancamento-periodo":
+          return api.matricula.destrancarPeriodo(matriculaId);
+      }
+    })();
     acao
       .then(() => { onDecidiu(s, true); toast.success("Solicitação deferida."); })
       .catch((e: Error) => toast.error(e.message || "Erro ao deferir solicitação."));
   };
-  const [pedidos, setPedidos] = useState<Pedido[]>([
-    { id: "MAT-2025-0231", aluno: "Maria Santos", tipo: "Exceção — pré-requisito", aberta: "12/03/2025", status: "Em análise" },
-    { id: "MAT-2025-0240", aluno: "Pedro Almeida", tipo: "Trancamento de período", aberta: "15/03/2025", status: "Em análise" },
-    { id: "MAT-2025-0245", aluno: "Júlia Rocha", tipo: "Trancamento — BD302", aberta: "18/03/2025", status: "Em análise" },
-    { id: "MAT-2025-0210", aluno: "Lucas Pires", tipo: "Ajuste fora do prazo", aberta: "02/02/2025", status: "Deferida" },
-  ]);
+  const [pedidos, setPedidos] = useState<Pedido[]>([]);
   const decidir = (id: string, status: "Deferida" | "Indeferida") => {
     setPedidos((p) => p.map((x) => x.id === id ? { ...x, status } : x));
     toast.success(`Solicitação ${id} ${status.toLowerCase()}.`);
@@ -360,15 +364,15 @@ function SecretariaView({ matriculaId, aguardandoSecretaria, onAprovada, solicit
       ]} />
       {solicitacoes.length > 0 && (
         <>
-          <SectionTitle title="Solicitações de ajuste" subtitle="Cancelamentos e trancamentos solicitados por estudantes aguardando deferimento." />
+          <SectionTitle title="Solicitações de ajuste" subtitle="Cancelamentos, trancamentos e destrancamentos solicitados por estudantes aguardando deferimento." />
           <DataTable
             columns={[
               { key: "estudante", header: "Estudante" },
               { key: "tipo", header: "Tipo", render: (r: SolicitacaoAjuste) => (
-                <StatusBadge tone={r.tipo === "cancelamento" ? "info" : r.tipo === "trancamento-disciplina" ? "warning" : "danger"}>{TIPO_LABEL[r.tipo]}</StatusBadge>
+                <StatusBadge tone={TIPO_TONE[r.tipo]}>{TIPO_LABEL[r.tipo]}</StatusBadge>
               )},
               { key: "disciplina", header: "Disciplina", render: (r: SolicitacaoAjuste) => {
-                if (r.tipo === "trancamento-periodo") return "Período completo";
+                if (ehSolicitacaoDePeriodo(r)) return "Período completo";
                 const d = DISC[r.disciplinaId];
                 return d ? `${d.codigo} — ${d.nome}` : `Turma ${r.turmaId}`;
               }},
@@ -642,12 +646,17 @@ const DISC: Record<number, { codigo: string; nome: string; creditos: number; pro
 // Toda solicitação fica pendente até a secretaria deferir/indeferir. Só ao
 // deferir a mudança é efetivada no backend e refletida na agenda (visão geral).
 const AJUSTE_SOL_KEY = "ajuste_solicitacoes_v2";
-type TipoSolicitacao = "cancelamento" | "trancamento-disciplina" | "trancamento-periodo";
+type TipoSolicitacao =
+  | "cancelamento"
+  | "trancamento-disciplina"
+  | "trancamento-periodo"
+  | "destrancamento-disciplina"
+  | "destrancamento-periodo";
 type SolicitacaoAjuste = {
   id: string;
   tipo: TipoSolicitacao;
-  turmaId: number;      // 0 para trancamento de período
-  disciplinaId: number; // 0 para trancamento de período
+  turmaId: number;      // 0 para operações de período
+  disciplinaId: number; // 0 para operações de período
   estudante: string;
   dataHora: string;
 };
@@ -656,14 +665,27 @@ const TIPO_LABEL: Record<TipoSolicitacao, string> = {
   "cancelamento": "Cancelamento de disciplina",
   "trancamento-disciplina": "Trancamento de disciplina",
   "trancamento-periodo": "Trancamento de período",
+  "destrancamento-disciplina": "Destrancamento de disciplina",
+  "destrancamento-periodo": "Destrancamento de período",
 };
+
+const TIPO_TONE: Record<TipoSolicitacao, "info" | "warning" | "danger" | "success"> = {
+  "cancelamento": "info",
+  "trancamento-disciplina": "warning",
+  "trancamento-periodo": "danger",
+  "destrancamento-disciplina": "success",
+  "destrancamento-periodo": "success",
+};
+
+const ehSolicitacaoDePeriodo = (s: SolicitacaoAjuste) =>
+  s.tipo === "trancamento-periodo" || s.tipo === "destrancamento-periodo";
 
 function novaSolicitacaoId(): string {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
 function descricaoSolicitacao(s: SolicitacaoAjuste): string {
-  if (s.tipo === "trancamento-periodo") return TIPO_LABEL[s.tipo];
+  if (ehSolicitacaoDePeriodo(s)) return TIPO_LABEL[s.tipo];
   const d = DISC[s.disciplinaId];
   const alvo = d ? `${d.codigo} — ${d.nome}` : `Turma ${s.turmaId}`;
   return `${TIPO_LABEL[s.tipo]} · ${alvo}`;
@@ -830,6 +852,65 @@ function TrancarDisciplina({ itensMatricula, solicitacoes, onBack, onSolicitar }
           <Button variant="outline" onClick={onBack}>Cancelar</Button>
           <Button variant="destructive" onClick={enviar} disabled={turmasDisponiveis.length === 0}>
             Solicitar trancamento
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function DestrancarDisciplina({ itensTrancados, solicitacoes, onBack, onSolicitar }: {
+  itensTrancados: ItemMatriculaResumo[];
+  solicitacoes: SolicitacaoAjuste[];
+  onBack: () => void;
+  onSolicitar: (turmaId: number, disciplinaId: number) => void;
+}) {
+  // Só itens TRANCADO sem solicitação pendente podem pedir destrancamento.
+  const idsComSolicitacao = new Set(solicitacoes.map((s) => s.turmaId));
+  const turmasDisponiveis = itensTrancados
+    .filter((i) => !idsComSolicitacao.has(i.turmaId))
+    .map((i) => { const d = DISC[i.disciplinaId]; return { turmaId: i.turmaId, disciplinaId: i.disciplinaId, label: d ? `${d.codigo} — ${d.nome}` : `Turma ${i.turmaId}` }; });
+
+  const primeiro = turmasDisponiveis[0];
+  const [turmaId, setTurmaId] = useState<number>(primeiro?.turmaId ?? 0);
+  const selecionada = turmasDisponiveis.find((t) => t.turmaId === turmaId) ?? primeiro;
+
+  // O destrancamento não é efetivado aqui: a solicitação vai à secretaria, que
+  // defere ou indefere. A disciplina só volta à agenda após o deferimento.
+  const enviar = () => {
+    if (!selecionada) return;
+    toast.success("Solicitação de destrancamento enviada para a secretaria.");
+    onSolicitar(selecionada.turmaId, selecionada.disciplinaId);
+    onBack();
+  };
+  return (
+    <div className="space-y-4">
+      <Button variant="ghost" size="sm" onClick={onBack}><ArrowLeft className="mr-1 h-4 w-4" /> Voltar</Button>
+      <div className="rounded-xl border bg-card p-6 shadow-card">
+        <SectionTitle title="Destrancar disciplina" subtitle="Solicite a reativação de uma disciplina trancada." />
+        {turmasDisponiveis.length === 0 ? (
+          <ValidationCallout className="mt-4" tone="info">Não há disciplinas trancadas aguardando destrancamento.</ValidationCallout>
+        ) : (
+          <div className="mt-4 grid grid-cols-2 gap-4">
+            <FormField label="Disciplina trancada" required>
+              <Select value={String(turmaId)} onValueChange={(v) => setTurmaId(Number(v))}>
+                <SelectTrigger className="h-10"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {turmasDisponiveis.map((t) => (
+                    <SelectItem key={t.turmaId} value={String(t.turmaId)}>{t.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </FormField>
+            <FormField label="Motivo" required><Input className="h-10" placeholder="Ex.: conflito resolvido, retorno às atividades" /></FormField>
+            <FormField label="Justificativa" full><Textarea rows={4} /></FormField>
+          </div>
+        )}
+        <ValidationCallout className="mt-4" tone="info">Após o deferimento da secretaria, a disciplina volta para a sua grade.</ValidationCallout>
+        <div className="mt-4 flex justify-end gap-2">
+          <Button variant="outline" onClick={onBack}>Cancelar</Button>
+          <Button onClick={enviar} disabled={turmasDisponiveis.length === 0}>
+            Solicitar destrancamento
           </Button>
         </div>
       </div>
