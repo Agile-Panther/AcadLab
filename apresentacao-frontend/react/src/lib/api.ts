@@ -197,11 +197,25 @@ export interface CasoResumo {
   status: string;
 }
 
+export interface ItemPlanoResumo {
+  disciplinaExternaId: number;
+  nomeDisciplinaExterna: string;
+  cargaHorariaExterna: number;
+  disciplinaEquivalenteId: number;
+  cargaHorariaEquivalente: number;
+  status: string;
+  comprovanteAnexado: boolean;
+  resultadoRegistrado: boolean;
+}
+
 export interface MobilidadeAcademicaResumo {
   id: number;
   estudanteId: number;
   instituicaoDestino: string;
   status: string;
+  dataInicioPeriodoExterno: string | null;
+  justificativaCancelamento: string | null;
+  plano: ItemPlanoResumo[];
 }
 
 export interface CobrancaResumo {
@@ -317,6 +331,8 @@ export const api = {
     getCasoById: (id: number) => get<CasoResumo>(`apoio/casos/${id}`),
   },
   mobilidade: {
+    listAll: () =>
+      get<MobilidadeAcademicaResumo[]>(`mobilidades`).then(r => r ?? []),
     getByEstudante: (estudanteId: number) =>
       get<MobilidadeAcademicaResumo[]>(`mobilidades/estudante/${estudanteId}`).then(r => r ?? []),
     getById: (id: number) =>

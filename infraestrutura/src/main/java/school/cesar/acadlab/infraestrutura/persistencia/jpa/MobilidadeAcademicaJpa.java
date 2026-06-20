@@ -114,6 +114,11 @@ class MobilidadeAcademicaRepositorioImpl implements MobilidadeAcademicaRepositor
     }
 
     @Override
+    public List<MobilidadeAcademicaResumo> listarTodos() {
+        return repository.findAll().stream().map(this::toResumo).toList();
+    }
+
+    @Override
     public List<MobilidadeAcademicaResumo> buscarPorEstudante(int estudanteId) {
         return repository.findByEstudanteId(estudanteId).stream()
                 .map(this::toResumo)
@@ -176,10 +181,24 @@ class MobilidadeAcademicaRepositorioImpl implements MobilidadeAcademicaRepositor
     }
 
     private MobilidadeAcademicaResumo toResumo(MobilidadeAcademicaJpa jpa) {
+        var plano = jpa.planoEstudos.stream()
+                .map(i -> new school.cesar.acadlab.aplicacao.mobilidadeacademica.ItemPlanoResumo(
+                        i.disciplinaExternaId,
+                        "Disciplina " + i.disciplinaExternaId,
+                        i.cargaHorariaExterna,
+                        i.disciplinaEquivalenteId,
+                        i.cargaHorariaEquivalente,
+                        i.status.name(),
+                        i.comprovanteAnexado,
+                        i.resultadoRegistrado))
+                .toList();
         return new MobilidadeAcademicaResumo(
                 jpa.id,
                 jpa.estudanteId,
                 jpa.instituicaoDestino,
-                jpa.status.name());
+                jpa.status.name(),
+                jpa.dataInicioPeriodoExterno != null ? jpa.dataInicioPeriodoExterno.toString() : null,
+                jpa.justificativaCancelamento,
+                plano);
     }
 }
