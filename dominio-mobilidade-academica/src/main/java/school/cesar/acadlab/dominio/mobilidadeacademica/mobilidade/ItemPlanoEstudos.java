@@ -23,7 +23,7 @@ public class ItemPlanoEstudos {
 
     public void autorizar(int cargaHorariaExterna, int cargaHorariaEquivalente) {
         if (cargaHorariaExterna < cargaHorariaEquivalente) {
-            throw new IllegalStateException("RN-3: Carga horária externa inferior à disciplina equivalente");
+            throw new IllegalStateException("carga horária externa é inferior à exigida para equivalência");
         }
         this.cargaHorariaExterna = cargaHorariaExterna;
         this.cargaHorariaEquivalente = cargaHorariaEquivalente;
