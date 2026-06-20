@@ -7,7 +7,9 @@ import io.cucumber.java.pt.Entao;
 import io.cucumber.java.pt.Quando;
 import school.cesar.acadlab.dominio.gestaopedagogica.GestaoPedagogicaFuncionalidade;
 
-public class RegistrarFrequenciaFuncionalidade extends GestaoPedagogicaFuncionalidade {
+public class RegistrarFrequenciaFuncionalidade {
+
+    private final GestaoPedagogicaFuncionalidade ctx;
 
     private static final LocalDate INICIO = LocalDate.of(2025, 2, 1);
     private static final LocalDate FIM = LocalDate.of(2025, 7, 31);
@@ -19,15 +21,18 @@ public class RegistrarFrequenciaFuncionalidade extends GestaoPedagogicaFuncional
 
     private DiarioTurma diario;
     private RegistroAulaId aulaId;
-    private RuntimeException excecao;
+
+    public RegistrarFrequenciaFuncionalidade(GestaoPedagogicaFuncionalidade ctx) {
+        this.ctx = ctx;
+    }
 
     @Dado("um diário com estudante matriculado ativo e aula registrada")
     public void diario_com_estudante_e_aula() {
-        diario = new DiarioTurma(repositorio.proximoId(), turmaId, periodoId, professorResponsavel, INICIO, FIM, 6.0, 75.0);
+        diario = new DiarioTurma(ctx.repositorio.proximoId(), turmaId, periodoId, professorResponsavel, INICIO, FIM, 6.0, 75.0);
         diario.adicionarEstudanteAtivo(estudanteId);
-        aulaId = repositorio.proximoAulaId();
+        aulaId = ctx.repositorio.proximoAulaId();
         diario.registrarAula(aulaId, professorResponsavel, LocalDate.of(2025, 3, 15), "Conteúdo");
-        repositorio.salvar(diario);
+        ctx.repositorio.salvar(diario);
     }
 
     @Quando("o professor responsável registra a frequência do estudante ativo")
@@ -35,23 +40,23 @@ public class RegistrarFrequenciaFuncionalidade extends GestaoPedagogicaFuncional
         try {
             diario.registrarFrequencia(professorResponsavel, aulaId, estudanteId, true);
         } catch (RuntimeException e) {
-            excecao = e;
+            ctx.excecao = e;
         }
     }
 
     @Entao("o lançamento de frequência é salvo para o estudante")
     public void frequencia_salva() {
-        assertNull(excecao, "Não deveria ter lançado exceção");
+        assertNull(ctx.excecao, "Não deveria ter lançado exceção");
         assertEquals(1, diario.getFrequencias().size());
         assertTrue(diario.getFrequencias().get(0).isPresente());
     }
 
     @Dado("um diário sem estudantes matriculados e com aula registrada")
     public void diario_sem_estudantes_com_aula() {
-        diario = new DiarioTurma(repositorio.proximoId(), turmaId, periodoId, professorResponsavel, INICIO, FIM, 6.0, 75.0);
-        aulaId = repositorio.proximoAulaId();
+        diario = new DiarioTurma(ctx.repositorio.proximoId(), turmaId, periodoId, professorResponsavel, INICIO, FIM, 6.0, 75.0);
+        aulaId = ctx.repositorio.proximoAulaId();
         diario.registrarAula(aulaId, professorResponsavel, LocalDate.of(2025, 3, 15), "Conteúdo");
-        repositorio.salvar(diario);
+        ctx.repositorio.salvar(diario);
     }
 
     @Quando("o professor tenta registrar frequência de estudante não matriculado")
@@ -59,15 +64,8 @@ public class RegistrarFrequenciaFuncionalidade extends GestaoPedagogicaFuncional
         try {
             diario.registrarFrequencia(professorResponsavel, aulaId, estudanteId, true);
         } catch (RuntimeException e) {
-            excecao = e;
+            ctx.excecao = e;
         }
-    }
-
-    @Entao("o sistema rejeita a frequência informando RN-3")
-    public void sistema_rejeita_rn3() {
-        assertNotNull(excecao);
-        assertInstanceOf(IllegalStateException.class, excecao);
-        assertTrue(excecao.getMessage().contains("RN-3"));
     }
 
     @Quando("outro professor tenta registrar a frequência do estudante")
@@ -75,14 +73,7 @@ public class RegistrarFrequenciaFuncionalidade extends GestaoPedagogicaFuncional
         try {
             diario.registrarFrequencia(new ProfessorId(99), aulaId, estudanteId, true);
         } catch (RuntimeException e) {
-            excecao = e;
+            ctx.excecao = e;
         }
-    }
-
-    @Entao("o sistema rejeita a frequência informando RN-4")
-    public void sistema_rejeita_rn4() {
-        assertNotNull(excecao);
-        assertInstanceOf(IllegalStateException.class, excecao);
-        assertTrue(excecao.getMessage().contains("RN-4"));
     }
 }

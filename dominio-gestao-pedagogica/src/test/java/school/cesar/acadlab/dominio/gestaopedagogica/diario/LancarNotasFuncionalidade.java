@@ -7,7 +7,9 @@ import io.cucumber.java.pt.Entao;
 import io.cucumber.java.pt.Quando;
 import school.cesar.acadlab.dominio.gestaopedagogica.GestaoPedagogicaFuncionalidade;
 
-public class LancarNotasFuncionalidade extends GestaoPedagogicaFuncionalidade {
+public class LancarNotasFuncionalidade {
+
+    private final GestaoPedagogicaFuncionalidade ctx;
 
     private static final LocalDate INICIO = LocalDate.of(2025, 2, 1);
     private static final LocalDate FIM = LocalDate.of(2025, 7, 31);
@@ -19,17 +21,20 @@ public class LancarNotasFuncionalidade extends GestaoPedagogicaFuncionalidade {
 
     private DiarioTurma diario;
     private AvaliacaoId avalId;
-    private RuntimeException excecao;
+
+    public LancarNotasFuncionalidade(GestaoPedagogicaFuncionalidade ctx) {
+        this.ctx = ctx;
+    }
 
     private void setupDiarioComEstudante() {
-        diario = new DiarioTurma(repositorio.proximoId(), turmaId, periodoId, professor, INICIO, FIM, 6.0, 75.0);
-        avalId = repositorio.proximaAvaliacaoId();
+        diario = new DiarioTurma(ctx.repositorio.proximoId(), turmaId, periodoId, professor, INICIO, FIM, 6.0, 75.0);
+        avalId = ctx.repositorio.proximaAvaliacaoId();
         diario.adicionarAvaliacao(avalId, "Prova Final", 100.0, LocalDate.of(2025, 6, 15));
         diario.adicionarEstudanteAtivo(estudante);
-        var aulaId = repositorio.proximoAulaId();
+        var aulaId = ctx.repositorio.proximoAulaId();
         diario.registrarAula(aulaId, professor, LocalDate.of(2025, 3, 10), "Conteúdo");
         diario.registrarFrequencia(professor, aulaId, estudante, true);
-        repositorio.salvar(diario);
+        ctx.repositorio.salvar(diario);
     }
 
     @Dado("um diário com estudante matriculado com frequência suficiente e nota aprovada")
@@ -43,13 +48,13 @@ public class LancarNotasFuncionalidade extends GestaoPedagogicaFuncionalidade {
         try {
             diario.fecharResultado(estudante);
         } catch (RuntimeException e) {
-            excecao = e;
+            ctx.excecao = e;
         }
     }
 
     @Entao("o resultado do estudante é marcado como aprovado")
     public void resultado_aprovado() {
-        assertNull(excecao, "Não deveria ter lançado exceção");
+        assertNull(ctx.excecao, "Não deveria ter lançado exceção");
         var resultado = diario.getResultados().stream()
                 .filter(r -> r.getEstudanteId().equals(estudante))
                 .findFirst().orElseThrow();
@@ -67,13 +72,13 @@ public class LancarNotasFuncionalidade extends GestaoPedagogicaFuncionalidade {
         try {
             diario.fecharResultado(estudante);
         } catch (RuntimeException e) {
-            excecao = e;
+            ctx.excecao = e;
         }
     }
 
     @Entao("o resultado do estudante é marcado como reprovado por nota")
     public void resultado_reprovado_nota() {
-        assertNull(excecao, "Não deveria ter lançado exceção");
+        assertNull(ctx.excecao, "Não deveria ter lançado exceção");
         var resultado = diario.getResultados().stream()
                 .filter(r -> r.getEstudanteId().equals(estudante))
                 .findFirst().orElseThrow();
@@ -92,22 +97,15 @@ public class LancarNotasFuncionalidade extends GestaoPedagogicaFuncionalidade {
         try {
             diario.lancarNota(estudante, avalId, 9.0);
         } catch (RuntimeException e) {
-            excecao = e;
+            ctx.excecao = e;
         }
-    }
-
-    @Entao("o sistema rejeita a alteração informando RN-8")
-    public void sistema_rejeita_rn8() {
-        assertNotNull(excecao);
-        assertInstanceOf(IllegalStateException.class, excecao);
-        assertTrue(excecao.getMessage().contains("RN-8"));
     }
 
     @Dado("um diário com estudante matriculado para revisão de nota")
     public void diario_para_revisao() {
-        diario = new DiarioTurma(repositorio.proximoId(), turmaId, periodoId, professor, INICIO, FIM, 6.0, 75.0);
+        diario = new DiarioTurma(ctx.repositorio.proximoId(), turmaId, periodoId, professor, INICIO, FIM, 6.0, 75.0);
         diario.adicionarEstudanteAtivo(estudante);
-        repositorio.salvar(diario);
+        ctx.repositorio.salvar(diario);
     }
 
     @Quando("o estudante solicita revisão de nota dentro da janela permitida")
@@ -115,13 +113,13 @@ public class LancarNotasFuncionalidade extends GestaoPedagogicaFuncionalidade {
         try {
             diario.solicitarRevisaoNota(estudante, LocalDate.of(2025, 8, 5), LocalDate.of(2025, 8, 15));
         } catch (RuntimeException e) {
-            excecao = e;
+            ctx.excecao = e;
         }
     }
 
     @Entao("a solicitação de revisão é registrada para o estudante")
     public void revisao_registrada() {
-        assertNull(excecao, "Não deveria ter lançado exceção");
+        assertNull(ctx.excecao, "Não deveria ter lançado exceção");
         var resultado = diario.getResultados().stream()
                 .filter(r -> r.getEstudanteId().equals(estudante))
                 .findFirst().orElseThrow();
@@ -133,14 +131,7 @@ public class LancarNotasFuncionalidade extends GestaoPedagogicaFuncionalidade {
         try {
             diario.solicitarRevisaoNota(estudante, LocalDate.of(2025, 8, 20), LocalDate.of(2025, 8, 15));
         } catch (RuntimeException e) {
-            excecao = e;
+            ctx.excecao = e;
         }
-    }
-
-    @Entao("o sistema rejeita a revisão informando RN-9")
-    public void sistema_rejeita_rn9() {
-        assertNotNull(excecao);
-        assertInstanceOf(IllegalStateException.class, excecao);
-        assertTrue(excecao.getMessage().contains("RN-9"));
     }
 }

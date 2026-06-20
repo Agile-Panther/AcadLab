@@ -44,7 +44,7 @@ public class RegistroAula {
             throw new IllegalStateException("RN-11: Apenas o professor responsável pela aula pode corrigi-la");
         }
         if (!diarioAberto) {
-            throw new IllegalStateException("RN-10: Correção de aula só é permitida com o diário aberto");
+            throw new IllegalStateException("diário de turma está fechado");
         }
         this.conteudo = novoConteudo;
         this.corrigido = true;
