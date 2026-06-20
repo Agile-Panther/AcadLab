@@ -12,7 +12,9 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
 
 import school.cesar.acadlab.aplicacao.matricula.MatriculaResumo;
 import school.cesar.acadlab.aplicacao.matricula.MatriculaServicoAplicacao;
@@ -42,7 +44,8 @@ public class MatriculaControlador {
 
     @GetMapping("/{id}")
     public MatriculaResumo buscarPorId(@PathVariable int id) {
-        return servicoAplicacao.buscarPorId(id).orElseThrow();
+        return servicoAplicacao.buscarPorId(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
     }
 
     @PostMapping

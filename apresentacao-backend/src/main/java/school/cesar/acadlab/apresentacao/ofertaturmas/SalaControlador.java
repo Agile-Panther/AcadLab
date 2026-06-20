@@ -42,7 +42,8 @@ class SalaControlador {
     SalaResumo cadastrar(@RequestBody CadastrarSalaRequest req) {
         var salaId = salaRepositorio.proximoId();
         salaRepositorio.salvar(new Sala(salaId, req.nome(), req.capacidade()));
-        return salaServico.buscarPorId(salaId.getId()).orElseThrow();
+        return salaServico.buscarPorId(salaId.getId())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
     }
 
     @RequestMapping(method = PUT, path = "/{id}/inativar")

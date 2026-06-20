@@ -41,7 +41,8 @@ class ProfessorControlador {
     ProfessorResumo cadastrar(@RequestBody CadastrarProfessorRequest req) {
         var professorId = professorRepositorio.proximoId();
         professorRepositorio.salvar(new Professor(professorId, req.nome()));
-        return professorServico.buscarPorId(professorId.getId()).orElseThrow();
+        return professorServico.buscarPorId(professorId.getId())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
     }
 
     @RequestMapping(method = PUT, path = "/{id}/inativar")

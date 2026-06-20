@@ -1,9 +1,32 @@
 // Typed API client — all requests are proxied by Vite to http://localhost:8080
 
-async function get<T>(path: string): Promise<T> {
+async function get<T>(path: string): Promise<T | null> {
   const res = await fetch(`/backend/${path}`);
+  if (res.status === 404) return null;
   if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
   return res.json() as Promise<T>;
+}
+
+async function post<T>(path: string, body?: unknown): Promise<T> {
+  const res = await fetch(`/backend/${path}`, {
+    method: "POST",
+    headers: body !== undefined ? { "Content-Type": "application/json" } : {},
+    body: body !== undefined ? JSON.stringify(body) : undefined,
+  });
+  if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+  const text = await res.text();
+  return (text ? JSON.parse(text) : undefined) as T;
+}
+
+async function put<T>(path: string, body?: unknown): Promise<T> {
+  const res = await fetch(`/backend/${path}`, {
+    method: "PUT",
+    headers: body !== undefined ? { "Content-Type": "application/json" } : {},
+    body: body !== undefined ? JSON.stringify(body) : undefined,
+  });
+  if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+  const text = await res.text();
+  return (text ? JSON.parse(text) : undefined) as T;
 }
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -193,22 +216,30 @@ export interface OportunidadeResumo {
 export const api = {
   periodos: {
     listByCurso: (cursoId: number) =>
-      get<PeriodoLetivoResumo[]>(`periodos-letivos/curso/${cursoId}`),
+      get<PeriodoLetivoResumo[]>(`periodos-letivos/curso/${cursoId}`).then(r => r ?? []),
+    criar: (body: { cursoId: number; ano: number; semestre: number; dataInicio: string; dataFim: string }) =>
+      post<void>(`periodos-letivos`, body),
   },
   turmas: {
     listByPeriodo: (periodoId: number) =>
-      get<TurmaResumo[]>(`turmas/periodo/${periodoId}`),
+      get<TurmaResumo[]>(`turmas/periodo/${periodoId}`).then(r => r ?? []),
     getById: (id: number) => get<TurmaResumo>(`turmas/${id}`),
-    listSalas: () => get<SalaResumo[]>(`salas`),
-    listProfessores: () => get<ProfessorResumo[]>(`professores`),
+    listSalas: () => get<SalaResumo[]>(`salas`).then(r => r ?? []),
+    listProfessores: () => get<ProfessorResumo[]>(`professores`).then(r => r ?? []),
   },
   curriculo: {
     listByCurso: (cursoId: number) =>
-      get<MatrizCurricularResumo[]>(`curriculo/curso/${cursoId}`),
+      get<MatrizCurricularResumo[]>(`curriculo/curso/${cursoId}`).then(r => r ?? []),
     getById: (id: number) => get<MatrizCurricularResumo>(`curriculo/${id}`),
   },
   matricula: {
     getById: (id: number) => get<MatriculaResumo>(`matriculas/${id}`),
+    iniciar: (body: { estudanteId: number; periodoLetivoId: number; limiteCreditos: number }) =>
+      post<void>(`matriculas`, body),
+    confirmar: (id: number, vagasPorTurma: Record<number, number>) =>
+      put<void>(`matriculas/${id}/confirmar`, vagasPorTurma),
+    trancarPeriodo: (id: number, body: object) =>
+      put<void>(`matriculas/${id}/trancar-periodo`, body),
   },
   diarios: {
     getByTurma: (turmaId: number) =>
@@ -221,32 +252,32 @@ export const api = {
   },
   solicitacoes: {
     listPendentes: () =>
-      get<SolicitacaoAcademicaResumo[]>(`solicitacoes/pendentes`),
+      get<SolicitacaoAcademicaResumo[]>(`solicitacoes/pendentes`).then(r => r ?? []),
     listTodas: () =>
-      get<SolicitacaoAcademicaResumo[]>(`solicitacoes/todas`),
+      get<SolicitacaoAcademicaResumo[]>(`solicitacoes/todas`).then(r => r ?? []),
     getById: (id: number) =>
       get<SolicitacaoAcademicaResumo>(`solicitacoes/${id}`),
   },
   integralizacao: {
-    listAll: () => get<IntegralizacaoResumo[]>(`integralizacoes`),
+    listAll: () => get<IntegralizacaoResumo[]>(`integralizacoes`).then(r => r ?? []),
     getByEstudante: (estudanteId: number) =>
       get<IntegralizacaoResumo>(`integralizacoes/estudante/${estudanteId}`),
   },
   atividades: {
     listByEstudante: (estudanteId: number) =>
-      get<AtividadeComplementarResumo[]>(
-        `atividades-complementares/estudante/${estudanteId}`
-      ),
+      get<AtividadeComplementarResumo[]>(`atividades-complementares/estudante/${estudanteId}`).then(r => r ?? []),
+    submeter: (body: { estudanteId: number; categoriaId: number; descricao: string; horasSubmetidas: number }) =>
+      post<void>(`atividades-complementares`, body),
   },
   permanencia: {
-    listEditais: () => get<EditalResumo[]>(`permanencia/editais`),
+    listEditais: () => get<EditalResumo[]>(`permanencia/editais`).then(r => r ?? []),
     getEditalById: (id: number) =>
       get<EditalResumo>(`permanencia/editais/${id}`),
     listBeneficios: (estudanteId: number) =>
-      get<unknown[]>(`permanencia/estudantes/${estudanteId}/beneficios`),
+      get<unknown[]>(`permanencia/estudantes/${estudanteId}/beneficios`).then(r => r ?? []),
   },
   apoio: {
-    listCasos: () => get<CasoResumo[]>(`apoio/casos`),
+    listCasos: () => get<CasoResumo[]>(`apoio/casos`).then(r => r ?? []),
     getCasoById: (id: number) => get<CasoResumo>(`apoio/casos/${id}`),
   },
   mobilidade: {
@@ -254,13 +285,21 @@ export const api = {
       get<MobilidadeAcademicaResumo>(`mobilidades/estudante/${estudanteId}`),
     getById: (id: number) =>
       get<MobilidadeAcademicaResumo>(`mobilidades/${id}`),
+    solicitar: (body: { estudanteId: number; instituicaoDestino: string; status: string }) =>
+      post<void>(`mobilidades`, body),
   },
   cobrancas: {
     getByContrato: (contratoId: number) =>
-      get<CobrancaResumo[]>(`cobrancas/contrato/${contratoId}`),
+      get<CobrancaResumo[]>(`cobrancas/contrato/${contratoId}`).then(r => r ?? []),
   },
   oportunidades: {
-    listAll: () => get<OportunidadeResumo[]>(`oportunidades`),
+    listAll: () => get<OportunidadeResumo[]>(`oportunidades`).then(r => r ?? []),
     getById: (id: number) => get<OportunidadeResumo>(`oportunidades/${id}`),
+    criar: (body: { empresaId: number; descricao: string; cargaHorariaTotal: number }) =>
+      post<void>(`oportunidades`, body),
+  },
+  estagios: {
+    listByEstudante: (estudanteId: number) =>
+      get<unknown[]>(`estagios/estudante/${estudanteId}`).then(r => r ?? []),
   },
 };
