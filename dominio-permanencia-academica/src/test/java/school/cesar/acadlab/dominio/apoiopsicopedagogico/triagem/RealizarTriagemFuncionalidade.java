@@ -12,45 +12,49 @@ import school.cesar.acadlab.dominio.apoiopsicopedagogico.caso.CasoId;
 import school.cesar.acadlab.dominio.apoiopsicopedagogico.estudante.EstudanteId;
 import school.cesar.acadlab.dominio.apoiopsicopedagogico.profissional.PsicopedagogoId;
 
-public class RealizarTriagemFuncionalidade extends ApoioPsicopedagogicoFuncionalidade {
+public class RealizarTriagemFuncionalidade {
+    private final ApoioPsicopedagogicoFuncionalidade ctx;
     private final EstudanteId estudanteId = new EstudanteId(1);
     private final PsicopedagogoId psicopedagogoId = new PsicopedagogoId(1);
     private CasoId casoId;
-    private RuntimeException excecao;
+
+    public RealizarTriagemFuncionalidade(ApoioPsicopedagogicoFuncionalidade ctx) {
+        this.ctx = ctx;
+    }
 
     @Dado("um caso psicopedagógico aberto sem triagem")
     public void um_caso_aberto_sem_triagem() {
-        casoId = repositorio.proximoId();
+        casoId = ctx.repositorio.proximoId();
         var caso = new Caso(casoId, estudanteId);
-        repositorio.salvar(caso);
+        ctx.repositorio.salvar(caso);
     }
 
     @Quando("o psicopedagogo realiza a triagem do caso")
     public void o_psicopedagogo_realiza_triagem() {
         var triagem = new Triagem(PrioridadeTriagem.ALTA, "Dificuldades acadêmicas severas", psicopedagogoId, LocalDate.now());
-        triagemServico.realizarTriagem(casoId, triagem);
+        ctx.triagemServico.realizarTriagem(casoId, triagem);
     }
 
     @Quando("o psicopedagogo tenta registrar um atendimento sem realizar triagem")
     public void o_psicopedagogo_tenta_atendimento_sem_triagem() {
         try {
             var atendimento = new Atendimento("Observações", null, false, LocalDate.now());
-            atendimentoServico.registrarAtendimento(casoId, atendimento);
+            ctx.atendimentoServico.registrarAtendimento(casoId, atendimento);
         } catch (RuntimeException e) {
-            excecao = e;
+            ctx.excecao = e;
         }
     }
 
     @Entao("o sistema registra a triagem no caso")
     public void o_sistema_registra_triagem() {
-        var caso = repositorio.obter(casoId);
+        var caso = ctx.repositorio.obter(casoId);
         assertNotNull(caso.getTriagem());
         assertEquals(PrioridadeTriagem.ALTA, caso.getTriagem().getPrioridade());
     }
 
     @Entao("o sistema informa que o caso precisa passar por triagem antes do atendimento")
     public void o_sistema_informa_triagem_obrigatoria() {
-        assertNotNull(excecao);
-        assertInstanceOf(IllegalStateException.class, excecao);
+        assertNotNull(ctx.excecao);
+        assertInstanceOf(IllegalStateException.class, ctx.excecao);
     }
 }

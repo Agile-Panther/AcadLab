@@ -73,7 +73,7 @@ public class Caso {
                         || (a.getEncaminhamento() != null && !a.getEncaminhamento().isBlank()));
         if (!temConclusaoOuEncaminhamento) {
             throw new IllegalStateException(
-                    "O caso só pode ser encerrado após o registro de uma conclusão ou encaminhamento final");
+                    "necessário registrar conclusão ou encaminhamento antes de encerrar o caso");
         }
         this.status = StatusCaso.ENCERRADO;
         return new CasoEncerradoEvento(this);

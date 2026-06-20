@@ -15,7 +15,8 @@ public class AcaoPermanenciaServico {
     }
 
     public void registrar(CoordenadorId coordenadorId, String descricao, String indicadoresAgregados) {
-        notNull(coordenadorId, "O coordenador não pode ser nulo");
+        if (coordenadorId == null)
+            throw new IllegalStateException("coordenador é obrigatório para registrar ações de permanência");
         notNull(descricao, "A descrição não pode ser nula");
         notBlank(descricao, "A descrição não pode estar em branco");
         notNull(indicadoresAgregados, "Os indicadores agregados não podem ser nulos");

@@ -14,20 +14,24 @@ import school.cesar.acadlab.dominio.apoiopsicopedagogico.profissional.Psicopedag
 import school.cesar.acadlab.dominio.apoiopsicopedagogico.triagem.PrioridadeTriagem;
 import school.cesar.acadlab.dominio.apoiopsicopedagogico.triagem.Triagem;
 
-public class RegistrarAtendimentoFuncionalidade extends ApoioPsicopedagogicoFuncionalidade {
+public class RegistrarAtendimentoFuncionalidade {
+    private final ApoioPsicopedagogicoFuncionalidade ctx;
     private final EstudanteId estudanteId = new EstudanteId(1);
     private final PsicopedagogoId psicopedagogoId = new PsicopedagogoId(1);
     private CasoId casoId;
     private CasoId casoInexistenteId;
-    private RuntimeException excecao;
+
+    public RegistrarAtendimentoFuncionalidade(ApoioPsicopedagogicoFuncionalidade ctx) {
+        this.ctx = ctx;
+    }
 
     @Dado("um caso psicopedagógico com triagem realizada")
     public void um_caso_com_triagem() {
-        casoId = repositorio.proximoId();
+        casoId = ctx.repositorio.proximoId();
         var caso = new Caso(casoId, estudanteId);
         var triagem = new Triagem(PrioridadeTriagem.MEDIA, "Triagem realizada", psicopedagogoId, LocalDate.now());
         caso.realizarTriagem(triagem);
-        repositorio.salvar(caso);
+        ctx.repositorio.salvar(caso);
     }
 
     @Dado("um caso psicopedagógico que não existe no sistema")
@@ -38,28 +42,28 @@ public class RegistrarAtendimentoFuncionalidade extends ApoioPsicopedagogicoFunc
     @Quando("o psicopedagogo registra um atendimento no caso")
     public void o_psicopedagogo_registra_atendimento() {
         var atendimento = new Atendimento("Sessão realizada com êxito", null, false, LocalDate.now());
-        atendimentoServico.registrarAtendimento(casoId, atendimento);
+        ctx.atendimentoServico.registrarAtendimento(casoId, atendimento);
     }
 
     @Quando("o psicopedagogo tenta registrar um atendimento no caso inexistente")
     public void o_psicopedagogo_registra_atendimento_caso_inexistente() {
         try {
             var atendimento = new Atendimento("Sessão", null, false, LocalDate.now());
-            atendimentoServico.registrarAtendimento(casoInexistenteId, atendimento);
+            ctx.atendimentoServico.registrarAtendimento(casoInexistenteId, atendimento);
         } catch (RuntimeException e) {
-            excecao = e;
+            ctx.excecao = e;
         }
     }
 
     @Entao("o sistema registra o atendimento e atualiza o status do caso")
     public void o_sistema_registra_atendimento() {
-        var caso = repositorio.obter(casoId);
+        var caso = ctx.repositorio.obter(casoId);
         assertEquals(1, caso.getAtendimentos().size());
         assertEquals(StatusCaso.EM_ATENDIMENTO, caso.getStatus());
     }
 
     @Entao("o sistema informa que o caso não foi encontrado")
     public void o_sistema_informa_caso_nao_encontrado() {
-        assertNotNull(excecao);
+        assertNotNull(ctx.excecao);
     }
 }

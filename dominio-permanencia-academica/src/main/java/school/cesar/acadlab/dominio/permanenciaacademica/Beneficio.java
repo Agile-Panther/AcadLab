@@ -74,7 +74,7 @@ public class Beneficio {
     public RenovacaoSolicitadaEvento solicitarRenovacao(LocalDate hoje) {
         notNull(hoje, "A data não pode ser nula");
         if (hoje.isAfter(prazoRenovacao)) {
-            throw new IllegalStateException("A renovação só pode ser solicitada dentro do prazo definido");
+            throw new IllegalStateException("prazo de renovação já encerrou");
         }
         if (status != StatusBeneficio.ATIVO) {
             throw new IllegalStateException("Apenas benefícios ativos podem ser renovados");
