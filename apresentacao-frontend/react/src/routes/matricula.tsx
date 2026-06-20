@@ -343,26 +343,21 @@ function SecretariaView({ matriculaId, aguardandoSecretaria, onAprovada, solicit
       .then(() => { onDecidiu(s, true); toast.success("Solicitação deferida."); })
       .catch((e: Error) => toast.error(e.message || "Erro ao deferir solicitação."));
   };
-  const [pedidos, setPedidos] = useState<Pedido[]>([]);
-  const decidir = (id: string, status: "Deferida" | "Indeferida") => {
-    setPedidos((p) => p.map((x) => x.id === id ? { ...x, status } : x));
-    toast.success(`Solicitação ${id} ${status.toLowerCase()}.`);
-  };
-
   const aprovar = useMutation({
     mutationFn: () => api.matricula.aprovarSecretaria(matriculaId),
     onSuccess: () => { toast.success("Matrícula aprovada pela secretaria!"); onAprovada(); },
     onError: () => toast.error("Erro ao aprovar matrícula."),
   });
+  const contar = (...tipos: TipoSolicitacao[]) => solicitacoes.filter((s) => tipos.includes(s.tipo)).length;
   return (
     <div className="space-y-5">
       <StatsRow stats={[
-        { label: "Matrículas confirmadas", value: 1284, tone: "success" },
-        { label: "Em análise", value: pedidos.filter((p) => p.status === "Em análise").length + solicitacoes.length, tone: "warning" },
-        { label: "Trancamentos abertos", value: 8, tone: "info" },
-        { label: "Exceções deferidas", value: pedidos.filter((p) => p.status === "Deferida").length, tone: "success" },
+        { label: "Solicitações pendentes", value: solicitacoes.length, tone: solicitacoes.length ? "warning" : "success" },
+        { label: "Cancelamentos", value: contar("cancelamento"), tone: "info" },
+        { label: "Trancamentos", value: contar("trancamento-disciplina", "trancamento-periodo"), tone: "warning" },
+        { label: "Destrancamentos", value: contar("destrancamento-disciplina", "destrancamento-periodo"), tone: "success" },
       ]} />
-      {solicitacoes.length > 0 && (
+      {solicitacoes.length > 0 ? (
         <>
           <SectionTitle title="Solicitações de ajuste" subtitle="Cancelamentos, trancamentos e destrancamentos solicitados por estudantes aguardando deferimento." />
           <DataTable
@@ -389,28 +384,11 @@ function SecretariaView({ matriculaId, aguardandoSecretaria, onAprovada, solicit
             rows={solicitacoes}
           />
         </>
+      ) : (
+        <ValidationCallout tone="info">
+          Nenhuma solicitação pendente. Cancelamentos, trancamentos e destrancamentos enviados pelos estudantes aparecem aqui para deferimento.
+        </ValidationCallout>
       )}
-      <SectionTitle title="Solicitações de matrícula" subtitle="Exceções, trancamentos e ajustes aguardando triagem." />
-      <DataTable
-        columns={[
-          { key: "id", header: "Protocolo" },
-          { key: "aluno", header: "Estudante" },
-          { key: "tipo", header: "Tipo" },
-          { key: "aberta", header: "Aberta em" },
-          { key: "status", header: "Status", render: (r) => (
-            <StatusBadge tone={r.status === "Deferida" ? "success" : r.status === "Indeferida" ? "danger" : "info"}>{r.status}</StatusBadge>
-          )},
-          { key: "acoes", header: "", align: "right", render: (r) => (
-            r.status === "Em análise" ? (
-              <div className="flex justify-end gap-2">
-                <RowActionButton onClick={() => decidir(r.id, "Indeferida")}>Indeferir</RowActionButton>
-                <RowActionButton tone="info" onClick={() => decidir(r.id, "Deferida")}>Deferir</RowActionButton>
-              </div>
-            ) : <span className="text-[12px] text-muted-foreground">—</span>
-          )},
-        ]}
-        rows={pedidos}
-      />
       {aguardandoSecretaria && (
         <div className="rounded-xl border border-warning bg-warning/10 p-4 flex items-center justify-between">
           <div>
