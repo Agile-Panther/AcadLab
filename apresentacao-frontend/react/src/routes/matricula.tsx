@@ -1,5 +1,6 @@
+import { useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import {
   FeaturePage, StatsRow, SuccessBanner, ScheduleGrid, SectionTitle, FormField,
   ValidationCallout, DataTable, StatusBadge, RowActionButton, ActionBar,
@@ -17,6 +18,9 @@ export const Route = createFileRoute("/matricula")({
 });
 
 const MATRICULA_ID = 1;
+const TURMA_PLACEHOLDER_ID = 1;
+const DISCIPLINA_EXCECAO_ID = 1;
+const HOJE = new Date().toISOString().split("T")[0];
 
 const blocos: ClassBlock[] = [
   { day: 1, start: 8, duration: 2, title: "Algoritmos Avançados", code: "AED301", color: "info" },
@@ -99,6 +103,10 @@ function Montar() {
 }
 
 function Confirmar() {
+  const { mutate, isPending, isError, isSuccess } = useMutation({
+    mutationFn: () => api.matricula.confirmar(MATRICULA_ID, {}),
+  });
+
   return (
     <div className="space-y-4">
       <div className="rounded-xl border bg-card p-5 shadow-card">
@@ -116,8 +124,15 @@ function Confirmar() {
         />
         <div className="mt-4 flex items-center justify-between">
           <p className="text-[13px] text-muted-foreground">Total: <span className="font-semibold text-foreground">18 créditos</span></p>
-          <div className="flex gap-2"><Button variant="outline">Voltar</Button><Button>Confirmar Matrícula</Button></div>
+          <div className="flex gap-2">
+            <Button variant="outline">Voltar</Button>
+            <Button onClick={() => mutate()} disabled={isPending}>
+              {isPending ? "Confirmando…" : "Confirmar Matrícula"}
+            </Button>
+          </div>
         </div>
+        {isError && <p className="mt-2 text-sm text-destructive">Erro ao confirmar matrícula.</p>}
+        {isSuccess && <p className="mt-2 text-sm text-green-600">Matrícula confirmada com sucesso.</p>}
       </div>
     </div>
   );
@@ -163,6 +178,15 @@ function Ajuste() {
 }
 
 function Trancar() {
+  const { mutate, isPending, isError } = useMutation({
+    mutationFn: () =>
+      api.matricula.trancarDisciplina(MATRICULA_ID, TURMA_PLACEHOLDER_ID, {
+        hoje: HOJE,
+        inicio: HOJE,
+        fim: HOJE,
+      }),
+  });
+
   return (
     <div className="rounded-xl border bg-card p-6 shadow-card">
       <SectionTitle title="Trancar Disciplina" />
@@ -172,12 +196,27 @@ function Trancar() {
         <FormField label="Justificativa" full><Textarea rows={4} /></FormField>
       </div>
       <ValidationCallout className="mt-4" tone="info">O trancamento não conta como reprovação, mas impacta CR.</ValidationCallout>
-      <div className="mt-4 flex justify-end gap-2"><Button variant="outline">Cancelar</Button><Button variant="destructive">Trancar Disciplina</Button></div>
+      {isError && <p className="mt-2 text-sm text-destructive">Erro ao trancar disciplina.</p>}
+      <div className="mt-4 flex justify-end gap-2">
+        <Button variant="outline">Cancelar</Button>
+        <Button variant="destructive" onClick={() => mutate()} disabled={isPending}>
+          {isPending ? "Trancando…" : "Trancar Disciplina"}
+        </Button>
+      </div>
     </div>
   );
 }
 
 function Excecao() {
+  const [motivo, setMotivo] = useState("");
+  const { mutate, isPending, isError } = useMutation({
+    mutationFn: () =>
+      api.matricula.solicitarExcecao(MATRICULA_ID, {
+        disciplinaId: DISCIPLINA_EXCECAO_ID,
+        motivo,
+      }),
+  });
+
   return (
     <div className="space-y-4">
       <SuccessBanner title="Exceção deferida!" description="Sua solicitação de quebra de pré-requisito foi aprovada pela coordenação." />
@@ -186,16 +225,35 @@ function Excecao() {
         <div className="mt-4 grid grid-cols-2 gap-4">
           <FormField label="Tipo de exceção" required><Input className="h-10" defaultValue="Quebra de pré-requisito" /></FormField>
           <FormField label="Disciplina" required><Input className="h-10" defaultValue="ES501 — Engenharia de Software III" /></FormField>
-          <FormField label="Justificativa" required full><Textarea rows={4} /></FormField>
+          <FormField label="Justificativa" required full>
+            <Textarea rows={4} value={motivo} onChange={(e) => setMotivo(e.target.value)} />
+          </FormField>
           <FormField label="Anexo" full><Input type="file" className="h-10" /></FormField>
         </div>
-        <div className="mt-4 flex justify-end gap-2"><Button variant="outline">Cancelar</Button><Button>Enviar Solicitação</Button></div>
+        {isError && <p className="text-sm text-destructive mt-2">Erro ao enviar solicitação.</p>}
+        <div className="mt-4 flex justify-end gap-2">
+          <Button variant="outline">Cancelar</Button>
+          <Button onClick={() => mutate()} disabled={isPending}>
+            {isPending ? "Enviando…" : "Enviar Solicitação"}
+          </Button>
+        </div>
       </div>
     </div>
   );
 }
 
 function TrancarPeriodo() {
+  const { mutate, isPending, isError } = useMutation({
+    mutationFn: () =>
+      api.matricula.trancarPeriodo(MATRICULA_ID, {
+        hoje: HOJE,
+        inicioTrancamento: HOJE,
+        fimTrancamento: HOJE,
+        totalTrancamentos: 0,
+        limiteTrancamentos: 2,
+      }),
+  });
+
   return (
     <div className="rounded-xl border bg-card p-6 shadow-card">
       <SectionTitle title="Trancamento do Período Letivo" />
@@ -204,7 +262,13 @@ function TrancarPeriodo() {
       </p>
       <FormField className="mt-4" label="Justificativa" required full><Textarea rows={4} /></FormField>
       <ValidationCallout className="mt-4" tone="error">Limite máximo de 2 trancamentos consecutivos.</ValidationCallout>
-      <div className="mt-4 flex justify-end gap-2"><Button variant="outline">Voltar</Button><Button variant="destructive">Trancar Período</Button></div>
+      {isError && <p className="mt-2 text-sm text-destructive">Erro ao trancar período.</p>}
+      <div className="mt-4 flex justify-end gap-2">
+        <Button variant="outline">Voltar</Button>
+        <Button variant="destructive" onClick={() => mutate()} disabled={isPending}>
+          {isPending ? "Trancando…" : "Trancar Período"}
+        </Button>
+      </div>
     </div>
   );
 }

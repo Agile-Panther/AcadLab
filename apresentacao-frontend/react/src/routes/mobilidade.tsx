@@ -1,5 +1,6 @@
+import { useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import {
   FeaturePage, StatsRow, DataTable, StatusBadge, RowActionButton, FormField,
   SuccessBanner, SectionTitle, ActionBar,
@@ -15,21 +16,37 @@ export const Route = createFileRoute("/mobilidade")({
 });
 
 const ESTUDANTE_ID = 1;
+const MOBILIDADE_ID = 1;
+const HOJE = new Date().toISOString().split("T")[0];
 
 function Solicitar() {
+  const [instituicao, setInstituicao] = useState("Universidade de Coimbra");
+  const { mutate, isPending, isError } = useMutation({
+    mutationFn: () =>
+      api.mobilidade.solicitar({ estudanteId: ESTUDANTE_ID, instituicaoDestino: instituicao }),
+  });
+
   return (
     <div className="space-y-4">
       <SuccessBanner title="Solicitação enviada com sucesso!" description="MB-2025-018 · Aguardando análise do plano de estudos." />
       <div className="rounded-xl border bg-card p-6 shadow-card">
         <SectionTitle title="Solicitar Mobilidade Acadêmica" />
         <div className="mt-4 grid grid-cols-2 gap-4">
-          <FormField label="Instituição destino" required><Input className="h-10" defaultValue="Universidade de Coimbra" /></FormField>
+          <FormField label="Instituição destino" required>
+            <Input className="h-10" value={instituicao} onChange={(e) => setInstituicao(e.target.value)} />
+          </FormField>
           <FormField label="País" required><Input className="h-10" defaultValue="Portugal" /></FormField>
           <FormField label="Período" required><Input className="h-10" defaultValue="2026.1" /></FormField>
           <FormField label="Modalidade" required><Input className="h-10" defaultValue="Intercâmbio" /></FormField>
           <FormField label="Plano de estudos" required full><Textarea rows={4} placeholder="Disciplinas pretendidas e equivalências..." /></FormField>
         </div>
-        <div className="mt-4 flex justify-end gap-2"><Button variant="outline">Cancelar</Button><Button>Enviar Solicitação</Button></div>
+        {isError && <p className="text-sm text-destructive mt-2">Erro ao enviar solicitação.</p>}
+        <div className="mt-4 flex justify-end gap-2">
+          <Button variant="outline">Cancelar</Button>
+          <Button onClick={() => mutate()} disabled={isPending}>
+            {isPending ? "Enviando…" : "Enviar Solicitação"}
+          </Button>
+        </div>
       </div>
     </div>
   );
@@ -94,21 +111,23 @@ function Acompanhar() {
     queryFn: () => api.mobilidade.getByEstudante(ESTUDANTE_ID),
   });
 
-  const rows = data ? [{
-    id: `MB-${data.id}`,
-    inst: data.instituicaoDestino,
+  const rows = data ? data.map(m => ({
+    id: `MB-${m.id}`,
+    inst: m.instituicaoDestino,
     per: "—",
-    status: mobLabel(data.status),
-    _status: data.status,
-  }] : [];
+    status: mobLabel(m.status),
+    _status: m.status,
+  })) : [];
+
+  const first = data?.[0];
 
   return (
     <>
       <StatsRow stats={[
-        { label: "Status atual", value: isLoading ? "…" : mobLabel(data?.status ?? ""), tone: mobTone(data?.status ?? "") },
-        { label: "Instituição", value: isLoading ? "…" : data?.instituicaoDestino ?? "—", tone: "info" },
-        { label: "Estudante", value: isLoading ? "…" : data ? `ID ${data.estudanteId}` : "—", tone: "warning" },
-        { label: "Mobilidades", value: isLoading ? "…" : data ? 1 : 0, tone: "neutral" as any },
+        { label: "Status atual", value: isLoading ? "…" : mobLabel(first?.status ?? ""), tone: mobTone(first?.status ?? "") },
+        { label: "Instituição", value: isLoading ? "…" : first?.instituicaoDestino ?? "—", tone: "info" },
+        { label: "Estudante", value: isLoading ? "…" : first ? `ID ${first.estudanteId}` : "—", tone: "warning" },
+        { label: "Mobilidades", value: isLoading ? "…" : data?.length ?? 0, tone: "neutral" as any },
       ]} />
       <ActionBar searchPlaceholder="Buscar solicitação..." primaryLabel="Nova Mobilidade" />
       {isError && <p className="text-sm text-destructive px-1">Não foi possível conectar ao servidor.</p>}
@@ -127,13 +146,27 @@ function Acompanhar() {
 }
 
 function CancelarMob() {
+  const [justificativa, setJustificativa] = useState("");
+  const { mutate, isPending, isError } = useMutation({
+    mutationFn: () =>
+      api.mobilidade.solicitarCancelamento(MOBILIDADE_ID, { justificativa, hoje: HOJE }),
+  });
+
   return (
     <div className="space-y-4">
       <SuccessBanner title="Cancelamento solicitado com sucesso." description="Pendente de aprovação." />
       <div className="rounded-xl border bg-card p-6 shadow-card">
         <SectionTitle title="Cancelar Mobilidade Autorizada" />
-        <FormField className="mt-4" label="Justificativa" required full><Textarea rows={4} /></FormField>
-        <div className="mt-4 flex justify-end gap-2"><Button variant="outline">Voltar</Button><Button variant="destructive">Cancelar Mobilidade</Button></div>
+        <FormField className="mt-4" label="Justificativa" required full>
+          <Textarea rows={4} value={justificativa} onChange={(e) => setJustificativa(e.target.value)} />
+        </FormField>
+        {isError && <p className="text-sm text-destructive mt-2">Erro ao solicitar cancelamento.</p>}
+        <div className="mt-4 flex justify-end gap-2">
+          <Button variant="outline">Voltar</Button>
+          <Button variant="destructive" onClick={() => mutate()} disabled={isPending}>
+            {isPending ? "Enviando…" : "Cancelar Mobilidade"}
+          </Button>
+        </div>
       </div>
     </div>
   );

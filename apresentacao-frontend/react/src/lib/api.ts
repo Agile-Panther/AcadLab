@@ -234,10 +234,25 @@ export const api = {
   },
   matricula: {
     getById: (id: number) => get<MatriculaResumo>(`matriculas/${id}`),
+    listByEstudante: (estudanteId: number) =>
+      get<MatriculaResumo[]>(`matriculas?estudanteId=${estudanteId}`).then(r => r ?? []),
     iniciar: (body: { estudanteId: number; periodoLetivoId: number; limiteCreditos: number }) =>
       post<void>(`matriculas`, body),
+    adicionarItem: (id: number, body: {
+      turmaId: number; disciplinaId: number; creditos: number;
+      cumpriuPreRequisitos: boolean; correquisitosNoPlano: boolean;
+      temPendencias: boolean; hoje: string; inicioJanela: string; fimJanela: string;
+    }) => post<void>(`matriculas/${id}/itens`, body),
+    cancelarItem: (id: number, turmaId: number, body: { hoje: string; inicio: string; fim: string }) =>
+      put<void>(`matriculas/${id}/itens/${turmaId}/cancelar`, body),
+    trancarDisciplina: (id: number, turmaId: number, body: { hoje: string; inicio: string; fim: string }) =>
+      put<void>(`matriculas/${id}/itens/${turmaId}/trancar`, body),
     confirmar: (id: number, vagasPorTurma: Record<number, number>) =>
       put<void>(`matriculas/${id}/confirmar`, vagasPorTurma),
+    solicitarExcecao: (id: number, body: { disciplinaId: number; motivo: string }) =>
+      post<void>(`matriculas/${id}/excecoes`, body),
+    deferir: (id: number, disciplinaId: number, coordenadorId: number) =>
+      put<void>(`matriculas/${id}/excecoes/${disciplinaId}/deferir?coordenadorId=${coordenadorId}`),
     trancarPeriodo: (id: number, body: object) =>
       put<void>(`matriculas/${id}/trancar-periodo`, body),
   },
@@ -282,11 +297,27 @@ export const api = {
   },
   mobilidade: {
     getByEstudante: (estudanteId: number) =>
-      get<MobilidadeAcademicaResumo>(`mobilidades/estudante/${estudanteId}`),
+      get<MobilidadeAcademicaResumo[]>(`mobilidades/estudante/${estudanteId}`).then(r => r ?? []),
     getById: (id: number) =>
       get<MobilidadeAcademicaResumo>(`mobilidades/${id}`),
-    solicitar: (body: { estudanteId: number; instituicaoDestino: string; status: string }) =>
-      post<void>(`mobilidades`, body),
+    solicitar: (body: { estudanteId: number; instituicaoDestino: string }) =>
+      post<number>(`mobilidades`, body),
+    autorizar: (id: number, coordenadorId: number) =>
+      put<void>(`mobilidades/${id}/autorizar`, { coordenadorId }),
+    iniciarPeriodoExterno: (id: number, dataInicio: string) =>
+      put<void>(`mobilidades/${id}/iniciar`, { dataInicio }),
+    adicionarItemPlano: (id: number, body: {
+      disciplinaExternaId: number; disciplinaEquivalenteId: number;
+      cargaHorariaExterna: number; cargaHorariaEquivalente: number;
+    }) => post<void>(`mobilidades/${id}/plano`, body),
+    anexarComprovante: (id: number, disciplinaExternaId: number) =>
+      put<void>(`mobilidades/${id}/plano/${disciplinaExternaId}/comprovante`),
+    registrarResultado: (id: number, disciplinaExternaId: number, secretariaId: number) =>
+      put<void>(`mobilidades/${id}/plano/${disciplinaExternaId}/resultado`, { secretariaId }),
+    solicitarCancelamento: (id: number, body: { justificativa: string; hoje: string }) =>
+      post<void>(`mobilidades/${id}/cancelamento`, body),
+    confirmarCancelamento: (id: number, coordenadorId: number) =>
+      put<void>(`mobilidades/${id}/cancelamento/confirmar`, { coordenadorId }),
   },
   cobrancas: {
     getByContrato: (contratoId: number) =>
