@@ -31,6 +31,7 @@ import school.cesar.acadlab.aplicacao.gestaofinanceira.BolsaServicoAplicacao;
 import school.cesar.acadlab.aplicacao.gestaofinanceira.CobrancaRepositorioAplicacao;
 import school.cesar.acadlab.aplicacao.gestaofinanceira.CobrancaServicoAplicacao;
 import school.cesar.acadlab.dominio.gestaofinanceira.CobrancaServico;
+import school.cesar.acadlab.dominio.gestaofinanceira.NotificacaoCobrancaObservador;
 import school.cesar.acadlab.dominio.gestaofinanceira.VerificadorAutorizacaoDesconto;
 import school.cesar.acadlab.dominio.gestaofinanceira.VerificadorMatriculaConfirmada;
 import school.cesar.acadlab.dominio.gestaofinanceira.cobranca.CobrancaRepositorio;
@@ -200,6 +201,14 @@ public class BackendAplicacao {
             VerificadorAutorizacaoDesconto verificadorAutorizacao,
             EventoBarramento barramento) {
         return new CobrancaServico(repositorio, verificadorMatricula, verificadorAutorizacao, barramento);
+    }
+
+    @Bean
+    NotificacaoCobrancaObservador notificacaoCobrancaObservador(
+            EventoBarramento barramento, RegistroNotificacoes registroNotificacoes) {
+        var observador = new NotificacaoCobrancaObservador(registroNotificacoes);
+        barramento.adicionar(observador);
+        return observador;
     }
 
     @Bean
