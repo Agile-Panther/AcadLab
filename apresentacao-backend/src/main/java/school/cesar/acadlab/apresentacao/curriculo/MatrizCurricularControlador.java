@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
+import school.cesar.acadlab.aplicacao.curriculo.MatrizCurricularDetalhe;
 import school.cesar.acadlab.aplicacao.curriculo.MatrizCurricularResumo;
 import school.cesar.acadlab.aplicacao.curriculo.MatrizCurricularServicoAplicacao;
 import school.cesar.acadlab.dominio.curriculo.CursoId;
@@ -51,6 +52,11 @@ class MatrizCurricularControlador {
     @RequestMapping(method = GET, path = "{id}")
     Optional<MatrizCurricularResumo> buscarPorId(@PathVariable int id) {
         return servicoAplicacao.buscarPorId(id);
+    }
+
+    @RequestMapping(method = GET, path = "{id}/detalhe")
+    Optional<MatrizCurricularDetalhe> buscarDetalhePorId(@PathVariable int id) {
+        return servicoAplicacao.buscarDetalhePorId(id);
     }
 
     @RequestMapping(method = POST)

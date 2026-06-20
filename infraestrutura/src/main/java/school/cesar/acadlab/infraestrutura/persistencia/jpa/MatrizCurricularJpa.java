@@ -22,6 +22,9 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.Table;
+import school.cesar.acadlab.aplicacao.curriculo.MatrizCurricularDetalhe;
+import school.cesar.acadlab.aplicacao.curriculo.MatrizCurricularDetalhe.DependenciaDetalhe;
+import school.cesar.acadlab.aplicacao.curriculo.MatrizCurricularDetalhe.ItemDetalhe;
 import school.cesar.acadlab.aplicacao.curriculo.MatrizCurricularRepositorioAplicacao;
 import school.cesar.acadlab.aplicacao.curriculo.MatrizCurricularResumo;
 import school.cesar.acadlab.dominio.curriculo.CursoId;
@@ -147,6 +150,11 @@ class MatrizCurricularRepositorioImpl implements MatrizCurricularRepositorio,
     }
 
     @Override
+    public Optional<MatrizCurricularDetalhe> buscarDetalhePorId(int id) {
+        return repository.findById(id).map(this::toDetalhe);
+    }
+
+    @Override
     public boolean existeMatrizAtivaParaCurso(CursoId cursoId) {
         return repository.existsByCursoIdAndStatus(cursoId.getValor(), StatusMatriz.ATIVA);
     }
@@ -240,5 +248,31 @@ class MatrizCurricularRepositorioImpl implements MatrizCurricularRepositorio,
                 jpa.cursoId,
                 jpa.nome,
                 jpa.status.name());
+    }
+
+    private MatrizCurricularDetalhe toDetalhe(MatrizCurricularJpa jpa) {
+        List<ItemDetalhe> itens = jpa.itens.stream()
+                .map(i -> new ItemDetalhe(i.disciplinaId, i.tipo.name(), i.cargaHoraria, i.creditos))
+                .toList();
+
+        List<DependenciaDetalhe> preRequisitos = jpa.preRequisitos.stream()
+                .map(pr -> new DependenciaDetalhe(pr.disciplinaId, pr.preRequisitoId))
+                .toList();
+
+        List<DependenciaDetalhe> correquisitos = jpa.correquisitos.stream()
+                .map(cq -> new DependenciaDetalhe(cq.disciplinaId, cq.correquisitoId))
+                .toList();
+
+        return new MatrizCurricularDetalhe(
+                jpa.id,
+                jpa.cursoId,
+                jpa.nome,
+                jpa.cargaHorariaMinima,
+                jpa.creditosExigidos,
+                jpa.maximoTrancamentos,
+                jpa.status.name(),
+                itens,
+                preRequisitos,
+                correquisitos);
     }
 }
