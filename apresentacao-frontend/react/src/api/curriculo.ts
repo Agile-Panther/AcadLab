@@ -75,6 +75,14 @@ export function adicionarDisciplina(
   return request<void>(`/${matrizId}/disciplinas`, { method: "POST", body: JSON.stringify(payload) });
 }
 
+export function editarDisciplina(
+  matrizId: number,
+  disciplinaId: number,
+  payload: { tipo: TipoDisciplina; cargaHoraria: number; creditos: number },
+) {
+  return request<void>(`/${matrizId}/disciplinas/${disciplinaId}`, { method: "PUT", body: JSON.stringify(payload) });
+}
+
 export function removerDisciplina(matrizId: number, disciplinaId: number) {
   return request<void>(`/${matrizId}/disciplinas/${disciplinaId}`, { method: "DELETE" });
 }
