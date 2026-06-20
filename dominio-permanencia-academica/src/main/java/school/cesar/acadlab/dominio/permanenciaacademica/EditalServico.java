@@ -28,7 +28,7 @@ public class EditalServico {
 
         if (editalRepositorio.existeEditalAbertoParaPrograma(programa)) {
             throw new IllegalStateException(
-                    "Já existe um edital com inscrições abertas para o programa '" + programa + "'");
+                    "já existe edital com inscrições abertas para este programa");
         }
 
         var id = editalRepositorio.proximoEditalId();

@@ -30,7 +30,7 @@ public class InscricaoServico {
         var edital = editalRepositorio.obter(editalId);
 
         if (!edital.isInscricaoAberta(hoje)) {
-            throw new IllegalStateException("Inscrição fora do prazo do edital");
+            throw new IllegalStateException("inscrição está fora do prazo do edital");
         }
 
         // RN3: estudante deve atender a todos os critérios de elegibilidade

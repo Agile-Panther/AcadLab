@@ -1,11 +1,12 @@
 package school.cesar.acadlab.dominio.permanenciaacademica;
 
 public class PermanenciaAcademicaFuncionalidade {
-    protected RepositorioPermanencia repositorio;
-    protected EventoBarramentoEmMemoria eventoBarramento;
-    protected EditalServico editalServico;
-    protected InscricaoServico inscricaoServico;
-    protected BeneficioServico beneficioServico;
+    public RepositorioPermanencia repositorio;
+    public EventoBarramentoEmMemoria eventoBarramento;
+    public EditalServico editalServico;
+    public InscricaoServico inscricaoServico;
+    public BeneficioServico beneficioServico;
+    public RuntimeException excecao;
 
     public PermanenciaAcademicaFuncionalidade() {
         repositorio = new RepositorioPermanencia();

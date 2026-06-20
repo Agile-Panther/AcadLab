@@ -12,18 +12,23 @@ import school.cesar.acadlab.dominio.apoiopsicopedagogico.profissional.Psicopedag
 import school.cesar.acadlab.dominio.apoiopsicopedagogico.triagem.PrioridadeTriagem;
 import school.cesar.acadlab.dominio.apoiopsicopedagogico.triagem.Triagem;
 
-public class ConsultarCasosFuncionalidade extends ApoioPsicopedagogicoFuncionalidade {
+public class ConsultarCasosFuncionalidade {
+    private final ApoioPsicopedagogicoFuncionalidade ctx;
     private final EstudanteId estudanteId = new EstudanteId(1);
     private final PsicopedagogoId responsavelId = new PsicopedagogoId(1);
     private final PsicopedagogoId outroResponsavelId = new PsicopedagogoId(2);
     private List<Caso> resultado;
 
+    public ConsultarCasosFuncionalidade(ApoioPsicopedagogicoFuncionalidade ctx) {
+        this.ctx = ctx;
+    }
+
     private void criarCasoComResponsavel(PsicopedagogoId responsavel) {
-        var casoId = repositorio.proximoId();
+        var casoId = ctx.repositorio.proximoId();
         var caso = new Caso(casoId, estudanteId);
         var triagem = new Triagem(PrioridadeTriagem.BAIXA, "Triagem", responsavel, LocalDate.now());
         caso.realizarTriagem(triagem);
-        repositorio.salvar(caso);
+        ctx.repositorio.salvar(caso);
     }
 
     @Dado("um psicopedagogo com casos atribuídos a ele")
@@ -39,7 +44,7 @@ public class ConsultarCasosFuncionalidade extends ApoioPsicopedagogicoFuncionali
 
     @Quando("o psicopedagogo consulta o histórico de casos")
     public void o_psicopedagogo_consulta_historico() {
-        resultado = consultaServico.listarCasosPorResponsavel(responsavelId);
+        resultado = ctx.consultaServico.listarCasosPorResponsavel(responsavelId);
     }
 
     @Entao("o sistema retorna apenas os casos nos quais o profissional é responsável")

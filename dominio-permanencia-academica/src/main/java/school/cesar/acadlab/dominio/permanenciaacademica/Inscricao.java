@@ -61,11 +61,11 @@ public class Inscricao {
 
     // RN9: prazo verificado no serviço; RN10: apenas um recurso por inscrição
     public RecursoInterpostoEvento interporRecurso() {
+        if (recursoInterposto) {
+            throw new IllegalStateException("já foi interposto um recurso para esta inscrição");
+        }
         if (status != StatusInscricao.INDEFERIDA) {
             throw new IllegalStateException("Recurso só pode ser interposto para inscrição indeferida");
-        }
-        if (recursoInterposto) {
-            throw new IllegalStateException("Já foi interposto um recurso para esta inscrição");
         }
         this.status = StatusInscricao.RECURSO_INTERPOSTO;
         this.recursoInterposto = true;

@@ -37,7 +37,9 @@ public class Repositorio implements CasoRepositorio, SolicitacaoApoioRepositorio
     @Override
     public Caso obter(CasoId id) {
         notNull(id, "O id do caso não pode ser nulo");
-        return Optional.ofNullable(casos.get(id)).get();
+        var caso = casos.get(id);
+        if (caso == null) throw new IllegalStateException("caso psicopedagógico não encontrado");
+        return caso;
     }
 
     @Override
