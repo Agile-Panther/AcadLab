@@ -22,7 +22,7 @@ public class PublicarResultadoFuncionalidade {
 
     private EditalId criarEditalComStatus(LocalDate prazoRecursoFim) {
         var id = ctx.repositorio.proximoEditalId();
-        var edital = Edital.reconstituir(id, PROGRAMA, 5,
+        var edital = Edital.reconstituir(id, PROGRAMA, null, 5,
                 LocalDate.now().minusDays(20), LocalDate.now().minusDays(10),
                 LocalDate.now().minusDays(9), prazoRecursoFim,
                 LocalDate.now().plusDays(180), StatusEdital.INSCRICOES_ABERTAS);

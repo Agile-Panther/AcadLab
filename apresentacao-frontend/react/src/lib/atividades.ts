@@ -19,6 +19,8 @@ export type AtividadeComplementarResumo = {
   horasSubmetidas: number;
   horasAprovadas: number;
   status: StatusAtividade;
+  dataRealizacao: string;
+  identificadorCertificado: string;
 };
 
 export type CategoriaHorasResumo = {

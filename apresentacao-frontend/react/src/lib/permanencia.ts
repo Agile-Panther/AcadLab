@@ -7,6 +7,7 @@ import { USUARIO_ATUAL } from "./config";
 export type EditalResumo = {
   id: number;
   programa: string;
+  descricao: string | null;
   vagas: number;
   prazoInscricaoInicio: string | null;
   prazoInscricaoFim: string | null;
@@ -114,6 +115,7 @@ export function useCriarEdital() {
   return useMutation({
     mutationFn: (vars: {
       programa: string;
+      descricao: string | null;
       vagas: number;
       prazoInscricaoInicio: string;
       prazoInscricaoFim: string;

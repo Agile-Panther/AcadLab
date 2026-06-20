@@ -16,3 +16,17 @@ export function validarSubmissaoAtividade(form: SubmissaoAtividadeForm): string 
   if (!form.identificadorCertificado.trim()) return "Selecione o comprovante.";
   return null;
 }
+
+export function validarHorasAprovadas(aprovadas: number, submetidas: number): string | null {
+  if (!Number.isInteger(aprovadas) || aprovadas < 1) {
+    return "Informe ao menos uma hora aprovada.";
+  }
+  if (aprovadas > submetidas) {
+    return "As horas aprovadas não podem superar as submetidas.";
+  }
+  return null;
+}
+
+export function validarJustificativaIndeferimento(justificativa: string): string | null {
+  return justificativa.trim() ? null : "Informe a justificativa do indeferimento.";
+}

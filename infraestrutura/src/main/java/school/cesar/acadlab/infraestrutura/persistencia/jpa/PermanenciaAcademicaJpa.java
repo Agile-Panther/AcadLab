@@ -39,6 +39,7 @@ import school.cesar.acadlab.dominio.permanenciaacademica.StatusInscricao;
 class EditalJpa {
     @Id int id;
     String programa;
+    String descricao;
     int vagas;
     LocalDate prazoInscricaoInicio;
     LocalDate prazoInscricaoFim;
@@ -255,6 +256,7 @@ class PermanenciaAcademicaRepositorioImpl
         var jpa = editalRepo.findById(e.getId().getValor()).orElseGet(EditalJpa::new);
         jpa.id = e.getId().getValor();
         jpa.programa = e.getPrograma();
+        jpa.descricao = e.getDescricao();
         jpa.vagas = e.getVagas();
         jpa.prazoInscricaoInicio = e.getPrazoInscricaoInicio();
         jpa.prazoInscricaoFim = e.getPrazoInscricaoFim();
@@ -266,14 +268,14 @@ class PermanenciaAcademicaRepositorioImpl
     }
 
     private Edital toDomain(EditalJpa jpa) {
-        return Edital.reconstituir(new EditalId(jpa.id), jpa.programa, jpa.vagas,
+        return Edital.reconstituir(new EditalId(jpa.id), jpa.programa, jpa.descricao, jpa.vagas,
                 jpa.prazoInscricaoInicio, jpa.prazoInscricaoFim,
                 jpa.prazoRecursoInicio, jpa.prazoRecursoFim,
                 jpa.prazoRenovacao, jpa.status);
     }
 
     private EditalResumo toResumoEdital(EditalJpa jpa) {
-        return new EditalResumo(jpa.id, jpa.programa, jpa.vagas,
+        return new EditalResumo(jpa.id, jpa.programa, jpa.descricao, jpa.vagas,
                 jpa.prazoInscricaoInicio, jpa.prazoInscricaoFim,
                 jpa.prazoRecursoInicio, jpa.prazoRecursoFim,
                 jpa.prazoRenovacao, jpa.status.name());

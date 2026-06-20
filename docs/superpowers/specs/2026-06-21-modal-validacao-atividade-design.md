@@ -16,9 +16,9 @@ Permitir que a coordenação examine os dados enviados pelo estudante antes de d
 
 ## Arquitetura
 
-O modal será implementado na rota de atividades complementares, reutilizando `Dialog`, `FormField`, `Input`, `Textarea`, `useDeferir` e `useIndeferir`. As regras puras de validação serão extraídas para um módulo pequeno e cobertas por testes unitários com Vitest.
+O DTO `AtividadeComplementarResumo` passará a transportar também a data de realização e o identificador do comprovante, já persistidos no backend. O modal será implementado na rota de atividades complementares, reutilizando `Dialog`, `FormField`, `Input`, `Textarea`, `useDeferir` e `useIndeferir`. As regras puras de validação serão extraídas para um módulo pequeno e cobertas por testes unitários com Vitest.
 
-Nenhum endpoint novo será criado: os resumos já retornados pela fila contêm os dados necessários e as mutations existentes executam as decisões.
+Nenhum endpoint novo será criado: a consulta da fila terá seu DTO ampliado e as mutations existentes executarão as decisões.
 
 ## Testes
 

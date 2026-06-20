@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { validarSubmissaoAtividade } from "./atividade-form";
+import {
+  validarHorasAprovadas,
+  validarJustificativaIndeferimento,
+  validarSubmissaoAtividade,
+} from "./atividade-form";
 
 describe("validarSubmissaoAtividade", () => {
   const atividadeValida = {
@@ -22,5 +26,29 @@ describe("validarSubmissaoAtividade", () => {
 
   it("aceita formulário completo", () => {
     expect(validarSubmissaoAtividade(atividadeValida)).toBeNull();
+  });
+});
+
+describe("validarHorasAprovadas", () => {
+  it("rejeita carga horária menor que uma hora", () => {
+    expect(validarHorasAprovadas(0, 20)).toBe("Informe ao menos uma hora aprovada.");
+  });
+
+  it("rejeita carga horária superior à submetida", () => {
+    expect(validarHorasAprovadas(21, 20)).toBe(
+      "As horas aprovadas não podem superar as submetidas.",
+    );
+  });
+
+  it("aceita carga horária dentro do intervalo", () => {
+    expect(validarHorasAprovadas(15, 20)).toBeNull();
+  });
+});
+
+describe("validarJustificativaIndeferimento", () => {
+  it("exige uma justificativa preenchida", () => {
+    expect(validarJustificativaIndeferimento(" ")).toBe(
+      "Informe a justificativa do indeferimento.",
+    );
   });
 });
