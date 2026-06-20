@@ -39,6 +39,21 @@ BoundedContext CompartilhadoContext implements CompartilhadoSubdomain {
         ValueObject TurmaId { int valor }
         ValueObject PeriodoLetivoId { int valor }
         ValueObject SecretariaId { int valor }
+
+        // Infraestrutura de eventos de domínio (padrão Observer):
+        // EventoBarramento (Subject) publica eventos; EventoObservador<E> e a base
+        // ObservadorDeEvento<E> — que filtra por tipo e isola falhas do efeito —
+        // reagem a eles. RegistroNotificacoes acumula a Notificacao como efeito
+        // observável dos observadores concretos dos contextos de negócio.
+        ValueObject Notificacao { int destinatarioId; String tipo; String mensagem }
+        Service EventoBarramento {
+            void adicionar(@EventoObservador observador);
+            void postar(Object evento);
+        }
+        Service RegistroNotificacoes {
+            void registrar(@Notificacao notificacao);
+            List<@Notificacao> doDestinatario(int destinatarioId);
+        }
     }
 }
 
@@ -460,6 +475,9 @@ BoundedContext AtividadesComplementaresContext implements ServicosAcademicosSubd
             void cancelar(int atividadeId);
             int consultarSaldo(@EstudanteId estudanteId);
         }
+        // Observer concreto (NotificacaoAtividadeObservador): registrado no barramento,
+        // reage aos eventos de análise (deferir/indeferir/revisar/cancelar) notificando
+        // o estudante via RegistroNotificacoes do contexto Compartilhado.
     }
 }
 
