@@ -16,7 +16,9 @@ class IntersectionObserverImediato {
 
   disconnect() {}
   unobserve() {}
-  takeRecords() { return []; }
+  takeRecords() {
+    return [];
+  }
   readonly root = null;
   readonly rootMargin = "0px";
   readonly thresholds = [0];

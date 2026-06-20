@@ -37,7 +37,10 @@ export function ActionBar({
         </Button>
       )}
       {primaryLabel && (
-        <Button onClick={onPrimary} className="h-10 gap-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90">
+        <Button
+          onClick={onPrimary}
+          className="h-10 gap-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90"
+        >
           <Plus className="h-4 w-4" /> {primaryLabel}
         </Button>
       )}

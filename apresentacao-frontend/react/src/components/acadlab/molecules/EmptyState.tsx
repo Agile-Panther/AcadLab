@@ -16,7 +16,12 @@ export function EmptyState({
   className?: string;
 }) {
   return (
-    <div className={cn("flex flex-col items-center justify-center gap-3 px-4 py-16 text-center", className)}>
+    <div
+      className={cn(
+        "flex flex-col items-center justify-center gap-3 px-4 py-16 text-center",
+        className,
+      )}
+    >
       <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted text-muted-foreground">
         <Inbox className="h-6 w-6" />
       </div>
@@ -25,7 +30,9 @@ export function EmptyState({
         {description && <p className="mt-1 text-xs text-muted-foreground">{description}</p>}
       </div>
       {actionLabel && (
-        <Button onClick={onAction} className="mt-2">{actionLabel}</Button>
+        <Button onClick={onAction} className="mt-2">
+          {actionLabel}
+        </Button>
       )}
     </div>
   );

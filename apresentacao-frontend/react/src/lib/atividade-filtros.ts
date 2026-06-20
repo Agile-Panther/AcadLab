@@ -14,11 +14,12 @@ export type FiltrosAtividade = {
   status: StatusAtividade | null;
 };
 
-const normalizar = (texto: string) => texto
-  .normalize("NFD")
-  .replace(/[\u0300-\u036f]/g, "")
-  .toLowerCase()
-  .trim();
+const normalizar = (texto: string) =>
+  texto
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim();
 
 export function filtrarAtividades<T extends AtividadeFiltravel>(
   atividades: T[],
@@ -29,8 +30,10 @@ export function filtrarAtividades<T extends AtividadeFiltravel>(
     const texto = normalizar(
       `AC-${atividade.id} ${atividade.descricao} Estudante #${atividade.estudanteId}`,
     );
-    return (!busca || texto.includes(busca))
-      && (filtros.categoriaId == null || atividade.categoriaId === filtros.categoriaId)
-      && (filtros.status == null || atividade.status === filtros.status);
+    return (
+      (!busca || texto.includes(busca)) &&
+      (filtros.categoriaId == null || atividade.categoriaId === filtros.categoriaId) &&
+      (filtros.status == null || atividade.status === filtros.status)
+    );
   });
 }

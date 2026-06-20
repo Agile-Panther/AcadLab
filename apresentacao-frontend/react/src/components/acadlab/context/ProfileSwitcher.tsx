@@ -47,18 +47,14 @@ export function ProfileSwitcherProvider({ children }: { children: ReactNode }) {
   );
 
   return (
-    <ProfileSwitcherContext.Provider value={value}>
-      {children}
-    </ProfileSwitcherContext.Provider>
+    <ProfileSwitcherContext.Provider value={value}>{children}</ProfileSwitcherContext.Provider>
   );
 }
 
 export function useProfileSwitcherContext() {
   const ctx = useContext(ProfileSwitcherContext);
   if (!ctx)
-    throw new Error(
-      "useProfileSwitcherContext must be used within ProfileSwitcherProvider",
-    );
+    throw new Error("useProfileSwitcherContext must be used within ProfileSwitcherProvider");
   return ctx;
 }
 

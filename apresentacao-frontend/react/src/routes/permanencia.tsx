@@ -2,8 +2,16 @@ import { toast } from "sonner";
 import { useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import {
-  AppShell, SectionTitle, StatsRow, DataTable, StatusBadge, RowActionButton,
-  FormField, ValidationCallout, Stepper, SuccessBanner,
+  AppShell,
+  SectionTitle,
+  StatsRow,
+  DataTable,
+  StatusBadge,
+  RowActionButton,
+  FormField,
+  ValidationCallout,
+  Stepper,
+  SuccessBanner,
   useProfileSwitcher,
 } from "@/components/acadlab";
 import { Button } from "@/components/ui/button";
@@ -13,10 +21,22 @@ import { ArrowLeft, Calendar, Plus, FileText, Clock, User } from "lucide-react";
 import { formatData } from "@/lib/format";
 import { ApiError, hojeIso } from "@/lib/api";
 import {
-  useEditais, useTodasInscricoes, useInscricoesEstudante, useBeneficiosEstudante, useTodosBeneficios,
-  useInscrever, useInterporRecurso, useRenovarBeneficio,
-  useCriarEdital, usePublicarResultado, useEncerrarEdital, useDeferirInscricao, useIndeferirInscricao,
-  type EditalResumo, type InscricaoResumo, type BeneficioResumo,
+  useEditais,
+  useTodasInscricoes,
+  useInscricoesEstudante,
+  useBeneficiosEstudante,
+  useTodosBeneficios,
+  useInscrever,
+  useInterporRecurso,
+  useRenovarBeneficio,
+  useCriarEdital,
+  usePublicarResultado,
+  useEncerrarEdital,
+  useDeferirInscricao,
+  useIndeferirInscricao,
+  type EditalResumo,
+  type InscricaoResumo,
+  type BeneficioResumo,
 } from "@/lib/permanencia";
 
 export const Route = createFileRoute("/permanencia")({
@@ -67,11 +87,16 @@ function editalTone(e: EditalResumo) {
 
 function inscricaoLabel(s: InscricaoResumo["status"]): string {
   switch (s) {
-    case "PENDENTE": return "Em análise";
-    case "DEFERIDA": return "Deferida";
-    case "INDEFERIDA": return "Indeferida";
-    case "RECURSO_INTERPOSTO": return "Recurso interposto";
-    case "RECURSO_ANALISADO": return "Recurso analisado";
+    case "PENDENTE":
+      return "Em análise";
+    case "DEFERIDA":
+      return "Deferida";
+    case "INDEFERIDA":
+      return "Indeferida";
+    case "RECURSO_INTERPOSTO":
+      return "Recurso interposto";
+    case "RECURSO_ANALISADO":
+      return "Recurso analisado";
   }
 }
 function inscricaoTone(s: InscricaoResumo["status"]) {
@@ -84,7 +109,11 @@ function beneficioLabel(s: BeneficioResumo["status"]): string {
   return s === "ATIVO" ? "Ativo" : s === "SUSPENSO" ? "Suspenso" : "Cancelado";
 }
 function beneficioTone(s: BeneficioResumo["status"]) {
-  return s === "ATIVO" ? "success" as const : s === "SUSPENSO" ? "danger" as const : "neutral" as const;
+  return s === "ATIVO"
+    ? ("success" as const)
+    : s === "SUSPENSO"
+      ? ("danger" as const)
+      : ("neutral" as const);
 }
 
 /** Inscrições ainda em tramitação (separadas das já concluídas/anteriores). */
@@ -152,31 +181,47 @@ function Page() {
 
   const { active: perfil } = useProfileSwitcher([
     { value: "estudante", label: "Estudante", description: "Inscreve-se e acompanha benefícios" },
-    { value: "assistencia", label: "Assistência Estudantil", description: "Analisa pedidos e gere editais" },
+    {
+      value: "assistencia",
+      label: "Assistência Estudantil",
+      description: "Analisa pedidos e gere editais",
+    },
   ]);
-  const subtitle = perfil === "assistencia"
-    ? "Setor de Assistência Estudantil · Análise de pedidos"
-    : "Bolsas e auxílios institucionais";
+  const subtitle =
+    perfil === "assistencia"
+      ? "Setor de Assistência Estudantil · Análise de pedidos"
+      : "Bolsas e auxílios institucionais";
 
   const handleRenovar = (id: number) => {
     renovar.mutate(id, {
-      onSuccess: () => toast.success("Solicitação de renovação enviada! Nova vigência será processada."),
+      onSuccess: () =>
+        toast.success("Solicitação de renovação enviada! Nova vigência será processada."),
       onError: notifyError,
     });
   };
 
   const handleSendRecurso = (e: React.FormEvent, inscricaoId: number, editalId: number) => {
     e.preventDefault();
-    recurso.mutate({ inscricaoId, editalId }, {
-      onSuccess: () => { toast.success("Recurso enviado com sucesso! Aguarde a reanálise."); setView({ kind: "overview" }); },
-      onError: notifyError,
-    });
+    recurso.mutate(
+      { inscricaoId, editalId },
+      {
+        onSuccess: () => {
+          toast.success("Recurso enviado com sucesso! Aguarde a reanálise.");
+          setView({ kind: "overview" });
+        },
+        onError: notifyError,
+      },
+    );
   };
 
   if (perfil === "assistencia") {
     return (
       <AppShell title="Permanência Acadêmica" subtitle={subtitle}>
-        <AssistenciaView editais={editais} editalNome={editalNome} loading={editaisQuery.isLoading} />
+        <AssistenciaView
+          editais={editais}
+          editalNome={editalNome}
+          loading={editaisQuery.isLoading}
+        />
       </AppShell>
     );
   }
@@ -185,32 +230,74 @@ function Page() {
     <AppShell title="Permanência Acadêmica" subtitle={subtitle}>
       {view.kind === "overview" && (
         <div className="space-y-5">
-          <StatsRow stats={[
-            { label: "Benefícios ativos", value: beneficios.filter((b) => b.status === "ATIVO").length, tone: "success" },
-            { label: "Editais abertos", value: editais.filter(inscricaoAberta).length, tone: "info" },
-            { label: "Inscrições", value: inscricoes.length, tone: "info" },
-            { label: "Em análise", value: inscricoesEmAnalise.length, tone: "warning" },
-          ]} />
+          <StatsRow
+            stats={[
+              {
+                label: "Benefícios ativos",
+                value: beneficios.filter((b) => b.status === "ATIVO").length,
+                tone: "success",
+              },
+              {
+                label: "Editais abertos",
+                value: editais.filter(inscricaoAberta).length,
+                tone: "info",
+              },
+              { label: "Inscrições", value: inscricoes.length, tone: "info" },
+              { label: "Em análise", value: inscricoesEmAnalise.length, tone: "warning" },
+            ]}
+          />
 
           <SectionTitle title="Meus benefícios" />
           {beneficiosQuery.isLoading ? (
             <p className="text-sm text-muted-foreground">Carregando benefícios…</p>
           ) : beneficios.length === 0 ? (
-            <ValidationCallout tone="info">Você não possui benefícios ativos no momento.</ValidationCallout>
+            <ValidationCallout tone="info">
+              Você não possui benefícios ativos no momento.
+            </ValidationCallout>
           ) : (
             <DataTable
               columns={[
                 { key: "protocolo", header: "Protocolo", render: (r) => `BEN-${r.id}` },
                 { key: "nome", header: "Benefício", render: (r) => editalNome(r.editalId) },
-                { key: "status", header: "Status", render: (r) => <StatusBadge tone={beneficioTone(r.status)}>{beneficioLabel(r.status)}</StatusBadge> },
-                { key: "vencimento", header: "Renova em", render: (r) => formatData(r.prazoRenovacao) },
-                { key: "acoes", header: "", align: "right", render: (r) => (
-                  <div className="flex items-center justify-end gap-1.5">
-                    {emTempoDeRenovacao(r) && <RowActionButton onClick={() => handleRenovar(r.id)}>Renovar</RowActionButton>}
-                    {r.status === "ATIVO" && r.solicitouRenovacao && <span className="text-[12px] text-muted-foreground">Renovação solicitada</span>}
-                    <RowActionButton tone="neutral" onClick={() => setView({ kind: "detail-beneficio", id: r.id })}>Detalhes</RowActionButton>
-                  </div>
-                ) },
+                {
+                  key: "status",
+                  header: "Status",
+                  render: (r) => (
+                    <StatusBadge tone={beneficioTone(r.status)}>
+                      {beneficioLabel(r.status)}
+                    </StatusBadge>
+                  ),
+                },
+                {
+                  key: "vencimento",
+                  header: "Renova em",
+                  render: (r) => formatData(r.prazoRenovacao),
+                },
+                {
+                  key: "acoes",
+                  header: "",
+                  align: "right",
+                  render: (r) => (
+                    <div className="flex items-center justify-end gap-1.5">
+                      {emTempoDeRenovacao(r) && (
+                        <RowActionButton onClick={() => handleRenovar(r.id)}>
+                          Renovar
+                        </RowActionButton>
+                      )}
+                      {r.status === "ATIVO" && r.solicitouRenovacao && (
+                        <span className="text-[12px] text-muted-foreground">
+                          Renovação solicitada
+                        </span>
+                      )}
+                      <RowActionButton
+                        tone="neutral"
+                        onClick={() => setView({ kind: "detail-beneficio", id: r.id })}
+                      >
+                        Detalhes
+                      </RowActionButton>
+                    </div>
+                  ),
+                },
               ]}
               rows={beneficios}
             />
@@ -228,15 +315,31 @@ function Page() {
                       <p className="text-[12px] text-muted-foreground">EDT-{e.id}</p>
                       <h3 className="mt-1 font-semibold text-foreground">{e.programa}</h3>
                     </div>
-                    <StatusBadge tone={inscritoEm.has(e.id) ? "info" : editalTone(e)}>{inscritoEm.has(e.id) ? "Inscrito" : editalLabel(e)}</StatusBadge>
+                    <StatusBadge tone={inscritoEm.has(e.id) ? "info" : editalTone(e)}>
+                      {inscritoEm.has(e.id) ? "Inscrito" : editalLabel(e)}
+                    </StatusBadge>
                   </div>
-                  {e.descricao && <p className="mt-2 text-[13px] text-muted-foreground line-clamp-2">{e.descricao}</p>}
+                  {e.descricao && (
+                    <p className="mt-2 text-[13px] text-muted-foreground line-clamp-2">
+                      {e.descricao}
+                    </p>
+                  )}
                   <div className="mt-3 flex items-center gap-4 text-[12px] text-muted-foreground">
                     <span>{e.vagas} vagas</span>
-                    <span className="flex items-center gap-1"><Calendar className="h-3.5 w-3.5" /> até {formatData(e.prazoInscricaoFim)}</span>
+                    <span className="flex items-center gap-1">
+                      <Calendar className="h-3.5 w-3.5" /> até {formatData(e.prazoInscricaoFim)}
+                    </span>
                   </div>
-                  {inscritoEm.has(e.id) && <p className="mt-2 text-[12px] text-muted-foreground">Você já possui inscrição neste edital.</p>}
-                  <Button className="mt-3 w-full" disabled={!inscricaoAberta(e) || inscritoEm.has(e.id)} onClick={() => setView({ kind: "edital", id: e.id })}>
+                  {inscritoEm.has(e.id) && (
+                    <p className="mt-2 text-[12px] text-muted-foreground">
+                      Você já possui inscrição neste edital.
+                    </p>
+                  )}
+                  <Button
+                    className="mt-3 w-full"
+                    disabled={!inscricaoAberta(e) || inscritoEm.has(e.id)}
+                    onClick={() => setView({ kind: "edital", id: e.id })}
+                  >
                     {inscritoEm.has(e.id) ? "Já inscrito" : "Ver edital"}
                   </Button>
                 </div>
@@ -245,18 +348,42 @@ function Page() {
           )}
 
           <div className="rounded-xl border bg-card p-5 shadow-card">
-            <SectionTitle title="Inscrições em análise" subtitle="Pedidos aguardando decisão da Assistência Estudantil" />
+            <SectionTitle
+              title="Inscrições em análise"
+              subtitle="Pedidos aguardando decisão da Assistência Estudantil"
+            />
             {inscricoesEmAnalise.length === 0 ? (
-              <p className="mt-3 text-sm text-muted-foreground">Nenhuma inscrição em análise no momento.</p>
+              <p className="mt-3 text-sm text-muted-foreground">
+                Nenhuma inscrição em análise no momento.
+              </p>
             ) : (
-              <DataTable className="mt-3"
+              <DataTable
+                className="mt-3"
                 columns={[
                   { key: "protocolo", header: "Protocolo", render: (r) => `INS-${r.id}` },
                   { key: "edital", header: "Edital", render: (r) => editalNome(r.editalId) },
-                  { key: "status", header: "Status", render: (r) => <StatusBadge tone={inscricaoTone(r.status)}>{inscricaoLabel(r.status)}</StatusBadge> },
-                  { key: "acoes", header: "", align: "right", render: (r) => (
-                    <RowActionButton tone="neutral" onClick={() => setView({ kind: "detail-inscricao", id: r.id })}>Detalhes</RowActionButton>
-                  ) },
+                  {
+                    key: "status",
+                    header: "Status",
+                    render: (r) => (
+                      <StatusBadge tone={inscricaoTone(r.status)}>
+                        {inscricaoLabel(r.status)}
+                      </StatusBadge>
+                    ),
+                  },
+                  {
+                    key: "acoes",
+                    header: "",
+                    align: "right",
+                    render: (r) => (
+                      <RowActionButton
+                        tone="neutral"
+                        onClick={() => setView({ kind: "detail-inscricao", id: r.id })}
+                      >
+                        Detalhes
+                      </RowActionButton>
+                    ),
+                  },
                 ]}
                 rows={inscricoesEmAnalise}
               />
@@ -266,19 +393,48 @@ function Page() {
           <div className="rounded-xl border bg-card p-5 shadow-card">
             <SectionTitle title="Inscrições anteriores" subtitle="Inscrições já analisadas" />
             {inscricoesAnteriores.length === 0 ? (
-              <p className="mt-3 text-sm text-muted-foreground">Você ainda não possui inscrições concluídas.</p>
+              <p className="mt-3 text-sm text-muted-foreground">
+                Você ainda não possui inscrições concluídas.
+              </p>
             ) : (
-              <DataTable className="mt-3"
+              <DataTable
+                className="mt-3"
                 columns={[
                   { key: "protocolo", header: "Protocolo", render: (r) => `INS-${r.id}` },
                   { key: "edital", header: "Edital", render: (r) => editalNome(r.editalId) },
-                  { key: "status", header: "Status", render: (r) => <StatusBadge tone={inscricaoTone(r.status)}>{inscricaoLabel(r.status)}</StatusBadge> },
-                  { key: "acoes", header: "", align: "right", render: (r) => (
-                    <div className="flex justify-end gap-1.5">
-                      <RowActionButton tone="neutral" onClick={() => setView({ kind: "detail-inscricao", id: r.id })}>Detalhes</RowActionButton>
-                      {r.status === "INDEFERIDA" && <RowActionButton onClick={() => setView({ kind: "recurso", inscricaoId: r.id, editalId: r.editalId })}>Interpor recurso</RowActionButton>}
-                    </div>
-                  ) },
+                  {
+                    key: "status",
+                    header: "Status",
+                    render: (r) => (
+                      <StatusBadge tone={inscricaoTone(r.status)}>
+                        {inscricaoLabel(r.status)}
+                      </StatusBadge>
+                    ),
+                  },
+                  {
+                    key: "acoes",
+                    header: "",
+                    align: "right",
+                    render: (r) => (
+                      <div className="flex justify-end gap-1.5">
+                        <RowActionButton
+                          tone="neutral"
+                          onClick={() => setView({ kind: "detail-inscricao", id: r.id })}
+                        >
+                          Detalhes
+                        </RowActionButton>
+                        {r.status === "INDEFERIDA" && (
+                          <RowActionButton
+                            onClick={() =>
+                              setView({ kind: "recurso", inscricaoId: r.id, editalId: r.editalId })
+                            }
+                          >
+                            Interpor recurso
+                          </RowActionButton>
+                        )}
+                      </div>
+                    ),
+                  },
                 ]}
                 rows={inscricoesAnteriores}
               />
@@ -287,36 +443,61 @@ function Page() {
         </div>
       )}
 
-      {view.kind === "edital" && (() => {
-        const e = editais.find((x) => x.id === view.id);
-        if (!e) return null;
-        return (
-          <div className="space-y-4">
-            <Button variant="ghost" size="sm" onClick={() => setView({ kind: "overview" })}><ArrowLeft className="mr-1 h-4 w-4" /> Voltar</Button>
-            <SectionTitle title={`EDT-${e.id} — ${e.programa}`} subtitle={`${e.vagas} vagas · inscrições até ${formatData(e.prazoInscricaoFim)}`} />
-            {e.descricao && (
+      {view.kind === "edital" &&
+        (() => {
+          const e = editais.find((x) => x.id === view.id);
+          if (!e) return null;
+          return (
+            <div className="space-y-4">
+              <Button variant="ghost" size="sm" onClick={() => setView({ kind: "overview" })}>
+                <ArrowLeft className="mr-1 h-4 w-4" /> Voltar
+              </Button>
+              <SectionTitle
+                title={`EDT-${e.id} — ${e.programa}`}
+                subtitle={`${e.vagas} vagas · inscrições até ${formatData(e.prazoInscricaoFim)}`}
+              />
+              {e.descricao && (
+                <div className="rounded-xl border bg-card p-5 shadow-card">
+                  <h3 className="font-semibold">Sobre o programa</h3>
+                  <p className="mt-2 text-[13px] text-muted-foreground">{e.descricao}</p>
+                </div>
+              )}
               <div className="rounded-xl border bg-card p-5 shadow-card">
-                <h3 className="font-semibold">Sobre o programa</h3>
-                <p className="mt-2 text-[13px] text-muted-foreground">{e.descricao}</p>
+                <h3 className="font-semibold">Prazos do edital</h3>
+                <div className="mt-3 grid gap-2 text-[13px] text-muted-foreground sm:grid-cols-2">
+                  <div>
+                    <span className="text-foreground">Inscrições:</span>{" "}
+                    {formatData(e.prazoInscricaoInicio)} a {formatData(e.prazoInscricaoFim)}
+                  </div>
+                  <div>
+                    <span className="text-foreground">Recursos:</span>{" "}
+                    {formatData(e.prazoRecursoInicio)} a {formatData(e.prazoRecursoFim)}
+                  </div>
+                  <div>
+                    <span className="text-foreground">Renovação:</span>{" "}
+                    {formatData(e.prazoRenovacao)}
+                  </div>
+                  <div>
+                    <span className="text-foreground">Vagas:</span> {e.vagas}
+                  </div>
+                </div>
               </div>
-            )}
-            <div className="rounded-xl border bg-card p-5 shadow-card">
-              <h3 className="font-semibold">Prazos do edital</h3>
-              <div className="mt-3 grid gap-2 text-[13px] text-muted-foreground sm:grid-cols-2">
-                <div><span className="text-foreground">Inscrições:</span> {formatData(e.prazoInscricaoInicio)} a {formatData(e.prazoInscricaoFim)}</div>
-                <div><span className="text-foreground">Recursos:</span> {formatData(e.prazoRecursoInicio)} a {formatData(e.prazoRecursoFim)}</div>
-                <div><span className="text-foreground">Renovação:</span> {formatData(e.prazoRenovacao)}</div>
-                <div><span className="text-foreground">Vagas:</span> {e.vagas}</div>
+              <ValidationCallout tone="info">
+                Ao se inscrever, confirme que atende aos critérios de elegibilidade do edital.
+              </ValidationCallout>
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" onClick={() => setView({ kind: "overview" })}>
+                  Voltar
+                </Button>
+                {inscricaoAberta(e) && !inscritoEm.has(e.id) && (
+                  <Button onClick={() => setView({ kind: "inscricao", step: 0, editalId: e.id })}>
+                    Inscrever-se
+                  </Button>
+                )}
               </div>
             </div>
-            <ValidationCallout tone="info">Ao se inscrever, confirme que atende aos critérios de elegibilidade do edital.</ValidationCallout>
-            <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setView({ kind: "overview" })}>Voltar</Button>
-              {inscricaoAberta(e) && !inscritoEm.has(e.id) && <Button onClick={() => setView({ kind: "inscricao", step: 0, editalId: e.id })}>Inscrever-se</Button>}
-            </div>
-          </div>
-        );
-      })()}
+          );
+        })()}
 
       {view.kind === "inscricao" && (
         <InscricaoWizard
@@ -324,10 +505,16 @@ function Page() {
           submitting={inscrever.isPending}
           onStep={(s) => setView({ kind: "inscricao", step: s, editalId: view.editalId })}
           onSubmit={() =>
-            inscrever.mutate({ editalId: view.editalId, atendeElegibilidade: true }, {
-              onSuccess: (id) => { toast.success(`Inscrição registrada! Protocolo: INS-${id}`); setView({ kind: "inscricao", step: 2, editalId: view.editalId }); },
-              onError: notifyError,
-            })
+            inscrever.mutate(
+              { editalId: view.editalId, atendeElegibilidade: true },
+              {
+                onSuccess: (id) => {
+                  toast.success(`Inscrição registrada! Protocolo: INS-${id}`);
+                  setView({ kind: "inscricao", step: 2, editalId: view.editalId });
+                },
+                onError: notifyError,
+              },
+            )
           }
           onDone={() => setView({ kind: "overview" })}
         />
@@ -335,107 +522,226 @@ function Page() {
 
       {view.kind === "recurso" && (
         <div className="space-y-4">
-          <Button variant="ghost" size="sm" onClick={() => setView({ kind: "overview" })}><ArrowLeft className="mr-1 h-4 w-4" /> Voltar</Button>
-          <form onSubmit={(e) => handleSendRecurso(e, view.inscricaoId, view.editalId)} className="rounded-xl border bg-card p-6 shadow-card">
-            <SectionTitle title="Interpor recurso" subtitle={`Inscrição INS-${view.inscricaoId} · Apenas um recurso por inscrição é permitido.`} />
-            <FormField className="mt-4" label="Justificativa" required full><Textarea rows={5} required /></FormField>
-            <FormField label="Documentação complementar" full><Input type="file" className="h-10" /></FormField>
-            <div className="mt-4 flex justify-end gap-2"><Button type="button" variant="outline" onClick={() => setView({ kind: "overview" })}>Cancelar</Button><Button type="submit" disabled={recurso.isPending}>Enviar recurso</Button></div>
+          <Button variant="ghost" size="sm" onClick={() => setView({ kind: "overview" })}>
+            <ArrowLeft className="mr-1 h-4 w-4" /> Voltar
+          </Button>
+          <form
+            onSubmit={(e) => handleSendRecurso(e, view.inscricaoId, view.editalId)}
+            className="rounded-xl border bg-card p-6 shadow-card"
+          >
+            <SectionTitle
+              title="Interpor recurso"
+              subtitle={`Inscrição INS-${view.inscricaoId} · Apenas um recurso por inscrição é permitido.`}
+            />
+            <FormField className="mt-4" label="Justificativa" required full>
+              <Textarea rows={5} required />
+            </FormField>
+            <FormField label="Documentação complementar" full>
+              <Input type="file" className="h-10" />
+            </FormField>
+            <div className="mt-4 flex justify-end gap-2">
+              <Button type="button" variant="outline" onClick={() => setView({ kind: "overview" })}>
+                Cancelar
+              </Button>
+              <Button type="submit" disabled={recurso.isPending}>
+                Enviar recurso
+              </Button>
+            </div>
           </form>
         </div>
       )}
 
-      {view.kind === "detail-beneficio" && (() => {
-        const b = beneficios.find((x) => x.id === view.id);
-        if (!b) return null;
-        return (
-          <div className="space-y-4">
-            <Button variant="ghost" size="sm" onClick={() => setView({ kind: "overview" })}><ArrowLeft className="mr-1 h-4 w-4" /> Voltar</Button>
-            <SectionTitle title={editalNome(b.editalId)} subtitle={`Protocolo BEN-${b.id}`} />
-            <div className="grid gap-4 md:grid-cols-2">
-              <div className="rounded-xl border bg-card p-5 shadow-card space-y-3">
-                <h3 className="font-semibold flex items-center gap-2"><FileText className="h-4 w-4" /> Informações</h3>
-                <div className="text-[13px]"><span className="text-muted-foreground">Status:</span> <StatusBadge tone={beneficioTone(b.status)}>{beneficioLabel(b.status)}</StatusBadge></div>
-                <div className="text-[13px]"><span className="text-muted-foreground">Ativado em:</span> {formatData(b.dataAtivacao)}</div>
-                <div className="text-[13px]"><span className="text-muted-foreground">Renova em:</span> {b.prazoRenovacao ? formatData(b.prazoRenovacao) : "Não prevê renovação"}</div>
-                {b.solicitouRenovacao && <div className="text-[13px]"><span className="text-muted-foreground">Renovação:</span> <StatusBadge tone="info">Solicitada</StatusBadge></div>}
+      {view.kind === "detail-beneficio" &&
+        (() => {
+          const b = beneficios.find((x) => x.id === view.id);
+          if (!b) return null;
+          return (
+            <div className="space-y-4">
+              <Button variant="ghost" size="sm" onClick={() => setView({ kind: "overview" })}>
+                <ArrowLeft className="mr-1 h-4 w-4" /> Voltar
+              </Button>
+              <SectionTitle title={editalNome(b.editalId)} subtitle={`Protocolo BEN-${b.id}`} />
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="rounded-xl border bg-card p-5 shadow-card space-y-3">
+                  <h3 className="font-semibold flex items-center gap-2">
+                    <FileText className="h-4 w-4" /> Informações
+                  </h3>
+                  <div className="text-[13px]">
+                    <span className="text-muted-foreground">Status:</span>{" "}
+                    <StatusBadge tone={beneficioTone(b.status)}>
+                      {beneficioLabel(b.status)}
+                    </StatusBadge>
+                  </div>
+                  <div className="text-[13px]">
+                    <span className="text-muted-foreground">Ativado em:</span>{" "}
+                    {formatData(b.dataAtivacao)}
+                  </div>
+                  <div className="text-[13px]">
+                    <span className="text-muted-foreground">Renova em:</span>{" "}
+                    {b.prazoRenovacao ? formatData(b.prazoRenovacao) : "Não prevê renovação"}
+                  </div>
+                  {b.solicitouRenovacao && (
+                    <div className="text-[13px]">
+                      <span className="text-muted-foreground">Renovação:</span>{" "}
+                      <StatusBadge tone="info">Solicitada</StatusBadge>
+                    </div>
+                  )}
+                </div>
+                <div className="rounded-xl border bg-card p-5 shadow-card space-y-3">
+                  <h3 className="font-semibold flex items-center gap-2">
+                    <Clock className="h-4 w-4" /> Origem
+                  </h3>
+                  <div className="text-[13px]">
+                    <span className="text-muted-foreground">Edital:</span> {editalNome(b.editalId)}
+                  </div>
+                  <div className="text-[13px]">
+                    <span className="text-muted-foreground">Inscrição:</span> INS-{b.inscricaoId}
+                  </div>
+                </div>
               </div>
-              <div className="rounded-xl border bg-card p-5 shadow-card space-y-3">
-                <h3 className="font-semibold flex items-center gap-2"><Clock className="h-4 w-4" /> Origem</h3>
-                <div className="text-[13px]"><span className="text-muted-foreground">Edital:</span> {editalNome(b.editalId)}</div>
-                <div className="text-[13px]"><span className="text-muted-foreground">Inscrição:</span> INS-{b.inscricaoId}</div>
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" onClick={() => setView({ kind: "overview" })}>
+                  Voltar
+                </Button>
+                {emTempoDeRenovacao(b) && (
+                  <Button disabled={renovar.isPending} onClick={() => handleRenovar(b.id)}>
+                    Solicitar renovação
+                  </Button>
+                )}
               </div>
             </div>
-            <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setView({ kind: "overview" })}>Voltar</Button>
-              {emTempoDeRenovacao(b) && <Button disabled={renovar.isPending} onClick={() => handleRenovar(b.id)}>Solicitar renovação</Button>}
-            </div>
-          </div>
-        );
-      })()}
+          );
+        })()}
 
-      {view.kind === "detail-inscricao" && (() => {
-        const ins = inscricoes.find((x) => x.id === view.id);
-        if (!ins) return null;
-        return (
-          <div className="space-y-4">
-            <Button variant="ghost" size="sm" onClick={() => setView({ kind: "overview" })}><ArrowLeft className="mr-1 h-4 w-4" /> Voltar</Button>
-            <SectionTitle title={`Inscrição INS-${ins.id}`} subtitle={editalNome(ins.editalId)} />
-            <div className="grid gap-4 md:grid-cols-2">
-              <div className="rounded-xl border bg-card p-5 shadow-card space-y-3">
-                <h3 className="font-semibold flex items-center gap-2"><User className="h-4 w-4" /> Dados da inscrição</h3>
-                <div className="text-[13px]"><span className="text-muted-foreground">Status:</span> <StatusBadge tone={inscricaoTone(ins.status)}>{inscricaoLabel(ins.status)}</StatusBadge></div>
-                <div className="text-[13px]"><span className="text-muted-foreground">Data de envio:</span> {formatData(ins.dataInscricao)}</div>
-                <div className="text-[13px]"><span className="text-muted-foreground">Pontuação:</span> {ins.pontuacao}</div>
+      {view.kind === "detail-inscricao" &&
+        (() => {
+          const ins = inscricoes.find((x) => x.id === view.id);
+          if (!ins) return null;
+          return (
+            <div className="space-y-4">
+              <Button variant="ghost" size="sm" onClick={() => setView({ kind: "overview" })}>
+                <ArrowLeft className="mr-1 h-4 w-4" /> Voltar
+              </Button>
+              <SectionTitle title={`Inscrição INS-${ins.id}`} subtitle={editalNome(ins.editalId)} />
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="rounded-xl border bg-card p-5 shadow-card space-y-3">
+                  <h3 className="font-semibold flex items-center gap-2">
+                    <User className="h-4 w-4" /> Dados da inscrição
+                  </h3>
+                  <div className="text-[13px]">
+                    <span className="text-muted-foreground">Status:</span>{" "}
+                    <StatusBadge tone={inscricaoTone(ins.status)}>
+                      {inscricaoLabel(ins.status)}
+                    </StatusBadge>
+                  </div>
+                  <div className="text-[13px]">
+                    <span className="text-muted-foreground">Data de envio:</span>{" "}
+                    {formatData(ins.dataInscricao)}
+                  </div>
+                  <div className="text-[13px]">
+                    <span className="text-muted-foreground">Pontuação:</span> {ins.pontuacao}
+                  </div>
+                </div>
+                <div className="rounded-xl border bg-card p-5 shadow-card space-y-3">
+                  <h3 className="font-semibold flex items-center gap-2">
+                    <FileText className="h-4 w-4" /> Edital
+                  </h3>
+                  <div className="text-[13px]">
+                    <span className="text-muted-foreground">Programa:</span>{" "}
+                    {editalNome(ins.editalId)}
+                  </div>
+                  <div className="text-[13px]">
+                    <span className="text-muted-foreground">Código:</span> EDT-{ins.editalId}
+                  </div>
+                </div>
               </div>
-              <div className="rounded-xl border bg-card p-5 shadow-card space-y-3">
-                <h3 className="font-semibold flex items-center gap-2"><FileText className="h-4 w-4" /> Edital</h3>
-                <div className="text-[13px]"><span className="text-muted-foreground">Programa:</span> {editalNome(ins.editalId)}</div>
-                <div className="text-[13px]"><span className="text-muted-foreground">Código:</span> EDT-{ins.editalId}</div>
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" onClick={() => setView({ kind: "overview" })}>
+                  Voltar
+                </Button>
+                {ins.status === "INDEFERIDA" && (
+                  <Button
+                    onClick={() =>
+                      setView({ kind: "recurso", inscricaoId: ins.id, editalId: ins.editalId })
+                    }
+                  >
+                    Interpor recurso
+                  </Button>
+                )}
               </div>
             </div>
-            <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setView({ kind: "overview" })}>Voltar</Button>
-              {ins.status === "INDEFERIDA" && <Button onClick={() => setView({ kind: "recurso", inscricaoId: ins.id, editalId: ins.editalId })}>Interpor recurso</Button>}
-            </div>
-          </div>
-        );
-      })()}
+          );
+        })()}
     </AppShell>
   );
 }
 
-const steps = [{ key: "elig", label: "Elegibilidade" }, { key: "doc", label: "Documentos" }, { key: "ok", label: "Confirmação" }];
+const steps = [
+  { key: "elig", label: "Elegibilidade" },
+  { key: "doc", label: "Documentos" },
+  { key: "ok", label: "Confirmação" },
+];
 
-function InscricaoWizard({ step, submitting, onStep, onSubmit, onDone }: {
-  step: 0 | 1 | 2; submitting: boolean;
-  onStep: (s: 0 | 1 | 2) => void; onSubmit: () => void; onDone: () => void;
+function InscricaoWizard({
+  step,
+  submitting,
+  onStep,
+  onSubmit,
+  onDone,
+}: {
+  step: 0 | 1 | 2;
+  submitting: boolean;
+  onStep: (s: 0 | 1 | 2) => void;
+  onSubmit: () => void;
+  onDone: () => void;
 }) {
   return (
     <div className="space-y-5">
-      <Button variant="ghost" size="sm" onClick={onDone}><ArrowLeft className="mr-1 h-4 w-4" /> Cancelar</Button>
+      <Button variant="ghost" size="sm" onClick={onDone}>
+        <ArrowLeft className="mr-1 h-4 w-4" /> Cancelar
+      </Button>
       <Stepper steps={steps} current={step} />
       {step === 0 && (
         <div className="rounded-xl border bg-card p-6 shadow-card">
           <SectionTitle title="Verificação de elegibilidade" />
-          <ValidationCallout className="mt-4" tone="info">Confirmo que atendo aos critérios de elegibilidade descritos no edital.</ValidationCallout>
-          <div className="mt-4 flex justify-end"><Button onClick={() => onStep(1)}>Avançar</Button></div>
+          <ValidationCallout className="mt-4" tone="info">
+            Confirmo que atendo aos critérios de elegibilidade descritos no edital.
+          </ValidationCallout>
+          <div className="mt-4 flex justify-end">
+            <Button onClick={() => onStep(1)}>Avançar</Button>
+          </div>
         </div>
       )}
       {step === 1 && (
         <div className="rounded-xl border bg-card p-6 shadow-card">
           <SectionTitle title="Documentação" />
           <div className="mt-4 grid grid-cols-2 gap-4">
-            <FormField label="Comprovante de renda" required full><Input type="file" className="h-10" /></FormField>
-            <FormField label="Comprovante de residência" required full><Input type="file" className="h-10" /></FormField>
-            <FormField label="Declaração socioeconômica" full><Input type="file" className="h-10" /></FormField>
+            <FormField label="Comprovante de renda" required full>
+              <Input type="file" className="h-10" />
+            </FormField>
+            <FormField label="Comprovante de residência" required full>
+              <Input type="file" className="h-10" />
+            </FormField>
+            <FormField label="Declaração socioeconômica" full>
+              <Input type="file" className="h-10" />
+            </FormField>
           </div>
-          <div className="mt-4 flex justify-end gap-2"><Button variant="outline" onClick={() => onStep(0)}>Voltar</Button><Button disabled={submitting} onClick={onSubmit}>Enviar inscrição</Button></div>
+          <div className="mt-4 flex justify-end gap-2">
+            <Button variant="outline" onClick={() => onStep(0)}>
+              Voltar
+            </Button>
+            <Button disabled={submitting} onClick={onSubmit}>
+              Enviar inscrição
+            </Button>
+          </div>
         </div>
       )}
       {step === 2 && (
         <div className="space-y-4">
-          <SuccessBanner title="Inscrição registrada!" description="Aguardando análise da Assistência Estudantil." />
+          <SuccessBanner
+            title="Inscrição registrada!"
+            description="Aguardando análise da Assistência Estudantil."
+          />
           <Button onClick={onDone}>Voltar</Button>
         </div>
       )}
@@ -445,7 +751,11 @@ function InscricaoWizard({ step, submitting, onStep, onSubmit, onDone }: {
 
 /* ===== Visão da Assistência Estudantil ===== */
 
-function AssistenciaView({ editais, editalNome, loading }: {
+function AssistenciaView({
+  editais,
+  editalNome,
+  loading,
+}: {
   editais: EditalResumo[];
   editalNome: (id: number) => string;
   loading: boolean;
@@ -465,35 +775,53 @@ function AssistenciaView({ editais, editalNome, loading }: {
 
   const [showAdd, setShowAdd] = useState(false);
   const [form, setForm] = useState({
-    programa: "", descricao: "", vagas: 0,
-    prazoInscricaoInicio: "", prazoInscricaoFim: "",
-    prazoRecursoInicio: "", prazoRecursoFim: "",
+    programa: "",
+    descricao: "",
+    vagas: 0,
+    prazoInscricaoInicio: "",
+    prazoInscricaoFim: "",
+    prazoRecursoInicio: "",
+    prazoRecursoFim: "",
   });
   const [detailEdital, setDetailEdital] = useState<EditalResumo | null>(null);
 
   const handlePublish = (e: React.FormEvent) => {
     e.preventDefault();
-    criar.mutate({
-      programa: form.programa,
-      descricao: form.descricao || null,
-      vagas: form.vagas,
-      prazoInscricaoInicio: form.prazoInscricaoInicio,
-      prazoInscricaoFim: form.prazoInscricaoFim,
-      prazoRecursoInicio: form.prazoRecursoInicio,
-      prazoRecursoFim: form.prazoRecursoFim,
-      prazoRenovacao: null,
-    }, {
-      onSuccess: () => {
-        setShowAdd(false);
-        setForm({ programa: "", descricao: "", vagas: 0, prazoInscricaoInicio: "", prazoInscricaoFim: "", prazoRecursoInicio: "", prazoRecursoFim: "" });
-        toast.success("Edital publicado com sucesso!");
+    criar.mutate(
+      {
+        programa: form.programa,
+        descricao: form.descricao || null,
+        vagas: form.vagas,
+        prazoInscricaoInicio: form.prazoInscricaoInicio,
+        prazoInscricaoFim: form.prazoInscricaoFim,
+        prazoRecursoInicio: form.prazoRecursoInicio,
+        prazoRecursoFim: form.prazoRecursoFim,
+        prazoRenovacao: null,
       },
-      onError: notifyError,
-    });
+      {
+        onSuccess: () => {
+          setShowAdd(false);
+          setForm({
+            programa: "",
+            descricao: "",
+            vagas: 0,
+            prazoInscricaoInicio: "",
+            prazoInscricaoFim: "",
+            prazoRecursoInicio: "",
+            prazoRecursoFim: "",
+          });
+          toast.success("Edital publicado com sucesso!");
+        },
+        onError: notifyError,
+      },
+    );
   };
 
   const handlePublicarResultado = (id: number) => {
-    publicarResultado.mutate(id, { onSuccess: () => toast.success("Resultado publicado! O edital já pode ser encerrado."), onError: notifyError });
+    publicarResultado.mutate(id, {
+      onSuccess: () => toast.success("Resultado publicado! O edital já pode ser encerrado."),
+      onError: notifyError,
+    });
   };
 
   const handleEncerrar = (id: number) => {
@@ -501,18 +829,29 @@ function AssistenciaView({ editais, editalNome, loading }: {
   };
 
   const handleDeferir = (id: number) => {
-    deferir.mutate({ inscricaoId: id, pontuacao: 0 }, { onSuccess: () => toast.success("Inscrição deferida!"), onError: notifyError });
+    deferir.mutate(
+      { inscricaoId: id, pontuacao: 0 },
+      { onSuccess: () => toast.success("Inscrição deferida!"), onError: notifyError },
+    );
   };
   const handleIndeferir = (id: number) => {
-    indeferir.mutate(id, { onSuccess: () => toast.error("Inscrição indeferida."), onError: notifyError });
+    indeferir.mutate(id, {
+      onSuccess: () => toast.error("Inscrição indeferida."),
+      onError: notifyError,
+    });
   };
 
   if (detailEdital) {
     const doEdital = inscricoes.filter((i) => i.editalId === detailEdital.id);
     return (
       <div className="space-y-4">
-        <Button variant="ghost" size="sm" onClick={() => setDetailEdital(null)}><ArrowLeft className="mr-1 h-4 w-4" /> Voltar</Button>
-        <SectionTitle title={`EDT-${detailEdital.id} — ${detailEdital.programa}`} subtitle={`${detailEdital.vagas} vagas · inscrições até ${formatData(detailEdital.prazoInscricaoFim)}`} />
+        <Button variant="ghost" size="sm" onClick={() => setDetailEdital(null)}>
+          <ArrowLeft className="mr-1 h-4 w-4" /> Voltar
+        </Button>
+        <SectionTitle
+          title={`EDT-${detailEdital.id} — ${detailEdital.programa}`}
+          subtitle={`${detailEdital.vagas} vagas · inscrições até ${formatData(detailEdital.prazoInscricaoFim)}`}
+        />
         {detailEdital.descricao && (
           <div className="rounded-xl border bg-card p-5 shadow-card">
             <h3 className="font-semibold">Sobre o programa</h3>
@@ -522,52 +861,150 @@ function AssistenciaView({ editais, editalNome, loading }: {
         <div className="rounded-xl border bg-card p-5 shadow-card">
           <h3 className="font-semibold">Prazos</h3>
           <div className="mt-3 grid gap-2 text-[13px] text-muted-foreground sm:grid-cols-2">
-            <div><span className="text-foreground">Inscrições:</span> {formatData(detailEdital.prazoInscricaoInicio)} a {formatData(detailEdital.prazoInscricaoFim)}</div>
-            <div><span className="text-foreground">Recursos:</span> {formatData(detailEdital.prazoRecursoInicio)} a {formatData(detailEdital.prazoRecursoFim)}</div>
+            <div>
+              <span className="text-foreground">Inscrições:</span>{" "}
+              {formatData(detailEdital.prazoInscricaoInicio)} a{" "}
+              {formatData(detailEdital.prazoInscricaoFim)}
+            </div>
+            <div>
+              <span className="text-foreground">Recursos:</span>{" "}
+              {formatData(detailEdital.prazoRecursoInicio)} a{" "}
+              {formatData(detailEdital.prazoRecursoFim)}
+            </div>
           </div>
         </div>
         <div className="rounded-xl border bg-card p-5 shadow-card">
           <h3 className="font-semibold">Estatísticas</h3>
-          <StatsRow className="mt-3" stats={[
-            { label: "Inscrições recebidas", value: doEdital.length, tone: "info" },
-            { label: "Em análise", value: doEdital.filter((i) => i.status === "PENDENTE").length, tone: "warning" },
-            { label: "Deferidas", value: doEdital.filter((i) => i.status === "DEFERIDA").length, tone: "success" },
-          ]} />
+          <StatsRow
+            className="mt-3"
+            stats={[
+              { label: "Inscrições recebidas", value: doEdital.length, tone: "info" },
+              {
+                label: "Em análise",
+                value: doEdital.filter((i) => i.status === "PENDENTE").length,
+                tone: "warning",
+              },
+              {
+                label: "Deferidas",
+                value: doEdital.filter((i) => i.status === "DEFERIDA").length,
+                tone: "success",
+              },
+            ]}
+          />
         </div>
-        <div className="flex justify-end"><Button variant="outline" onClick={() => setDetailEdital(null)}>Voltar</Button></div>
+        <div className="flex justify-end">
+          <Button variant="outline" onClick={() => setDetailEdital(null)}>
+            Voltar
+          </Button>
+        </div>
       </div>
     );
   }
 
   return (
     <div className="space-y-5">
-      <StatsRow stats={[
-        { label: "Pedidos aguardando", value: inscricoes.filter((i) => i.status === "PENDENTE").length, tone: "warning" },
-        { label: "Recursos", value: inscricoes.filter((i) => i.status === "RECURSO_INTERPOSTO").length, tone: "danger" },
-        { label: "Deferidas", value: inscricoes.filter((i) => i.status === "DEFERIDA").length, tone: "success" },
-        { label: "Renovações", value: renovacoesPendentes.length, tone: "warning" },
-        { label: "Editais vigentes", value: editais.filter(inscricaoAberta).length, tone: "info" },
-      ]} />
+      <StatsRow
+        stats={[
+          {
+            label: "Pedidos aguardando",
+            value: inscricoes.filter((i) => i.status === "PENDENTE").length,
+            tone: "warning",
+          },
+          {
+            label: "Recursos",
+            value: inscricoes.filter((i) => i.status === "RECURSO_INTERPOSTO").length,
+            tone: "danger",
+          },
+          {
+            label: "Deferidas",
+            value: inscricoes.filter((i) => i.status === "DEFERIDA").length,
+            tone: "success",
+          },
+          { label: "Renovações", value: renovacoesPendentes.length, tone: "warning" },
+          {
+            label: "Editais vigentes",
+            value: editais.filter(inscricaoAberta).length,
+            tone: "info",
+          },
+        ]}
+      />
 
       <div className="flex items-center justify-between">
         <SectionTitle title="Editais publicados" />
-        <Button size="sm" onClick={() => setShowAdd(!showAdd)}><Plus className="mr-1 h-4 w-4" /> Publicar edital</Button>
+        <Button size="sm" onClick={() => setShowAdd(!showAdd)}>
+          <Plus className="mr-1 h-4 w-4" /> Publicar edital
+        </Button>
       </div>
 
       {showAdd && (
-        <form onSubmit={handlePublish} className="rounded-xl border bg-card p-5 shadow-card animate-in fade-in slide-in-from-top-2">
+        <form
+          onSubmit={handlePublish}
+          className="rounded-xl border bg-card p-5 shadow-card animate-in fade-in slide-in-from-top-2"
+        >
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <FormField label="Programa" required><Input value={form.programa} onChange={(e) => setForm({ ...form, programa: e.target.value })} required /></FormField>
-            <FormField label="Vagas" required><Input type="number" value={form.vagas} onChange={(e) => setForm({ ...form, vagas: parseInt(e.target.value) || 0 })} required /></FormField>
-            <FormField label="Início inscrições" required><Input type="date" value={form.prazoInscricaoInicio} onChange={(e) => setForm({ ...form, prazoInscricaoInicio: e.target.value })} required /></FormField>
-            <FormField label="Fim inscrições" required><Input type="date" value={form.prazoInscricaoFim} onChange={(e) => setForm({ ...form, prazoInscricaoFim: e.target.value })} required /></FormField>
-            <FormField label="Início recursos" required><Input type="date" value={form.prazoRecursoInicio} onChange={(e) => setForm({ ...form, prazoRecursoInicio: e.target.value })} required /></FormField>
-            <FormField label="Fim recursos" required><Input type="date" value={form.prazoRecursoFim} onChange={(e) => setForm({ ...form, prazoRecursoFim: e.target.value })} required /></FormField>
-            <FormField label="Descrição" full className="md:col-span-3"><Textarea rows={3} placeholder="Descreva o programa, critérios e informações relevantes para os estudantes." value={form.descricao} onChange={(e) => setForm({ ...form, descricao: e.target.value })} /></FormField>
+            <FormField label="Programa" required>
+              <Input
+                value={form.programa}
+                onChange={(e) => setForm({ ...form, programa: e.target.value })}
+                required
+              />
+            </FormField>
+            <FormField label="Vagas" required>
+              <Input
+                type="number"
+                value={form.vagas}
+                onChange={(e) => setForm({ ...form, vagas: parseInt(e.target.value) || 0 })}
+                required
+              />
+            </FormField>
+            <FormField label="Início inscrições" required>
+              <Input
+                type="date"
+                value={form.prazoInscricaoInicio}
+                onChange={(e) => setForm({ ...form, prazoInscricaoInicio: e.target.value })}
+                required
+              />
+            </FormField>
+            <FormField label="Fim inscrições" required>
+              <Input
+                type="date"
+                value={form.prazoInscricaoFim}
+                onChange={(e) => setForm({ ...form, prazoInscricaoFim: e.target.value })}
+                required
+              />
+            </FormField>
+            <FormField label="Início recursos" required>
+              <Input
+                type="date"
+                value={form.prazoRecursoInicio}
+                onChange={(e) => setForm({ ...form, prazoRecursoInicio: e.target.value })}
+                required
+              />
+            </FormField>
+            <FormField label="Fim recursos" required>
+              <Input
+                type="date"
+                value={form.prazoRecursoFim}
+                onChange={(e) => setForm({ ...form, prazoRecursoFim: e.target.value })}
+                required
+              />
+            </FormField>
+            <FormField label="Descrição" full className="md:col-span-3">
+              <Textarea
+                rows={3}
+                placeholder="Descreva o programa, critérios e informações relevantes para os estudantes."
+                value={form.descricao}
+                onChange={(e) => setForm({ ...form, descricao: e.target.value })}
+              />
+            </FormField>
           </div>
           <div className="mt-4 flex justify-end gap-2">
-            <Button type="button" variant="outline" onClick={() => setShowAdd(false)}>Cancelar</Button>
-            <Button type="submit" disabled={criar.isPending}>Publicar</Button>
+            <Button type="button" variant="outline" onClick={() => setShowAdd(false)}>
+              Cancelar
+            </Button>
+            <Button type="submit" disabled={criar.isPending}>
+              Publicar
+            </Button>
           </div>
         </form>
       )}
@@ -581,18 +1018,33 @@ function AssistenciaView({ editais, editalNome, loading }: {
             { key: "programa", header: "Edital" },
             { key: "vagas", header: "Vagas", align: "right" },
             { key: "prazo", header: "Prazo", render: (r) => formatData(r.prazoInscricaoFim) },
-            { key: "status", header: "Status", render: (r) => <StatusBadge tone={editalTone(r)}>{editalLabel(r)}</StatusBadge> },
-            { key: "acoes", header: "", align: "right", render: (r) => (
-              <div className="flex justify-end gap-1.5">
-                {r.status === "INSCRICOES_ABERTAS" && recursoEncerrado(r) && (
-                  <RowActionButton onClick={() => handlePublicarResultado(r.id)}>Publicar resultado</RowActionButton>
-                )}
-                {r.status === "RESULTADO_PUBLICADO" && (
-                  <RowActionButton tone="danger" onClick={() => handleEncerrar(r.id)}>Encerrar</RowActionButton>
-                )}
-                <RowActionButton tone="neutral" onClick={() => setDetailEdital(r)}>Detalhes</RowActionButton>
-              </div>
-            )},
+            {
+              key: "status",
+              header: "Status",
+              render: (r) => <StatusBadge tone={editalTone(r)}>{editalLabel(r)}</StatusBadge>,
+            },
+            {
+              key: "acoes",
+              header: "",
+              align: "right",
+              render: (r) => (
+                <div className="flex justify-end gap-1.5">
+                  {r.status === "INSCRICOES_ABERTAS" && recursoEncerrado(r) && (
+                    <RowActionButton onClick={() => handlePublicarResultado(r.id)}>
+                      Publicar resultado
+                    </RowActionButton>
+                  )}
+                  {r.status === "RESULTADO_PUBLICADO" && (
+                    <RowActionButton tone="danger" onClick={() => handleEncerrar(r.id)}>
+                      Encerrar
+                    </RowActionButton>
+                  )}
+                  <RowActionButton tone="neutral" onClick={() => setDetailEdital(r)}>
+                    Detalhes
+                  </RowActionButton>
+                </div>
+              ),
+            },
           ]}
           rows={editais}
         />
@@ -610,25 +1062,44 @@ function AssistenciaView({ editais, editalNome, loading }: {
             { key: "aluno", header: "Estudante", render: (r) => `Estudante #${r.estudanteId}` },
             { key: "edital", header: "Edital", render: (r) => editalNome(r.editalId) },
             { key: "pontuacao", header: "Pontuação", align: "right" },
-            { key: "status", header: "Status", render: (r) => <StatusBadge tone={inscricaoTone(r.status)}>{inscricaoLabel(r.status)}</StatusBadge> },
-            { key: "acoes", header: "", align: "right", render: (r) => (
-              r.status === "PENDENTE" ? (
-                <div className="flex justify-end gap-1.5">
-                  <RowActionButton tone="danger" onClick={() => handleIndeferir(r.id)}>Indeferir</RowActionButton>
-                  <RowActionButton onClick={() => handleDeferir(r.id)}>Deferir</RowActionButton>
-                </div>
-              ) : <span className="text-[12px] text-muted-foreground">—</span>
-            )},
+            {
+              key: "status",
+              header: "Status",
+              render: (r) => (
+                <StatusBadge tone={inscricaoTone(r.status)}>{inscricaoLabel(r.status)}</StatusBadge>
+              ),
+            },
+            {
+              key: "acoes",
+              header: "",
+              align: "right",
+              render: (r) =>
+                r.status === "PENDENTE" ? (
+                  <div className="flex justify-end gap-1.5">
+                    <RowActionButton tone="danger" onClick={() => handleIndeferir(r.id)}>
+                      Indeferir
+                    </RowActionButton>
+                    <RowActionButton onClick={() => handleDeferir(r.id)}>Deferir</RowActionButton>
+                  </div>
+                ) : (
+                  <span className="text-[12px] text-muted-foreground">—</span>
+                ),
+            },
           ]}
           rows={inscricoes}
         />
       )}
 
-      <SectionTitle title="Solicitações de renovação" subtitle="Renovações de benefício pedidas pelos estudantes" />
+      <SectionTitle
+        title="Solicitações de renovação"
+        subtitle="Renovações de benefício pedidas pelos estudantes"
+      />
       {beneficiosQuery.isLoading ? (
         <p className="text-sm text-muted-foreground">Carregando solicitações…</p>
       ) : renovacoesPendentes.length === 0 ? (
-        <ValidationCallout tone="info">Nenhuma solicitação de renovação pendente.</ValidationCallout>
+        <ValidationCallout tone="info">
+          Nenhuma solicitação de renovação pendente.
+        </ValidationCallout>
       ) : (
         <DataTable
           columns={[
@@ -636,7 +1107,11 @@ function AssistenciaView({ editais, editalNome, loading }: {
             { key: "aluno", header: "Estudante", render: (r) => `Estudante #${r.estudanteId}` },
             { key: "edital", header: "Benefício", render: (r) => editalNome(r.editalId) },
             { key: "prazo", header: "Renova em", render: (r) => formatData(r.prazoRenovacao) },
-            { key: "status", header: "Status", render: () => <StatusBadge tone="warning">Aguardando análise</StatusBadge> },
+            {
+              key: "status",
+              header: "Status",
+              render: () => <StatusBadge tone="warning">Aguardando análise</StatusBadge>,
+            },
           ]}
           rows={renovacoesPendentes}
         />

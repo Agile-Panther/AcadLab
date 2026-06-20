@@ -23,10 +23,7 @@ export function DotPattern({
   return (
     <svg
       aria-hidden
-      className={cn(
-        "pointer-events-none absolute inset-0 h-full w-full fill-current",
-        className,
-      )}
+      className={cn("pointer-events-none absolute inset-0 h-full w-full fill-current", className)}
     >
       <defs>
         <pattern id={id} width={width} height={height} patternUnits="userSpaceOnUse">

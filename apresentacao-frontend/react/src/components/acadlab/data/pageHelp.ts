@@ -43,24 +43,20 @@ export const pageHelp: Record<string, PageHelp> = {
   },
   "/gestao-curricular": {
     title: "Gestão Curricular",
-    summary:
-      "Estruture cursos, matrizes curriculares, disciplinas e pré-requisitos.",
+    summary: "Estruture cursos, matrizes curriculares, disciplinas e pré-requisitos.",
     bullets: ["Mantenha versionamento ao alterar matrizes vigentes."],
   },
   "/periodo-letivo": {
     title: "Período Letivo",
-    summary:
-      "Configure calendário acadêmico, datas-chave e janelas de matrícula e avaliação.",
+    summary: "Configure calendário acadêmico, datas-chave e janelas de matrícula e avaliação.",
   },
   "/historico-academico": {
     title: "Histórico Acadêmico",
-    summary:
-      "Consulte notas, frequências e progressão do estudante ao longo dos períodos.",
+    summary: "Consulte notas, frequências e progressão do estudante ao longo dos períodos.",
   },
   "/integralizacao": {
     title: "Integralização",
-    summary:
-      "Acompanhe o cumprimento da matriz e o tempo restante para conclusão do curso.",
+    summary: "Acompanhe o cumprimento da matriz e o tempo restante para conclusão do curso.",
   },
   "/atividades-complementares": {
     title: "Atividades Complementares",
@@ -69,8 +65,7 @@ export const pageHelp: Record<string, PageHelp> = {
   },
   "/estagios": {
     title: "Estágios e Oportunidades",
-    summary:
-      "Gerencie vagas, candidaturas, encaminhamentos e validação de estágios.",
+    summary: "Gerencie vagas, candidaturas, encaminhamentos e validação de estágios.",
     bullets: [
       "Cadastre vagas com critérios objetivos de elegibilidade.",
       "Acompanhe o ciclo de candidatura até a seleção.",
@@ -78,33 +73,27 @@ export const pageHelp: Record<string, PageHelp> = {
   },
   "/mobilidade": {
     title: "Mobilidade Acadêmica",
-    summary:
-      "Programas de intercâmbio, equivalências e acompanhamento de alunos em mobilidade.",
+    summary: "Programas de intercâmbio, equivalências e acompanhamento de alunos em mobilidade.",
   },
   "/permanencia": {
     title: "Permanência",
-    summary:
-      "Monitore indicadores de risco e ações de apoio para reduzir evasão e retenção.",
+    summary: "Monitore indicadores de risco e ações de apoio para reduzir evasão e retenção.",
   },
   "/psicopedagogico": {
     title: "Apoio Psicopedagógico",
-    summary:
-      "Atendimentos, acompanhamentos e encaminhamentos do núcleo psicopedagógico.",
+    summary: "Atendimentos, acompanhamentos e encaminhamentos do núcleo psicopedagógico.",
   },
   "/gestao-pedagogica": {
     title: "Gestão Pedagógica",
-    summary:
-      "Indicadores de desempenho, planos de ensino e acompanhamento docente.",
+    summary: "Indicadores de desempenho, planos de ensino e acompanhamento docente.",
   },
   "/secretaria-virtual": {
     title: "Secretaria Virtual",
-    summary:
-      "Solicitações, documentos e protocolos atendidos pela secretaria.",
+    summary: "Solicitações, documentos e protocolos atendidos pela secretaria.",
   },
   "/financeiro": {
     title: "Financeiro",
-    summary:
-      "Mensalidades, boletos, acordos e situação financeira do estudante.",
+    summary: "Mensalidades, boletos, acordos e situação financeira do estudante.",
   },
 };
 

@@ -13,8 +13,7 @@ export function calcularSaldoPorCategoria(
   return atividades
     .filter((atividade) => atividade.status === "DEFERIDA")
     .reduce<Record<number, number>>((saldo, atividade) => {
-      saldo[atividade.categoriaId] =
-        (saldo[atividade.categoriaId] ?? 0) + atividade.horasAprovadas;
+      saldo[atividade.categoriaId] = (saldo[atividade.categoriaId] ?? 0) + atividade.horasAprovadas;
       return saldo;
     }, {});
 }
@@ -42,10 +41,7 @@ export function calcularIndicadoresCoordenacao(
 ) {
   return {
     aguardandoValidacao: pendentes.length,
-    horasAguardando: pendentes.reduce(
-      (total, atividade) => total + atividade.horasSubmetidas,
-      0,
-    ),
+    horasAguardando: pendentes.reduce((total, atividade) => total + atividade.horasSubmetidas, 0),
     deferidas: deferidas.length,
     indeferidas: indeferidas.length,
   };

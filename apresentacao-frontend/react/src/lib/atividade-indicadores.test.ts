@@ -30,11 +30,13 @@ describe("calcularIndicadoresEstudante", () => {
 
 describe("calcularIndicadoresCoordenacao", () => {
   it("calcula quantidades e horas usando as consultas reais", () => {
-    expect(calcularIndicadoresCoordenacao(
-      atividades.filter((atividade) => atividade.status === "PENDENTE"),
-      atividades.filter((atividade) => atividade.status === "DEFERIDA"),
-      [{ categoriaId: 3, horasSubmetidas: 10, horasAprovadas: 0, status: "INDEFERIDA" as const }],
-    )).toEqual({
+    expect(
+      calcularIndicadoresCoordenacao(
+        atividades.filter((atividade) => atividade.status === "PENDENTE"),
+        atividades.filter((atividade) => atividade.status === "DEFERIDA"),
+        [{ categoriaId: 3, horasSubmetidas: 10, horasAprovadas: 0, status: "INDEFERIDA" as const }],
+      ),
+    ).toEqual({
       aguardandoValidacao: 1,
       horasAguardando: 30,
       deferidas: 3,

@@ -12,8 +12,7 @@ export function ConflictGrid({
   occupied: [number, number][];
   className?: string;
 }) {
-  const isBusy = (d: number, s: number) =>
-    occupied.some(([dd, ss]) => dd === d && ss === s);
+  const isBusy = (d: number, s: number) => occupied.some(([dd, ss]) => dd === d && ss === s);
   return (
     <div className={cn("flex flex-col gap-3", className)}>
       <div className="overflow-hidden rounded-lg border bg-card">
@@ -52,7 +51,8 @@ export function ConflictGrid({
           <span className="h-3 w-3 rounded-sm border bg-[#F3F4F6]" /> Livre
         </span>
         <span className="flex items-center gap-1.5">
-          <span className="h-3 w-3 rounded-sm border bg-warning-soft" /> Ocupado pelo professor selecionado
+          <span className="h-3 w-3 rounded-sm border bg-warning-soft" /> Ocupado pelo professor
+          selecionado
         </span>
       </div>
     </div>

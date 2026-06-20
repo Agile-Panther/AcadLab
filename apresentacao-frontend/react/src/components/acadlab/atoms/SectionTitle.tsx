@@ -15,9 +15,7 @@ export function SectionTitle({
     <div className={cn("flex items-end justify-between gap-4", className)}>
       <div>
         <h2 className="text-sm font-semibold text-foreground">{title}</h2>
-        {subtitle && (
-          <p className="mt-0.5 text-xs text-muted-foreground">{subtitle}</p>
-        )}
+        {subtitle && <p className="mt-0.5 text-xs text-muted-foreground">{subtitle}</p>}
       </div>
       {right}
     </div>
