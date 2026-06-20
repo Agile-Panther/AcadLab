@@ -675,6 +675,9 @@ BoundedContext GestaoFinanceiraContext implements FinanceiroSubdomain {
             void contestar(int cobrancaId, String motivo);
             void cancelarPagamento(int cobrancaId, int pagamentoId);
         }
+        // Observer concreto (NotificacaoCobrancaObservador): registrado no barramento,
+        // reage aos eventos de cobrança (pagamento, desconto, contestação, cancelamento,
+        // nova versão) notificando o estudante titular via RegistroNotificacoes.
     }
 }
 
