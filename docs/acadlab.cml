@@ -240,6 +240,17 @@ BoundedContext GestaoPedagogicaContext implements AcademicoSubdomain {
     Aggregate DiarioTurma {
         enum SituacaoFinal { APROVADO, REPROVADO, REPROVADO_POR_FREQUENCIA, EM_ANDAMENTO }
 
+        // Padrão Template Method de apuração do resultado (ApuracaoResultado):
+        // o método-template apurar() fixa a ordem das etapas — contar aulas,
+        // contar presenças, calcular média e registrar situação. As subclasses
+        // especializam apenas o passo variável calcularMedia():
+        //   - ApuracaoMediaPonderada (regime padrão, pondera pelo peso da avaliação);
+        //   - ApuracaoMediaAritmetica (média simples das notas).
+        // O enum RegimeApuracao seleciona a implementação na borda (serviço/controlador).
+        Service ApuracaoResultado {
+            void apurar(@DiarioTurma diario, @ResultadoEstudante resultado);
+        }
+
         Entity DiarioTurma {
             aggregateRoot
             int id
