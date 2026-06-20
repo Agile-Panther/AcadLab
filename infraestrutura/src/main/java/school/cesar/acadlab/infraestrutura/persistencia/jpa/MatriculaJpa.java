@@ -152,13 +152,17 @@ class MatriculaRepositorioImpl implements MatriculaRepositorio, MatriculaReposit
         jpa.limiteCreditos = matricula.getLimiteCreditos();
         jpa.status = matricula.getStatus();
 
+        // Preserva IDs existentes para evitar OptimisticLockingFailure no orphanRemoval
+        var existingByTurma = jpa.itens.stream()
+                .collect(java.util.stream.Collectors.toMap(i -> i.turmaId, i -> i));
         jpa.itens.clear();
         for (var item : matricula.getItens()) {
-            var itemJpa = new ItemMatriculaJpa();
+            var itemJpa = existingByTurma.getOrDefault(item.getTurmaId().getId(), new ItemMatriculaJpa());
             itemJpa.turmaId = item.getTurmaId().getId();
             itemJpa.disciplinaId = item.getDisciplinaId().getId();
             itemJpa.creditos = item.getCreditos();
             itemJpa.status = item.getStatus();
+            itemJpa.horarios.clear();
             for (var h : item.getHorarios()) {
                 var hJpa = new HorarioAulaJpa();
                 hJpa.dia = h.getDia();
@@ -211,7 +215,11 @@ class MatriculaRepositorioImpl implements MatriculaRepositorio, MatriculaReposit
     }
 
     private MatriculaResumo toResumo(MatriculaJpa jpa) {
+        var itens = jpa.itens.stream()
+                .map(i -> new school.cesar.acadlab.aplicacao.matricula.ItemResumo(
+                        i.turmaId, i.disciplinaId, i.status != null ? i.status.name() : null))
+                .toList();
         return new MatriculaResumo(jpa.id, jpa.estudanteId, jpa.periodoLetivoId,
-                jpa.status.name());
+                jpa.status.name(), itens);
     }
 }

@@ -112,8 +112,15 @@ public class Matricula {
                 item.confirmar();
             }
         }
-        this.status = StatusMatricula.CONFIRMADA;
+        this.status = StatusMatricula.AGUARDANDO_SECRETARIA;
         return new MatriculaConfirmadaEvento(this);
+    }
+
+    // US02b — Aprovação da secretaria
+    public void aprovarSecretaria() {
+        isTrue(status == StatusMatricula.AGUARDANDO_SECRETARIA,
+                "Somente matrículas aguardando aprovação podem ser aprovadas pela secretaria");
+        this.status = StatusMatricula.CONFIRMADA;
     }
 
     // US03 — Ajuste de matrícula (RN-8)

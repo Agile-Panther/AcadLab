@@ -73,11 +73,18 @@ export interface MatrizCurricularResumo {
   status: string;
 }
 
+export interface ItemMatriculaResumo {
+  turmaId: number;
+  disciplinaId: number;
+  statusItem: string;
+}
+
 export interface MatriculaResumo {
   id: number;
   estudanteId: number;
   periodoLetivoId: number;
   status: string;
+  itens: ItemMatriculaResumo[];
 }
 
 export interface DiarioTurmaResumo {
@@ -243,12 +250,16 @@ export const api = {
       cumpriuPreRequisitos: boolean; correquisitosNoPlano: boolean;
       temPendencias: boolean; hoje: string; inicioJanela: string; fimJanela: string;
     }) => post<void>(`matriculas/${id}/itens`, body),
+    removerItem: (id: number, turmaId: number) =>
+      put<void>(`matriculas/${id}/itens/${turmaId}/remover`),
     cancelarItem: (id: number, turmaId: number, body: { hoje: string; inicio: string; fim: string }) =>
       put<void>(`matriculas/${id}/itens/${turmaId}/cancelar`, body),
     trancarDisciplina: (id: number, turmaId: number, body: { hoje: string; inicio: string; fim: string }) =>
       put<void>(`matriculas/${id}/itens/${turmaId}/trancar`, body),
     confirmar: (id: number, vagasPorTurma: Record<number, number>) =>
       put<void>(`matriculas/${id}/confirmar`, vagasPorTurma),
+    aprovarSecretaria: (id: number) =>
+      put<void>(`matriculas/${id}/aprovar-secretaria`),
     solicitarExcecao: (id: number, body: { disciplinaId: number; motivo: string }) =>
       post<void>(`matriculas/${id}/excecoes`, body),
     deferir: (id: number, disciplinaId: number, coordenadorId: number) =>

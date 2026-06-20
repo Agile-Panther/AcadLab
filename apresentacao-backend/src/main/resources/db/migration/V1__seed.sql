@@ -16,6 +16,8 @@ INSERT INTO professor (id, nome, ativo) VALUES
   (1,  'Carlos Lima',        true),
   (2,  'Ana Souza',          true),
   (3,  'Marcos Rodrigues',   true),
+  (4,  'Dra. Lúcia Mendes',  true),
+  (5,  'Pedro Alves',        true),
   (10, 'Dra. Lúcia Mendes',  true)
 ON CONFLICT (id) DO NOTHING;
 
@@ -43,7 +45,11 @@ INSERT INTO turma (id, periodo_letivo_id, disciplina_id, professor_id, sala_id, 
   (1, 1, 101, 1, 1, 'PRESENCIAL', 40, 'OFERTADA'),
   (2, 1, 201, 2, 2, 'PRESENCIAL', 30, 'OFERTADA'),
   (3, 1, 301, 3, 3, 'HIBRIDO',   45, 'OFERTADA'),
-  (4, 1, 401, 1, 4, 'EAD',       60, 'OFERTADA')
+  (4, 1, 401, 1, 4, 'EAD',       60, 'OFERTADA'),
+  (5, 1, 501, 2, 1, 'PRESENCIAL', 35, 'OFERTADA'),
+  (6, 1, 601, 4, 2, 'PRESENCIAL', 30, 'OFERTADA'),
+  (7, 1, 701, 3, 4, 'EAD',       50, 'OFERTADA'),
+  (8, 1, 801, 1, 1, 'HIBRIDO',   40, 'OFERTADA')
 ON CONFLICT (id) DO NOTHING;
 
 -- horários semanais de cada turma
@@ -55,7 +61,14 @@ INSERT INTO horario_aula (turma_id, dia_semana, hora_inicio, hora_fim) VALUES
   (3, 'TUESDAY',   '10:00:00', '12:00:00'),
   (3, 'THURSDAY',  '10:00:00', '12:00:00'),
   (4, 'WEDNESDAY', '19:00:00', '21:00:00'),
-  (4, 'FRIDAY',    '19:00:00', '21:00:00');
+  (4, 'FRIDAY',    '19:00:00', '21:00:00'),
+  (5, 'FRIDAY',    '08:00:00', '12:00:00'),
+  (6, 'TUESDAY',   '14:00:00', '16:00:00'),
+  (6, 'THURSDAY',  '14:00:00', '16:00:00'),
+  (7, 'WEDNESDAY', '14:00:00', '18:00:00'),
+  (8, 'MONDAY',    '10:00:00', '12:00:00'),
+  (8, 'WEDNESDAY', '10:00:00', '12:00:00')
+ON CONFLICT DO NOTHING;
 
 -- ─── MATRÍCULA ───────────────────────────────────────────────────────────────
 INSERT INTO matricula (id, estudante_id, periodo_letivo_id, limite_creditos, status) VALUES

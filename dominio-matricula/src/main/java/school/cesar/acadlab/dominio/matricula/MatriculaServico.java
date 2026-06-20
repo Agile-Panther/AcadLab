@@ -61,6 +61,13 @@ public class MatriculaServico {
         repositorio.salvar(matricula);
     }
 
+    public void aprovarSecretaria(MatriculaId matriculaId) {
+        notNull(matriculaId, "O id da matrícula não pode ser nulo");
+        var matricula = repositorio.buscarPorId(matriculaId).orElseThrow();
+        matricula.aprovarSecretaria();
+        repositorio.salvar(matricula);
+    }
+
     public void cancelarItem(MatriculaId matriculaId, TurmaId turmaId,
                               LocalDate hoje, LocalDate inicioAjuste, LocalDate fimAjuste) {
         notNull(matriculaId, "O id da matrícula não pode ser nulo");

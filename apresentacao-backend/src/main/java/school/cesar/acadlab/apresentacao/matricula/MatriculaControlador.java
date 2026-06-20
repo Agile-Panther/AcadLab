@@ -73,6 +73,16 @@ public class MatriculaControlador {
                 req.fimJanela());
     }
 
+    @PutMapping("/{id}/aprovar-secretaria")
+    public void aprovarSecretaria(@PathVariable int id) {
+        servico.aprovarSecretaria(new MatriculaId(id));
+    }
+
+    @PutMapping("/{id}/itens/{turmaId}/remover")
+    public void removerItem(@PathVariable int id, @PathVariable int turmaId) {
+        servico.removerItem(new MatriculaId(id), new TurmaId(turmaId));
+    }
+
     @PutMapping("/{id}/confirmar")
     public void confirmar(@PathVariable int id,
                            @RequestBody Map<Integer, Integer> vagasPorTurma) {
