@@ -25,7 +25,27 @@
 				</plugins>
 			</build>			
 		</profile>
-	</profiles>    
+	</profiles>
+
+	<build>
+		<plugins>
+			<!-- Gera um JAR executável (java -jar) com BOOT-INF e manifesto principal. -->
+			<plugin>
+				<groupId>org.springframework.boot</groupId>
+				<artifactId>spring-boot-maven-plugin</artifactId>
+				<configuration>
+					<mainClass>school.cesar.acadlab.BackendAplicacao</mainClass>
+				</configuration>
+				<executions>
+					<execution>
+						<goals>
+							<goal>repackage</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+		</plugins>
+	</build>
 
     <dependencies>
         <dependency>
