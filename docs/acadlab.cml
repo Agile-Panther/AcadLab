@@ -201,6 +201,13 @@ BoundedContext MatriculaContext implements AcademicoSubdomain {
         enum StatusMatricula { EM_MONTAGEM, CONFIRMADA, TRANCADA, CANCELADA }
         enum StatusItem { ATIVO, TRANCADO, CANCELADO }
 
+        // Padrão Strategy de elegibilidade (EstrategiaMatricula): a Matrícula seleciona
+        // ValidacaoRegular (aplica todas as RNs) ou ValidacaoExcecao (ignora pré-requisitos,
+        // correquisitos e pendências quando a coordenação defere a exceção).
+        Service EstrategiaMatricula {
+            void validarAdicao(int creditosExistentes, int creditos, int limiteCreditos, boolean cumpriuPreRequisitos, boolean correquisitosNoPlano, boolean temPendencias, java.time.LocalDate hoje, java.time.LocalDate inicioJanela, java.time.LocalDate fimJanela);
+        }
+
         Entity Matricula {
             aggregateRoot
             int id
