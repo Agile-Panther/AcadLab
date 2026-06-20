@@ -115,7 +115,7 @@ public class Matricula {
         isTrue(status == StatusMatricula.CONFIRMADA,
                 "Ajustes só podem ser feitos em matrículas confirmadas");
         isTrue(!hoje.isBefore(inicioAjuste) && !hoje.isAfter(fimAjuste),
-                "O cancelamento só é permitido dentro da janela de ajuste (RN-8)");
+                "fora da janela de ajuste de matrícula");
         ItemMatricula item = buscarItem(turmaId);
         item.cancelar();
     }
@@ -127,7 +127,7 @@ public class Matricula {
         isTrue(status == StatusMatricula.CONFIRMADA,
                 "O trancamento de disciplina só é permitido em matrículas confirmadas");
         isTrue(!hoje.isBefore(inicioTrancamento) && !hoje.isAfter(fimTrancamento),
-                "O trancamento de disciplina só é permitido dentro da janela de trancamento (RN-9)");
+                "fora da janela de trancamento");
         ItemMatricula item = buscarItem(turmaId);
         item.trancar();
     }
@@ -174,7 +174,7 @@ public class Matricula {
         for (int i = 0; i < ativos.size(); i++) {
             for (int j = i + 1; j < ativos.size(); j++) {
                 isTrue(!ativos.get(i).conflitaHorario(ativos.get(j)),
-                        "Há conflito de horário entre as turmas selecionadas (RN-7)");
+                        "conflito de horário entre turmas");
             }
         }
     }

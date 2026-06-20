@@ -214,4 +214,11 @@ public class MatriculaStepDefinitions extends MatriculaFuncionalidade {
                 "Mensagem esperada: '" + mensagemEsperada + "', mas foi: '"
                         + erroCapturado.getMessage() + "'");
     }
+
+    @Então("o sistema deve rejeitar informando {string}")
+    public void o_sistema_deve_rejeitar_informando(String mensagem) {
+        assertTrue(erroCapturado != null, "Esperava exceção mas nenhuma foi lançada");
+        assertTrue(erroCapturado.getMessage().toLowerCase().contains(mensagem.toLowerCase()),
+                "Mensagem esperada: \"" + mensagem + "\", mas obtida: \"" + erroCapturado.getMessage() + "\"");
+    }
 }
