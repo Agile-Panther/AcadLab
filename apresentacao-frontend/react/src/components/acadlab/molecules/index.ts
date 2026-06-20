@@ -6,3 +6,5 @@ export * from "./ActionBar";
 export * from "./TabsRow";
 export * from "./EmptyState";
 export * from "./ProgressRow";
+export * from "./Stepper";
+export * from "./EmptyHero";
