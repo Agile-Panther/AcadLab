@@ -69,11 +69,15 @@ export function useCategorias() {
   });
 }
 
-export function useAtividadesPendentes() {
+export function useAtividadesPorStatus(status: StatusAtividade) {
   return useQuery({
-    queryKey: keys.porStatus("PENDENTE"),
-    queryFn: () => api.get<AtividadeComplementarResumo[]>(`${base}?status=PENDENTE`),
+    queryKey: keys.porStatus(status),
+    queryFn: () => api.get<AtividadeComplementarResumo[]>(`${base}?status=${status}`),
   });
+}
+
+export function useAtividadesPendentes() {
+  return useAtividadesPorStatus("PENDENTE");
 }
 
 /* ===== Mutações ===== */
