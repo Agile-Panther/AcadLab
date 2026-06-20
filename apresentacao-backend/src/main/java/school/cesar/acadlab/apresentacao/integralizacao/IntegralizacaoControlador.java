@@ -20,10 +20,9 @@ import school.cesar.acadlab.aplicacao.integralizacao.IntegralizacaoServicoAplica
 import school.cesar.acadlab.dominio.integralizacao.ColacaoServico;
 import school.cesar.acadlab.dominio.integralizacao.CoordenadorId;
 import school.cesar.acadlab.dominio.integralizacao.EstudanteId;
+import school.cesar.acadlab.dominio.integralizacao.GeradorChecklistPorta;
 import school.cesar.acadlab.dominio.integralizacao.IntegralizacaoOperacoes;
 import school.cesar.acadlab.dominio.integralizacao.MatrizCurricularId;
-import school.cesar.acadlab.dominio.integralizacao.checklist.ItemChecklist;
-import school.cesar.acadlab.dominio.integralizacao.checklist.TipoItemChecklist;
 import school.cesar.acadlab.dominio.integralizacao.integralizacao.IntegralizacaoId;
 import school.cesar.acadlab.dominio.integralizacao.integralizacao.StatusIntegralizacao;
 
@@ -39,6 +38,9 @@ class IntegralizacaoControlador {
 
     @Autowired
     private IntegralizacaoServicoAplicacao servicoAplicacao;
+
+    @Autowired
+    private GeradorChecklistPorta geradorChecklist;
 
     @RequestMapping(method = GET)
     List<IntegralizacaoResumo> buscarTodas() {
@@ -62,13 +64,16 @@ class IntegralizacaoControlador {
                 new MatrizCurricularId(request.matrizCurricularId())).getId().getId();
     }
 
+    // US02 - RN3: o checklist é gerado a partir de registros consolidados, não de
+    // dados informados pelo cliente.
     @RequestMapping(method = PUT, path = "{id}/checklist")
-    void gerarChecklist(@PathVariable int id, @RequestBody List<ItemChecklistRequest> itens) {
-        var itensChecklist = itens.stream()
-                .map(i -> new ItemChecklist(
-                        TipoItemChecklist.valueOf(i.tipo()), i.descricao(), i.cumprido()))
-                .toList();
-        integralizacaoOperacoes.gerarChecklist(new IntegralizacaoId(id), itensChecklist);
+    void gerarChecklist(@PathVariable int id) {
+        var resumo = servicoAplicacao.buscarIntegralizacaoPorId(id)
+                .orElseThrow(() -> new IllegalArgumentException("integralização não encontrada"));
+        var itens = geradorChecklist.gerar(
+                new EstudanteId(resumo.estudanteId()),
+                new MatrizCurricularId(resumo.matrizCurricularId()));
+        integralizacaoOperacoes.gerarChecklist(new IntegralizacaoId(id), itens);
     }
 
     @RequestMapping(method = PUT, path = "{id}/resultado")
@@ -100,7 +105,6 @@ class IntegralizacaoControlador {
     }
 
     record IniciarAnaliseRequest(int estudanteId, int matrizCurricularId) {}
-    record ItemChecklistRequest(String tipo, String descricao, boolean cumprido) {}
     record ResultadoRequest(String resultado) {}
     record AprovarAptidaoRequest(int coordenadorId) {}
     record RegistrarColacaoRequest(LocalDate dataCerimonia, String horario,

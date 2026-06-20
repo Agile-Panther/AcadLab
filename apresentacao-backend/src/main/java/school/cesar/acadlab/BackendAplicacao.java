@@ -228,20 +228,10 @@ public class BackendAplicacao {
                 periodoLetivoPorta, pendenciasPorta, requisitosPorta);
     }
 
-    @Bean
-    ConsultaPeriodoLetivoPorta consultaPeriodoLetivoPorta() {
-        return e -> true;
-    }
-
-    @Bean
-    ConsultaPendenciasPorta consultaPendenciasPorta() {
-        return e -> false;
-    }
-
-    @Bean
-    ConsultaRequisitosIntegralizacaoPorta consultaRequisitosPorta() {
-        return (e, m) -> true;
-    }
+    // As portas de consulta da F-08 — RN1 (ConsultaPeriodoLetivoPorta),
+    // RN2 (ConsultaPendenciasPorta), RN6 (ConsultaRequisitosIntegralizacaoPorta) e
+    // a geração de checklist da RN3 (GeradorChecklistPorta) — são providas por
+    // adaptadores JPA reais (@Component) em infraestrutura.persistencia.jpa.
 
     @Bean
     ColacaoServico colacaoServico(ColacaoRepositorio colacaoRepositorio,
