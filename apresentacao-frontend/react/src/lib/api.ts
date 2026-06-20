@@ -45,9 +45,18 @@ export const api = {
   delete: <T>(path: string) => request<T>("DELETE", path),
 };
 
-/** Data de hoje no formato ISO (YYYY-MM-DD) esperado pelos LocalDate do backend. */
+/**
+ * Data de hoje no formato ISO (YYYY-MM-DD) esperado pelos LocalDate do backend.
+ * Usa o calendário LOCAL (não UTC): `toISOString()` converte para UTC e, à noite
+ * em fusos negativos (ex.: Brasil, UTC−3), retornaria o dia seguinte — fazendo
+ * editais que encerram "hoje" parecerem fora do prazo.
+ */
 export function hojeIso(): string {
-  return new Date().toISOString().slice(0, 10);
+  const d = new Date();
+  const ano = d.getFullYear();
+  const mes = String(d.getMonth() + 1).padStart(2, "0");
+  const dia = String(d.getDate()).padStart(2, "0");
+  return `${ano}-${mes}-${dia}`;
 }
 
 export { ApiError };
