@@ -146,8 +146,10 @@ BoundedContext OfertaAcademicaContext implements AcademicoSubdomain {
         enum StatusTurma { PLANEJADA, OFERTADA, CANCELADA, ENCERRADA }
         enum ModalidadeTurma { PRESENCIAL, REMOTO, HIBRIDO, EAD }
 
-        // Turma implementa TurmaOferecida (interface do padrão Decorator:
-        // TurmaDecorador, TurmaOnline) para acrescentar comportamento de oferta.
+        // Padrão Decorator: Turma implementa TurmaOferecida; TurmaComListaEspera e
+        // TurmaOnline (sobre TurmaDecorador) acrescentam comportamento. A composição de
+        // múltiplos decorators é testada; a persistência do estado adicional (lista de
+        // espera, link de acesso) permanece como integração pendente.
         Entity Turma {
             aggregateRoot
             int id
@@ -706,6 +708,9 @@ BoundedContext EstagiosContext implements ServicosAcademicosSubdomain {
             void candidatar(int oportunidadeId, @EstudanteId estudanteId);
             void confirmarCandidatura(int oportunidadeId, @EstudanteId estudanteId);
         }
+        // Padrão Decorator (OportunidadeDecorador sobre OportunidadeBase): EstagioServico
+        // empilha em produção OportunidadeComPrazoInscricao e OportunidadeComCriterioElegibilidade
+        // para validar a candidatura. A composição de múltiplos decorators é testada.
     }
 
     Aggregate Estagio {
