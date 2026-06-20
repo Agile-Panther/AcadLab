@@ -110,6 +110,7 @@ import school.cesar.acadlab.dominio.permanenciaacademica.EditalRepositorio;
 import school.cesar.acadlab.dominio.permanenciaacademica.EditalServico;
 import school.cesar.acadlab.dominio.permanenciaacademica.InscricaoRepositorio;
 import school.cesar.acadlab.dominio.permanenciaacademica.InscricaoServico;
+import school.cesar.acadlab.dominio.permanenciaacademica.NotificacaoInscricaoObservador;
 import school.cesar.acadlab.dominio.secretariavirtual.AnaliseServico;
 import school.cesar.acadlab.dominio.secretariavirtual.CalendarioAcademicoPorta;
 import school.cesar.acadlab.dominio.secretariavirtual.SolicitacaoServico;
@@ -380,6 +381,14 @@ public class BackendAplicacao {
     PermanenciaAcademicaServicoAplicacao permanenciaAcademicaServicoAplicacao(
             PermanenciaAcademicaRepositorioAplicacao repositorio) {
         return new PermanenciaAcademicaServicoAplicacao(repositorio);
+    }
+
+    @Bean
+    NotificacaoInscricaoObservador notificacaoInscricaoObservador(
+            EventoBarramento barramento, RegistroNotificacoes registroNotificacoes) {
+        var observador = new NotificacaoInscricaoObservador(registroNotificacoes);
+        barramento.adicionar(observador);
+        return observador;
     }
 
     /* ===== F-11: Apoio Psicopedagógico ===== */
