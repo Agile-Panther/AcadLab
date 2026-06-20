@@ -47,8 +47,10 @@ import school.cesar.acadlab.dominio.apoiopsicopedagogico.TriagemServico;
 import school.cesar.acadlab.dominio.apoiopsicopedagogico.caso.CasoRepositorio;
 import school.cesar.acadlab.dominio.apoiopsicopedagogico.solicitacao.SolicitacaoApoioRepositorio;
 import school.cesar.acadlab.dominio.estagios.EstagioServico;
+import school.cesar.acadlab.dominio.estagios.candidatura.CandidaturaRepositorio;
 import school.cesar.acadlab.dominio.estagios.estagio.EstagioRepositorio;
 import school.cesar.acadlab.dominio.estagios.oportunidade.OportunidadeRepositorio;
+import school.cesar.acadlab.dominio.estagios.oportunidade.VerificadorElegibilidade;
 import school.cesar.acadlab.dominio.evento.EventoBarramento;
 import school.cesar.acadlab.dominio.gestaopedagogica.DiarioTurmaServico;
 import school.cesar.acadlab.dominio.gestaopedagogica.diario.DiarioTurmaRepositorio;
@@ -181,9 +183,17 @@ public class BackendAplicacao {
     }
 
     @Bean
+    VerificadorElegibilidade verificadorElegibilidade() {
+        return (estudanteId, criterio) -> true;
+    }
+
+    @Bean
     EstagioServico estagioServico(OportunidadeRepositorio oportunidadeRepositorio,
-                                   EstagioRepositorio estagioRepositorio) {
-        return new EstagioServico(oportunidadeRepositorio, estagioRepositorio);
+                                   CandidaturaRepositorio candidaturaRepositorio,
+                                   EstagioRepositorio estagioRepositorio,
+                                   VerificadorElegibilidade verificadorElegibilidade) {
+        return new EstagioServico(oportunidadeRepositorio, candidaturaRepositorio,
+                estagioRepositorio, verificadorElegibilidade);
     }
 
     @Bean

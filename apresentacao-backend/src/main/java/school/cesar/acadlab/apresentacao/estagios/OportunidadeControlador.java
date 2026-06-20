@@ -3,6 +3,7 @@ package school.cesar.acadlab.apresentacao.estagios;
 import static org.springframework.web.bind.annotation.RequestMethod.GET;
 import static org.springframework.web.bind.annotation.RequestMethod.POST;
 import static org.springframework.web.bind.annotation.RequestMethod.PUT;
+import java.time.LocalDate;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -14,7 +15,7 @@ import org.springframework.web.server.ResponseStatusException;
 import school.cesar.acadlab.aplicacao.estagios.OportunidadeResumo;
 import school.cesar.acadlab.aplicacao.estagios.OportunidadeServicoAplicacao;
 import school.cesar.acadlab.dominio.estagios.EstagioServico;
-import school.cesar.acadlab.dominio.estagios.oportunidade.CoordenadorId;
+import school.cesar.acadlab.dominio.estagios.candidatura.CandidaturaId;
 import school.cesar.acadlab.dominio.estagios.oportunidade.EmpresaId;
 import school.cesar.acadlab.dominio.estagios.oportunidade.EstudanteId;
 import school.cesar.acadlab.dominio.estagios.oportunidade.OportunidadeId;
@@ -50,27 +51,32 @@ class OportunidadeControlador {
     }
 
     @RequestMapping(method = PUT, path = "{id}/candidatura")
-    void candidatar(@PathVariable int id, @RequestBody CandidatarRequest request) {
-        servico.candidatar(new OportunidadeId(id), new EstudanteId(request.estudanteId()));
+    int candidatar(@PathVariable int id, @RequestBody CandidatarRequest request) {
+        return servico.registrarCandidatura(
+                new OportunidadeId(id),
+                new EstudanteId(request.estudanteId()),
+                LocalDate.now()).getValor();
     }
 
-    @RequestMapping(method = PUT, path = "{id}/encaminhar")
-    void encaminhar(@PathVariable int id, @RequestBody EncaminharRequest request) {
-        servico.encaminhar(new OportunidadeId(id), new CoordenadorId(request.coordenadorId()));
+    @RequestMapping(method = PUT, path = "{id}/candidaturas/{candidaturaId}/deferir")
+    void deferir(@PathVariable int id, @PathVariable int candidaturaId) {
+        servico.deferir(new CandidaturaId(candidaturaId));
     }
 
-    @RequestMapping(method = PUT, path = "{id}/confirmar")
-    int confirmar(@PathVariable int id, @RequestBody EmpresaRequest request) {
-        return servico.confirmar(new OportunidadeId(id), new EmpresaId(request.empresaId())).getValor();
+    @RequestMapping(method = PUT, path = "{id}/candidaturas/{candidaturaId}/indeferir")
+    void indeferir(@PathVariable int id, @PathVariable int candidaturaId) {
+        servico.indeferir(new CandidaturaId(candidaturaId));
     }
 
-    @RequestMapping(method = PUT, path = "{id}/recusar")
-    void recusar(@PathVariable int id, @RequestBody EmpresaRequest request) {
-        servico.recusar(new OportunidadeId(id), new EmpresaId(request.empresaId()));
+    @RequestMapping(method = PUT, path = "{id}/candidaturas/{candidaturaId}/encaminhar")
+    int encaminharEConfirmar(@PathVariable int id, @PathVariable int candidaturaId,
+                              @RequestBody EmpresaRequest request) {
+        return servico.encaminharEConfirmar(
+                new CandidaturaId(candidaturaId),
+                new EmpresaId(request.empresaId())).getValor();
     }
 
     record CadastrarOportunidadeRequest(int empresaId, String descricao, int cargaHorariaTotal) {}
     record CandidatarRequest(int estudanteId) {}
-    record EncaminharRequest(int coordenadorId) {}
     record EmpresaRequest(int empresaId) {}
 }
