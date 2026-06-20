@@ -20,6 +20,10 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.Table;
 import school.cesar.acadlab.aplicacao.estagios.EstagioRepositorioAplicacao;
 import school.cesar.acadlab.aplicacao.estagios.EstagioResumo;
+import school.cesar.acadlab.dominio.estagios.candidatura.Candidatura;
+import school.cesar.acadlab.dominio.estagios.candidatura.CandidaturaId;
+import school.cesar.acadlab.dominio.estagios.candidatura.CandidaturaRepositorio;
+import school.cesar.acadlab.dominio.estagios.candidatura.StatusCandidatura;
 import school.cesar.acadlab.dominio.estagios.estagio.Estagio;
 import school.cesar.acadlab.dominio.estagios.estagio.EstagioId;
 import school.cesar.acadlab.dominio.estagios.estagio.EstagioRepositorio;
@@ -36,6 +40,7 @@ class EstagioJpa {
     @Id
     int id;
     int oportunidadeId;
+    int candidaturaId;
     int estudanteId;
     int empresaId;
 
@@ -109,6 +114,7 @@ class EstagioRepositorioImpl implements EstagioRepositorio, EstagioRepositorioAp
         var jpa = repository.findById(e.getId().getValor()).orElseGet(EstagioJpa::new);
         jpa.id = e.getId().getValor();
         jpa.oportunidadeId = e.getOportunidadeId().getValor();
+        jpa.candidaturaId = e.getCandidaturaId().getValor();
         jpa.estudanteId = e.getEstudanteId().getValor();
         jpa.empresaId = e.getEmpresaId().getValor();
         jpa.status = e.getStatus();
@@ -130,6 +136,7 @@ class EstagioRepositorioImpl implements EstagioRepositorio, EstagioRepositorioAp
         return Estagio.reconstituir(
                 new EstagioId(jpa.id),
                 new OportunidadeId(jpa.oportunidadeId),
+                new CandidaturaId(jpa.candidaturaId),
                 new EstudanteId(jpa.estudanteId),
                 new EmpresaId(jpa.empresaId),
                 jpa.status,
@@ -139,5 +146,51 @@ class EstagioRepositorioImpl implements EstagioRepositorio, EstagioRepositorioAp
     private EstagioResumo toResumo(EstagioJpa jpa) {
         return new EstagioResumo(jpa.id, jpa.oportunidadeId, jpa.estudanteId,
                 jpa.empresaId, jpa.status.name());
+    }
+}
+
+@Entity
+@Table(name = "CANDIDATURA_ESTAGIO")
+class CandidaturaJpa {
+    @Id int id;
+    int oportunidadeId;
+    int estudanteId;
+    @Enumerated(EnumType.STRING)
+    StatusCandidatura status;
+}
+
+interface CandidaturaJpaRepository extends JpaRepository<CandidaturaJpa, Integer> {
+    @Query("SELECT COALESCE(MAX(c.id), 0) + 1 FROM CandidaturaJpa c")
+    int proximoId();
+}
+
+@Repository
+class CandidaturaRepositorioImpl implements CandidaturaRepositorio {
+
+    @Autowired CandidaturaJpaRepository repository;
+
+    @Override
+    public CandidaturaId proximaCandidaturaId() {
+        return new CandidaturaId(repository.proximoId());
+    }
+
+    @Override
+    public void salvar(Candidatura candidatura) {
+        var jpa = repository.findById(candidatura.getId().getValor()).orElseGet(CandidaturaJpa::new);
+        jpa.id = candidatura.getId().getValor();
+        jpa.oportunidadeId = candidatura.getOportunidadeId().getValor();
+        jpa.estudanteId = candidatura.getEstudanteId().getValor();
+        jpa.status = candidatura.getStatus();
+        repository.save(jpa);
+    }
+
+    @Override
+    public Optional<Candidatura> buscarPorId(CandidaturaId id) {
+        return repository.findById(id.getValor()).map(jpa ->
+                Candidatura.reconstituir(
+                        new CandidaturaId(jpa.id),
+                        new OportunidadeId(jpa.oportunidadeId),
+                        new EstudanteId(jpa.estudanteId),
+                        jpa.status));
     }
 }
