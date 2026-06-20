@@ -153,8 +153,10 @@ BoundedContext OfertaAcademicaContext implements AcademicoSubdomain {
 
         // Padrão Decorator: Turma implementa TurmaOferecida; TurmaComListaEspera e
         // TurmaOnline (sobre TurmaDecorador) acrescentam comportamento. A composição de
-        // múltiplos decorators é testada; a persistência do estado adicional (lista de
-        // espera, link de acesso) permanece como integração pendente.
+        // múltiplos decorators é testada e o padrão está integrado em produção:
+        // OfertaTurmaServico instancia o decorator (que carrega as invariantes — EAD para
+        // o link, não-duplicidade na lista de espera) e o estado resultante (linkAcesso,
+        // listaEspera) é gravado no agregado e persistido, sobrevivendo ao recarregamento.
         Entity Turma {
             aggregateRoot
             int id
@@ -166,6 +168,8 @@ BoundedContext OfertaAcademicaContext implements AcademicoSubdomain {
             int capacidade
             - List<HorarioAula> horarios
             - StatusTurma status
+            String linkAcesso
+            - List<EstudanteId> listaEspera
         }
         Entity HorarioAula {
             String diaSemana
@@ -179,6 +183,10 @@ BoundedContext OfertaAcademicaContext implements AcademicoSubdomain {
             void adicionarHorario(int turmaId, String diaSemana, String horaInicio, String horaFim);
             void confirmarOferta(int turmaId);
             void cancelar(int turmaId);
+            // Decorator TurmaOnline / TurmaComListaEspera aplicados aqui em produção:
+            void definirLinkAcessoOnline(int turmaId, String link);
+            void entrarListaEspera(int turmaId, int estudanteId);
+            void sairListaEspera(int turmaId, int estudanteId);
         }
     }
 
