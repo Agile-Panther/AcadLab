@@ -17,7 +17,9 @@ public class ConsultarHistoricoOficialFuncionalidade {
 
     public ConsultarHistoricoOficialFuncionalidade(HistoricoFuncionalidade ctx) {
         this.ctx = ctx;
-        this.consultaServico = new ConsultaHistoricoServico(ctx.repositorio);
+        // RN-10: no cenário, o período do registro consolidado está encerrado.
+        ConsultaPeriodoEncerradoPorta periodosEncerrados = periodoLetivoId -> true;
+        this.consultaServico = new ConsultaHistoricoServico(ctx.repositorio, periodosEncerrados);
     }
 
     @Dado("um histórico com um registro consolidado de turma encerrada")

@@ -8,10 +8,14 @@ import school.cesar.acadlab.dominio.historicoacademico.iterador.IteradorHistoric
 
 public class ConsultaHistoricoServico {
     private final HistoricoAcademicoRepositorio repositorio;
+    private final ConsultaPeriodoEncerradoPorta consultaPeriodo;
 
-    public ConsultaHistoricoServico(HistoricoAcademicoRepositorio repositorio) {
+    public ConsultaHistoricoServico(HistoricoAcademicoRepositorio repositorio,
+                                    ConsultaPeriodoEncerradoPorta consultaPeriodo) {
         notNull(repositorio, "O repositório não pode ser nulo");
+        notNull(consultaPeriodo, "A consulta de período não pode ser nula");
         this.repositorio = repositorio;
+        this.consultaPeriodo = consultaPeriodo;
     }
 
     // RN-10: histórico oficial contém apenas registros consolidados de períodos encerrados
@@ -21,7 +25,10 @@ public class ConsultaHistoricoServico {
         var resultado = new ArrayList<RegistroDisciplina>();
         IteradorHistorico<RegistroDisciplina> iterador = historico.iteradorRegistros();
         while (iterador.temProximo()) {
-            resultado.add(iterador.proximo());
+            RegistroDisciplina registro = iterador.proximo();
+            if (consultaPeriodo.estaEncerrado(registro.getPeriodoLetivoId())) {
+                resultado.add(registro);
+            }
         }
         return resultado;
     }
