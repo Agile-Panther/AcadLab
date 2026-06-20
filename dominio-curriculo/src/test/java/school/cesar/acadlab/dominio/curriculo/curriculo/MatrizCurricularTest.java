@@ -36,7 +36,7 @@ class MatrizCurricularTest {
 
         var excecao = assertThrows(IllegalStateException.class,
                 () -> matriz.adicionarDisciplina(disc1, TipoDisciplina.OPTATIVA, 30, 2));
-        assertTrue(excecao.getMessage().contains("RN-1"));
+        assertTrue(excecao.getMessage().contains("disciplina já está na matriz curricular"));
     }
 
     @Test
@@ -50,7 +50,7 @@ class MatrizCurricularTest {
         matriz.adicionarDisciplina(disc1, TipoDisciplina.OBRIGATORIA, 60, 4);
 
         var excecao = assertThrows(IllegalStateException.class, () -> matriz.ativar(repositorio));
-        assertTrue(excecao.getMessage().contains("RN-2"));
+        assertTrue(excecao.getMessage().contains("carga horária total não atinge o mínimo exigido"));
     }
 
     @Test
@@ -69,7 +69,7 @@ class MatrizCurricularTest {
 
         var excecao = assertThrows(IllegalStateException.class,
                 () -> matriz.adicionarPreRequisito(disc1, disc2));
-        assertTrue(excecao.getMessage().contains("RN-3"));
+        assertTrue(excecao.getMessage().contains("relação de pré-requisito cíclica detectada"));
     }
 
     @Test
@@ -88,7 +88,7 @@ class MatrizCurricularTest {
 
         var excecao = assertThrows(IllegalArgumentException.class,
                 () -> matriz.adicionarCorrequisito(disc1, disciplinaForaMatriz));
-        assertTrue(excecao.getMessage().contains("RN-4"));
+        assertTrue(excecao.getMessage().contains("disciplina correquisito não pertence à matriz curricular"));
     }
 
     @Test
@@ -111,7 +111,7 @@ class MatrizCurricularTest {
         matriz.adicionarDisciplina(disc2, TipoDisciplina.OBRIGATORIA, 2400, 160);
 
         var excecao = assertThrows(IllegalStateException.class, () -> matriz.ativar(repositorio));
-        assertTrue(excecao.getMessage().contains("RN-5"));
+        assertTrue(excecao.getMessage().contains("já existe uma matriz curricular ativa para este curso"));
     }
 
     @Test
@@ -151,7 +151,7 @@ class MatrizCurricularTest {
 
         var excecao = assertThrows(IllegalStateException.class,
                 () -> matriz.removerDisciplina(disc1, repositorio));
-        assertTrue(excecao.getMessage().contains("RN-9"));
+        assertTrue(excecao.getMessage().contains("disciplina não pode ser removida pois possui turmas vinculadas"));
     }
 
     @Test
@@ -172,6 +172,6 @@ class MatrizCurricularTest {
 
         var excecao = assertThrows(IllegalStateException.class,
                 () -> matriz.adicionarPreRequisito(disc1, disc3));
-        assertTrue(excecao.getMessage().contains("RN-3"));
+        assertTrue(excecao.getMessage().contains("relação de pré-requisito cíclica detectada"));
     }
 }

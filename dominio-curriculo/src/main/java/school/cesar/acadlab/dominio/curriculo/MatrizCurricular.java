@@ -77,7 +77,7 @@ public class MatrizCurricular {
 
         boolean jaExiste = itens.stream().anyMatch(i -> i.getDisciplinaId().equals(disciplinaId));
         if (jaExiste) {
-            throw new IllegalStateException("RN-1: Disciplina já existe nessa matriz");
+            throw new IllegalStateException("disciplina já está na matriz curricular");
         }
 
         itens.add(new ItemMatriz(disciplinaId, tipo, cargaHoraria, creditos));
@@ -92,7 +92,7 @@ public class MatrizCurricular {
         }
 
         if (porta.existeTurmaParaDisciplina(disciplinaId)) {
-            throw new IllegalStateException("RN-9: Disciplina vinculada a turmas não pode ser removida");
+            throw new IllegalStateException("disciplina não pode ser removida pois possui turmas vinculadas");
         }
 
         itens.removeIf(i -> i.getDisciplinaId().equals(disciplinaId));
@@ -118,7 +118,7 @@ public class MatrizCurricular {
         }
 
         if (existeCiclo(disciplina, preRequisito)) {
-            throw new IllegalStateException("RN-3: Pré-requisito cíclico detectado");
+            throw new IllegalStateException("relação de pré-requisito cíclica detectada");
         }
 
         preRequisitos.computeIfAbsent(disciplina, k -> new ArrayList<>()).add(preRequisito);
@@ -136,7 +136,7 @@ public class MatrizCurricular {
         boolean corequisitoExiste = itens.stream().anyMatch(i -> i.getDisciplinaId().equals(correquisito));
 
         if (!disciplinaExiste || !corequisitoExiste) {
-            throw new IllegalArgumentException("RN-4: Correquisito deve pertencer à mesma matriz");
+            throw new IllegalArgumentException("disciplina correquisito não pertence à matriz curricular");
         }
 
         correquisitos.computeIfAbsent(disciplina, k -> new ArrayList<>()).add(correquisito);
@@ -146,14 +146,14 @@ public class MatrizCurricular {
         notNull(porta, "ConsultaMatrizAtivaPorta não pode ser nulo");
 
         if (porta.existeMatrizAtivaParaCurso(cursoId)) {
-            throw new IllegalStateException("RN-5: Já existe matriz ativa para este curso");
+            throw new IllegalStateException("já existe uma matriz curricular ativa para este curso");
         }
 
         int totalCargaHoraria = itens.stream().mapToInt(ItemMatriz::getCargaHoraria).sum();
         int totalCreditos = itens.stream().mapToInt(ItemMatriz::getCreditos).sum();
 
         if (totalCargaHoraria < cargaHorariaMinima || totalCreditos < creditosExigidos) {
-            throw new IllegalStateException("RN-2: Carga horária ou créditos insuficientes para ativação");
+            throw new IllegalStateException("carga horária total não atinge o mínimo exigido");
         }
 
         this.status = StatusMatriz.ATIVA;
