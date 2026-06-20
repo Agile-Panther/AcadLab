@@ -1,0 +1,440 @@
+import { useMemo, useState } from "react";
+import { createFileRoute } from "@tanstack/react-router";
+import {
+  AppShell, SectionTitle, StatsRow, DataTable, StatusBadge, RowActionButton,
+  FormField, ValidationCallout, SuccessBanner, TabsRow,
+  useProfileSwitcher,
+} from "@/components/acadlab";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
+import { ArrowLeft, Download, CreditCard, AlertCircle, Send, FileText, Plus } from "lucide-react";
+import { toast } from "sonner";
+
+export const Route = createFileRoute("/financeiro")({
+  head: () => ({ meta: [{ title: "Financeiro — AcadLab" }] }),
+  component: Page,
+});
+
+type Cobranca = {
+  id: string; descricao: string; vencimento: string; valor: string;
+  status: "Em aberto" | "Paga" | "Atrasada" | "Em contestação";
+};
+
+const cobrancasIniciais: Cobranca[] = [
+  { id: "COB-2025-03", descricao: "Mensalidade Março/2025", vencimento: "10/04/2025", valor: "R$ 1.420,00", status: "Em aberto" },
+  { id: "COB-2025-02", descricao: "Mensalidade Fevereiro/2025", vencimento: "10/03/2025", valor: "R$ 1.420,00", status: "Paga" },
+  { id: "COB-2025-01", descricao: "Mensalidade Janeiro/2025", vencimento: "10/02/2025", valor: "R$ 1.420,00", status: "Paga" },
+  { id: "COB-2024-12", descricao: "Mensalidade Dezembro/2024", vencimento: "10/01/2025", valor: "R$ 1.420,00", status: "Atrasada" },
+];
+
+type View =
+  | { kind: "overview" }
+  | { kind: "detail"; id: string }
+  | { kind: "pagar"; id: string }
+  | { kind: "contestar"; id: string }
+  | { kind: "comprovante"; id: string };
+
+function Page() {
+  const { active: perfil } = useProfileSwitcher([
+    { value: "estudante", label: "Estudante", description: "Consulta cobranças e contesta" },
+    { value: "financeiro", label: "Setor Financeiro", description: "Concilia pagamentos e contestações" },
+  ]);
+  const [view, setView] = useState<View>({ kind: "overview" });
+  const [cobrancas, setCobrancas] = useState(cobrancasIniciais);
+
+  const proxima = cobrancas.find((c) => c.status === "Em aberto");
+
+  const pagar = (id: string) =>
+    setCobrancas((p) => p.map((c) => c.id === id ? { ...c, status: "Paga" } : c));
+
+  const subtitle = perfil === "financeiro"
+    ? "Visão Setor Financeiro · Conciliação"
+    : "Maria Santos · Contrato CT-2020-0451";
+
+  return (
+    <AppShell title="Financeiro" subtitle={subtitle}>
+      {perfil === "financeiro" && <FinanceiroView />}
+
+      {perfil === "estudante" && view.kind === "overview" && (
+        <div className="space-y-5">
+          <StatsRow stats={[
+            { label: "Em aberto", value: "R$ 1.420", tone: "warning" },
+            { label: "Em atraso", value: "R$ 1.420", tone: "danger" },
+            { label: "Pago no ano", value: "R$ 2.840", tone: "success" },
+            { label: "Bolsa aplicada", value: "0%", tone: "info" },
+          ]} />
+
+          {proxima && (
+            <div className="rounded-xl border-l-4 border-l-warning bg-card p-5 shadow-card">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <p className="text-[12px] text-muted-foreground">Próxima cobrança</p>
+                  <p className="text-lg font-semibold text-foreground">{proxima.descricao} — {proxima.valor}</p>
+                  <p className="text-[12px] text-muted-foreground">Vence em {proxima.vencimento}</p>
+                </div>
+                <div className="flex gap-2">
+                  <Button onClick={() => setView({ kind: "pagar", id: proxima.id })}><CreditCard className="mr-2 h-4 w-4" /> Pagar agora</Button>
+                  <Button variant="outline" onClick={() => setView({ kind: "contestar", id: proxima.id })}><AlertCircle className="mr-2 h-4 w-4" /> Contestar</Button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <SectionTitle title="Extrato" subtitle="Todas as cobranças e pagamentos do seu contrato." />
+          <DataTable
+            columns={[
+              { key: "id", header: "Protocolo" }, { key: "descricao", header: "Descrição" },
+              { key: "vencimento", header: "Vencimento" }, { key: "valor", header: "Valor", align: "right" },
+              { key: "status", header: "Status", render: (r) => (
+                <StatusBadge tone={r.status === "Paga" ? "success" : r.status === "Atrasada" ? "danger" : r.status === "Em contestação" ? "warning" : "info"}>{r.status}</StatusBadge>
+              )},
+              { key: "acoes", header: "", align: "right", render: (r) => (
+                r.status === "Paga"
+                  ? <RowActionButton onClick={() => setView({ kind: "comprovante", id: r.id })}>Comprovante</RowActionButton>
+                  : <RowActionButton onClick={() => setView({ kind: "detail", id: r.id })}>Abrir</RowActionButton>
+              )},
+            ]}
+            rows={cobrancas}
+          />
+        </div>
+      )}
+
+      {perfil === "estudante" && view.kind === "detail" && (() => {
+        const c = cobrancas.find((x) => x.id === view.id)!;
+        return (
+          <div className="space-y-4">
+            <Button variant="ghost" size="sm" onClick={() => setView({ kind: "overview" })}><ArrowLeft className="mr-1 h-4 w-4" /> Extrato</Button>
+            <div className="rounded-xl border bg-card p-6 shadow-card">
+              <SectionTitle title={c.descricao} subtitle={`Vencimento: ${c.vencimento}`} />
+              <p className="mt-4 text-3xl font-bold text-foreground">{c.valor}</p>
+              <StatusBadge className="mt-2" tone={c.status === "Atrasada" ? "danger" : "warning"}>{c.status}</StatusBadge>
+              <div className="mt-6 flex gap-2">
+                <Button onClick={() => setView({ kind: "pagar", id: c.id })}><CreditCard className="mr-2 h-4 w-4" /> Pagar</Button>
+                <Button variant="outline" onClick={() => setView({ kind: "contestar", id: c.id })}>Contestar valor</Button>
+              </div>
+              {c.status === "Atrasada" && <ValidationCallout className="mt-4" tone="error">Mensalidade em atraso pode gerar restrições em operações acadêmicas.</ValidationCallout>}
+            </div>
+          </div>
+        );
+      })()}
+
+      {perfil === "estudante" && view.kind === "pagar" && (
+        <div className="space-y-4">
+          <Button variant="ghost" size="sm" onClick={() => setView({ kind: "overview" })}><ArrowLeft className="mr-1 h-4 w-4" /> Voltar</Button>
+          <div className="rounded-xl border bg-card p-6 shadow-card">
+            <SectionTitle title="Pagamento" subtitle={view.id} />
+            <div className="mt-4 grid grid-cols-2 gap-3 text-[13px]">
+              <div className="rounded-lg border p-4">
+                <p className="font-semibold">PIX</p>
+                <p className="text-muted-foreground">Aprovação instantânea</p>
+              </div>
+              <div className="rounded-lg border p-4">
+                <p className="font-semibold">Boleto</p>
+                <p className="text-muted-foreground">Compensa em até 3 dias</p>
+              </div>
+            </div>
+            <div className="mt-4 flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setView({ kind: "overview" })}>Cancelar</Button>
+              <Button onClick={() => { pagar(view.id); setView({ kind: "comprovante", id: view.id }); }}>Confirmar pagamento</Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {perfil === "estudante" && view.kind === "contestar" && (
+        <div className="space-y-4">
+          <Button variant="ghost" size="sm" onClick={() => setView({ kind: "overview" })}><ArrowLeft className="mr-1 h-4 w-4" /> Voltar</Button>
+          <div className="rounded-xl border bg-card p-6 shadow-card">
+            <SectionTitle title={`Contestar cobrança — ${view.id}`} subtitle="O Setor Financeiro analisará seu pedido." />
+            <FormField className="mt-4" label="Motivo da contestação" required full><Textarea rows={5} /></FormField>
+            <div className="mt-4 flex justify-end gap-2"><Button variant="outline" onClick={() => setView({ kind: "overview" })}>Cancelar</Button><Button>Enviar contestação</Button></div>
+          </div>
+        </div>
+      )}
+
+      {perfil === "estudante" && view.kind === "comprovante" && (
+        <div className="space-y-4">
+          <SuccessBanner title="Pagamento confirmado!" description={`Cobrança ${view.id} quitada. Comprovante disponível abaixo.`} />
+          <Button onClick={() => setView({ kind: "overview" })}><Download className="mr-2 h-4 w-4" /> Baixar comprovante</Button>
+          <Button variant="ghost" onClick={() => setView({ kind: "overview" })}>Voltar</Button>
+        </div>
+      )}
+    </AppShell>
+  );
+}
+
+type Contestacao = { id: string; aluno: string; cobranca: string; valor: string; motivo: string; status: "Em análise" | "Deferida" | "Indeferida" };
+type Inadimplente = { matricula: string; aluno: string; curso: string; emAtraso: string; diasAtraso: number; status: "Notificado" | "Negociar" | "Bloqueado" };
+type Bolsa = { id: string; aluno: string; tipo: "ProUni" | "FIES" | "Mérito" | "Convênio"; percentual: number; validade: string; status: "Ativa" | "Em renovação" | "Suspensa" };
+type Lancamento = { id: string; data: string; descricao: string; metodo: "PIX" | "Boleto" | "Cartão"; valor: string; status: "Conciliado" | "Pendente" | "Divergente" };
+
+function FinanceiroView() {
+  const [tab, setTab] = useState("contestacoes");
+
+  const [contest, setContest] = useState<Contestacao[]>([
+    { id: "CT-2025-018", aluno: "Maria Santos", cobranca: "Mensalidade Mar/2025", valor: "R$ 1.420,00", motivo: "Bolsa não aplicada", status: "Em análise" },
+    { id: "CT-2025-016", aluno: "Pedro Almeida", cobranca: "Taxa de emissão", valor: "R$ 45,00", motivo: "Cobrança duplicada", status: "Em análise" },
+    { id: "CT-2025-011", aluno: "Júlia Rocha", cobranca: "Mensalidade Fev/2025", valor: "R$ 1.420,00", motivo: "Erro de cálculo", status: "Deferida" },
+  ]);
+  const [inadimp, setInadimp] = useState<Inadimplente[]>([
+    { matricula: "2021.0451", aluno: "Lucas Pereira", curso: "Eng. Civil", emAtraso: "R$ 2.840,00", diasAtraso: 47, status: "Notificado" },
+    { matricula: "2022.0188", aluno: "Carla Mendes", curso: "Direito", emAtraso: "R$ 4.260,00", diasAtraso: 92, status: "Negociar" },
+    { matricula: "2020.0712", aluno: "Rafael Lima", curso: "Medicina", emAtraso: "R$ 9.120,00", diasAtraso: 121, status: "Bloqueado" },
+    { matricula: "2023.0034", aluno: "Beatriz Souza", curso: "Psicologia", emAtraso: "R$ 1.420,00", diasAtraso: 18, status: "Notificado" },
+  ]);
+  const [bolsas, setBolsas] = useState<Bolsa[]>([
+    { id: "BL-441", aluno: "Maria Santos", tipo: "Mérito", percentual: 50, validade: "12/2025", status: "Ativa" },
+    { id: "BL-318", aluno: "João Oliveira", tipo: "ProUni", percentual: 100, validade: "12/2026", status: "Ativa" },
+    { id: "BL-205", aluno: "Ana Costa", tipo: "FIES", percentual: 75, validade: "06/2025", status: "Em renovação" },
+    { id: "BL-099", aluno: "Bruno Dias", tipo: "Convênio", percentual: 20, validade: "12/2024", status: "Suspensa" },
+  ]);
+  const [lancs, setLancs] = useState<Lancamento[]>([
+    { id: "LC-9821", data: "18/03/2025", descricao: "PIX recebido — 2021.0188", metodo: "PIX", valor: "R$ 1.420,00", status: "Conciliado" },
+    { id: "LC-9820", data: "18/03/2025", descricao: "Boleto compensado — 2022.0345", metodo: "Boleto", valor: "R$ 1.420,00", status: "Conciliado" },
+    { id: "LC-9819", data: "17/03/2025", descricao: "PIX sem identificação", metodo: "PIX", valor: "R$ 1.420,00", status: "Divergente" },
+    { id: "LC-9818", data: "17/03/2025", descricao: "Cartão — parcela 3/6", metodo: "Cartão", valor: "R$ 710,00", status: "Pendente" },
+  ]);
+  const [filtroInad, setFiltroInad] = useState("");
+  const [novaBolsaOpen, setNovaBolsaOpen] = useState(false);
+
+  const decidir = (id: string, status: "Deferida" | "Indeferida") => {
+    setContest((p) => p.map((c) => c.id === id ? { ...c, status } : c));
+    toast.success(`Contestação ${id} ${status.toLowerCase()}.`);
+  };
+  const notificar = (m: string) => {
+    setInadimp((p) => p.map((i) => i.matricula === m ? { ...i, status: "Notificado" } : i));
+    toast.success(`Notificação enviada para ${m}.`);
+  };
+  const negociar = (m: string) => {
+    setInadimp((p) => p.map((i) => i.matricula === m ? { ...i, status: "Negociar" } : i));
+    toast.success("Proposta de acordo registrada.");
+  };
+  const bloquear = (m: string) => {
+    setInadimp((p) => p.map((i) => i.matricula === m ? { ...i, status: "Bloqueado" } : i));
+    toast.warning(`Matrícula ${m} bloqueada para novas operações.`);
+  };
+  const conciliar = (id: string) => {
+    setLancs((p) => p.map((l) => l.id === id ? { ...l, status: "Conciliado" } : l));
+    toast.success(`Lançamento ${id} conciliado.`);
+  };
+  const suspenderBolsa = (id: string) => {
+    setBolsas((p) => p.map((b) => b.id === id ? { ...b, status: "Suspensa" } : b));
+    toast.warning(`Bolsa ${id} suspensa.`);
+  };
+  const reativarBolsa = (id: string) => {
+    setBolsas((p) => p.map((b) => b.id === id ? { ...b, status: "Ativa" } : b));
+    toast.success(`Bolsa ${id} reativada.`);
+  };
+
+  const inadimpFiltrada = useMemo(
+    () => inadimp.filter((i) => (i.aluno + i.matricula + i.curso).toLowerCase().includes(filtroInad.toLowerCase())),
+    [inadimp, filtroInad],
+  );
+
+  return (
+    <div className="space-y-5">
+      <StatsRow stats={[
+        { label: "Arrecadação no mês", value: "R$ 1,82M", tone: "success" },
+        { label: "Inadimplência", value: `${inadimp.length} alunos`, tone: "warning" },
+        { label: "Contestações abertas", value: contest.filter((c) => c.status === "Em análise").length, tone: "info" },
+        { label: "Bolsas ativas", value: bolsas.filter((b) => b.status === "Ativa").length, tone: "info" },
+      ]} />
+
+      <TabsRow
+        value={tab}
+        onChange={setTab}
+        items={[
+          { value: "contestacoes", label: "Contestações", count: contest.filter((c) => c.status === "Em análise").length },
+          { value: "inadimplencia", label: "Inadimplência", count: inadimp.filter((i) => i.status !== "Bloqueado").length },
+          { value: "bolsas", label: "Bolsas & Descontos", count: bolsas.length },
+          { value: "conciliacao", label: "Conciliação", count: lancs.filter((l) => l.status !== "Conciliado").length },
+          { value: "relatorios", label: "Relatórios" },
+        ]}
+      />
+
+      {tab === "contestacoes" && (
+        <>
+          <SectionTitle title="Fila de contestações" subtitle="Pedidos abertos por estudantes aguardando análise." />
+          <DataTable
+            columns={[
+              { key: "id", header: "Protocolo" },
+              { key: "aluno", header: "Estudante" },
+              { key: "cobranca", header: "Cobrança" },
+              { key: "valor", header: "Valor", align: "right" },
+              { key: "motivo", header: "Motivo" },
+              { key: "status", header: "Status", render: (r) => (
+                <StatusBadge tone={r.status === "Deferida" ? "success" : r.status === "Indeferida" ? "danger" : "info"}>{r.status}</StatusBadge>
+              )},
+              { key: "acoes", header: "", align: "right", render: (r) => (
+                r.status === "Em análise" ? (
+                  <div className="flex justify-end gap-2">
+                    <RowActionButton onClick={() => decidir(r.id, "Indeferida")}>Indeferir</RowActionButton>
+                    <RowActionButton tone="info" onClick={() => decidir(r.id, "Deferida")}>Deferir</RowActionButton>
+                  </div>
+                ) : <span className="text-[12px] text-muted-foreground">—</span>
+              )},
+            ]}
+            rows={contest}
+          />
+        </>
+      )}
+
+      {tab === "inadimplencia" && (
+        <>
+          <SectionTitle title="Carteira de inadimplência" subtitle="Acompanhe atrasos, envie notificações e abra acordos." />
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+            <Input
+              placeholder="Buscar por aluno, matrícula ou curso…"
+              value={filtroInad}
+              onChange={(e) => setFiltroInad(e.target.value)}
+              className="max-w-sm"
+            />
+            <Button variant="outline" onClick={() => toast.success("Régua de cobrança disparada para todos os atrasados.")}>
+              <Send className="mr-2 h-4 w-4" /> Disparar régua
+            </Button>
+          </div>
+          <DataTable
+            columns={[
+              { key: "matricula", header: "Matrícula" },
+              { key: "aluno", header: "Estudante" },
+              { key: "curso", header: "Curso" },
+              { key: "emAtraso", header: "Em atraso", align: "right" },
+              { key: "diasAtraso", header: "Dias", align: "right", render: (r) => (
+                <span className={r.diasAtraso > 90 ? "font-semibold text-destructive" : r.diasAtraso > 30 ? "font-semibold text-amber-600" : ""}>
+                  {r.diasAtraso}
+                </span>
+              )},
+              { key: "status", header: "Status", render: (r) => (
+                <StatusBadge tone={r.status === "Bloqueado" ? "danger" : r.status === "Negociar" ? "warning" : "info"}>{r.status}</StatusBadge>
+              )},
+              { key: "acoes", header: "", align: "right", render: (r) => (
+                <div className="flex justify-end gap-2">
+                  <RowActionButton onClick={() => notificar(r.matricula)}>Notificar</RowActionButton>
+                  <RowActionButton tone="info" onClick={() => negociar(r.matricula)}>Acordo</RowActionButton>
+                  {r.status !== "Bloqueado" && (
+                    <RowActionButton tone="danger" onClick={() => bloquear(r.matricula)}>Bloquear</RowActionButton>
+                  )}
+                </div>
+              )},
+            ]}
+            rows={inadimpFiltrada}
+          />
+        </>
+      )}
+
+      {tab === "bolsas" && (
+        <>
+          <SectionTitle title="Bolsas e descontos" subtitle="Concessões ativas, renovações e suspensões." />
+          <div className="flex">
+            <Button onClick={() => setNovaBolsaOpen((v) => !v)}>
+              <Plus className="mr-2 h-4 w-4" /> Nova concessão
+            </Button>
+          </div>
+          {novaBolsaOpen && (
+            <div className="rounded-xl border bg-card p-5 shadow-card">
+              <SectionTitle title="Conceder bolsa" subtitle="Preencha os dados da nova concessão." />
+              <div className="mt-3 grid grid-cols-2 gap-3">
+                <FormField label="Matrícula" required><Input placeholder="2024.XXXX" /></FormField>
+                <FormField label="Tipo" required><Input placeholder="Mérito, ProUni, FIES…" /></FormField>
+                <FormField label="Percentual (%)" required><Input type="number" placeholder="0–100" /></FormField>
+                <FormField label="Validade" required><Input placeholder="MM/AAAA" /></FormField>
+              </div>
+              <div className="mt-4 flex justify-end gap-2">
+                <Button variant="outline" onClick={() => setNovaBolsaOpen(false)}>Cancelar</Button>
+                <Button onClick={() => {
+                  const id = `BL-${Math.floor(Math.random() * 900 + 100)}`;
+                  setBolsas((p) => [{ id, aluno: "Novo Beneficiário", tipo: "Mérito", percentual: 25, validade: "12/2025", status: "Ativa" }, ...p]);
+                  setNovaBolsaOpen(false);
+                  toast.success(`Bolsa ${id} concedida.`);
+                }}>Conceder</Button>
+              </div>
+            </div>
+          )}
+          <DataTable
+            columns={[
+              { key: "id", header: "Código" },
+              { key: "aluno", header: "Beneficiário" },
+              { key: "tipo", header: "Tipo" },
+              { key: "percentual", header: "%", align: "right", render: (r) => `${r.percentual}%` },
+              { key: "validade", header: "Validade" },
+              { key: "status", header: "Status", render: (r) => (
+                <StatusBadge tone={r.status === "Ativa" ? "success" : r.status === "Suspensa" ? "danger" : "warning"}>{r.status}</StatusBadge>
+              )},
+              { key: "acoes", header: "", align: "right", render: (r) => (
+                <div className="flex justify-end gap-2">
+                  {r.status === "Ativa"
+                    ? <RowActionButton tone="danger" onClick={() => suspenderBolsa(r.id)}>Suspender</RowActionButton>
+                    : <RowActionButton tone="info" onClick={() => reativarBolsa(r.id)}>Reativar</RowActionButton>}
+                  <RowActionButton onClick={() => toast.success(`Renovação de ${r.id} iniciada.`)}>Renovar</RowActionButton>
+                </div>
+              )},
+            ]}
+            rows={bolsas}
+          />
+        </>
+      )}
+
+      {tab === "conciliacao" && (
+        <>
+          <SectionTitle title="Conciliação bancária" subtitle="Lançamentos importados nas últimas 48h." />
+          <ValidationCallout tone="error">
+            {lancs.filter((l) => l.status === "Divergente").length} divergência(s) precisam de atenção.
+          </ValidationCallout>
+          <DataTable
+            columns={[
+              { key: "id", header: "Lançamento" },
+              { key: "data", header: "Data" },
+              { key: "descricao", header: "Descrição" },
+              { key: "metodo", header: "Método" },
+              { key: "valor", header: "Valor", align: "right" },
+              { key: "status", header: "Status", render: (r) => (
+                <StatusBadge tone={r.status === "Conciliado" ? "success" : r.status === "Divergente" ? "danger" : "warning"}>{r.status}</StatusBadge>
+              )},
+              { key: "acoes", header: "", align: "right", render: (r) => (
+                r.status !== "Conciliado"
+                  ? <RowActionButton tone="info" onClick={() => conciliar(r.id)}>Conciliar</RowActionButton>
+                  : <span className="text-[12px] text-muted-foreground">—</span>
+              )},
+            ]}
+            rows={lancs}
+          />
+        </>
+      )}
+
+      {tab === "relatorios" && (
+        <>
+          <SectionTitle title="Relatórios financeiros" subtitle="Gere e baixe relatórios consolidados do período." />
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
+            {[
+              { titulo: "Arrecadação mensal", desc: "Receita por curso e tipo de cobrança." },
+              { titulo: "Aging de inadimplência", desc: "Distribuição por faixa de dias em atraso." },
+              { titulo: "Bolsas concedidas", desc: "Investimento por modalidade e curso." },
+              { titulo: "Conciliação bancária", desc: "Lançamentos e divergências do período." },
+              { titulo: "Contestações", desc: "Volume, deferimentos e tempo médio." },
+              { titulo: "Previsão de caixa", desc: "Projeção 90 dias com base no contrato." },
+            ].map((r) => (
+              <div key={r.titulo} className="rounded-xl border bg-card p-5 shadow-card">
+                <div className="flex items-start gap-3">
+                  <FileText className="mt-0.5 h-5 w-5 text-primary" />
+                  <div className="flex-1">
+                    <p className="font-semibold text-foreground">{r.titulo}</p>
+                    <p className="text-[12px] text-muted-foreground">{r.desc}</p>
+                  </div>
+                </div>
+                <div className="mt-4 flex gap-2">
+                  <Button size="sm" variant="outline" onClick={() => toast.success(`Relatório "${r.titulo}" gerado.`)}>
+                    <Download className="mr-2 h-4 w-4" /> Gerar PDF
+                  </Button>
+                  <Button size="sm" variant="ghost" onClick={() => toast.success(`Exportado CSV de "${r.titulo}".`)}>
+                    CSV
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
