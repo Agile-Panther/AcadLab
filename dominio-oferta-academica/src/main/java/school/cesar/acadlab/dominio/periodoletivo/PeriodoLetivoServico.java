@@ -72,7 +72,7 @@ public class PeriodoLetivoServico {
         notNull(periodoId, "O período não pode ser nulo");
         var periodo = repositorio.obter(periodoId);
         if (repositorio.existeSobreposicaoExcluindo(periodo.getCursoId(), novaDataInicio, novaDataFim, periodoId)) {
-            throw new IllegalStateException("RN1: Já existe período letivo com datas sobrepostas para este curso");
+            throw new IllegalStateException("datas se sobrepõem a período letivo já existente");
         }
         periodo.editar(novaDataInicio, novaDataFim);
         repositorio.salvar(periodo);

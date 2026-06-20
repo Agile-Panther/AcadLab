@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import io.cucumber.java.pt.Dado;
+import io.cucumber.java.pt.E;
 import io.cucumber.java.pt.Entao;
 import io.cucumber.java.pt.Quando;
 import school.cesar.acadlab.dominio.periodoletivo.PeriodoLetivoFuncionalidade;
@@ -46,6 +47,12 @@ public class EditarPeriodoLetivoFuncionalidade {
                 LocalDate.of(2025, 3, 1), LocalDate.of(2025, 6, 30));
         periodoId = periodo.getId();
         ctx.periodoLetivoServico.iniciar(periodoId);
+    }
+
+    @E("um segundo período letivo com datas sobrepostas cadastrado no mesmo curso")
+    public void segundo_periodo_com_datas_sobrepostas() {
+        ctx.periodoLetivoServico.cadastrar(cursoId, 2029, 1,
+                LocalDate.of(2029, 1, 1), LocalDate.of(2029, 12, 31));
     }
 
     @Quando("a secretaria edita o período letivo para as datas de {string} a {string}")

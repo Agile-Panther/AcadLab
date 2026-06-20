@@ -22,3 +22,13 @@ Funcionalidade: Gerenciar disciplinas da matriz curricular
     E a disciplina 5 possui turmas vinculadas
     Quando o coordenador tenta remover a disciplina 5
     Então o sistema deve rejeitar informando "disciplina não pode ser removida pois possui turmas vinculadas"
+
+  Cenário: Adicionar disciplina em matriz ATIVA é rejeitado
+    Dado uma matriz curricular ATIVA com as disciplinas 1 e 2
+    Quando o coordenador adiciona a disciplina com id 9 à matriz
+    Então o sistema deve rejeitar informando "não é possível alterar matriz ativa"
+
+  Cenário: Remover disciplina de matriz ATIVA é rejeitado
+    Dado uma matriz curricular ATIVA com as disciplinas 1 e 2
+    Quando o coordenador tenta remover a disciplina 1
+    Então o sistema deve rejeitar informando "não é possível alterar matriz ativa"

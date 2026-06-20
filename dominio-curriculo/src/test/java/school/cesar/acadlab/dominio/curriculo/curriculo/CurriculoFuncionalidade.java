@@ -122,6 +122,17 @@ public class CurriculoFuncionalidade {
         repositorio.salvar(matriz);
     }
 
+    @Dado("uma matriz curricular ATIVA com as disciplinas {int} e {int}")
+    public void matriz_ativa_com_duas_disciplinas(int id1, int id2) {
+        matrizId = repositorio.proximaMatrizId();
+        matriz = new MatrizCurricular(matrizId, new CursoId(1), "Matriz Ativa", 60, 4, 3);
+        matriz.adicionarDisciplina(new DisciplinaId(id1), TipoDisciplina.OBRIGATORIA, 60, 4);
+        matriz.adicionarDisciplina(new DisciplinaId(id2), TipoDisciplina.OBRIGATORIA, 60, 4);
+        repositorio.salvar(matriz);
+        matriz.ativar(repositorio);
+        repositorio.salvar(matriz);
+    }
+
     // --- Quando ---
 
     @Quando("o coordenador ativa a matriz")

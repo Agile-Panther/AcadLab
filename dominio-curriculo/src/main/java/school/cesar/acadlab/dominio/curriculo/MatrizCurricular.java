@@ -72,7 +72,7 @@ public class MatrizCurricular {
         notNull(tipo, "TipoDisciplina não pode ser nulo");
 
         if (status == StatusMatriz.ATIVA) {
-            throw new IllegalStateException("RN-8: Não é possível alterar matriz ativa");
+            throw new IllegalStateException("não é possível alterar matriz ativa");
         }
 
         boolean jaExiste = itens.stream().anyMatch(i -> i.getDisciplinaId().equals(disciplinaId));
@@ -88,7 +88,7 @@ public class MatrizCurricular {
         notNull(porta, "ConsultaTurmasPorta não pode ser nulo");
 
         if (status == StatusMatriz.ATIVA) {
-            throw new IllegalStateException("RN-8: Não é possível alterar matriz ativa");
+            throw new IllegalStateException("não é possível alterar matriz ativa");
         }
 
         if (porta.existeTurmaParaDisciplina(disciplinaId)) {
@@ -107,7 +107,7 @@ public class MatrizCurricular {
         notNull(preRequisito, "PreRequisito DisciplinaId não pode ser nulo");
 
         if (status == StatusMatriz.ATIVA) {
-            throw new IllegalStateException("RN-8: Não é possível alterar matriz ativa");
+            throw new IllegalStateException("não é possível alterar matriz ativa");
         }
 
         boolean disciplinaExiste = itens.stream().anyMatch(i -> i.getDisciplinaId().equals(disciplina));
@@ -129,7 +129,7 @@ public class MatrizCurricular {
         notNull(correquisito, "Correquisito DisciplinaId não pode ser nulo");
 
         if (status == StatusMatriz.ATIVA) {
-            throw new IllegalStateException("RN-8: Não é possível alterar matriz ativa");
+            throw new IllegalStateException("não é possível alterar matriz ativa");
         }
 
         boolean disciplinaExiste = itens.stream().anyMatch(i -> i.getDisciplinaId().equals(disciplina));

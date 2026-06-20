@@ -6,8 +6,8 @@ public interface OportunidadeBase {
     String getDescricao();
     int getCargaHorariaTotal();
     StatusOportunidade getStatus();
-    void publicar(SetorEstagiosId setorId);
-    void encerrar(MotivoEncerramento motivo);
-    void definirCriterios(SetorEstagiosId setorId, CriterioElegibilidade criterio);
+    Oportunidade.OportunidadePublicadaEvento publicar(SetorEstagiosId setorId);
+    Oportunidade.OportunidadeEncerradaEvento encerrar(MotivoEncerramento motivo);
+    Oportunidade.CriteriosDefinidosEvento definirCriterios(SetorEstagiosId setorId, CriterioElegibilidade criterio);
     void validarCandidatura(EstudanteId estudanteId);
 }

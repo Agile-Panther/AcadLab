@@ -21,10 +21,16 @@ public class Matricula {
 
     public Matricula(MatriculaId id, EstudanteId estudanteId, PeriodoLetivoId periodoLetivoId,
                       int limiteCreditos) {
-        notNull(id, "O id da matrícula não pode ser nulo");
-        notNull(estudanteId, "O id do estudante não pode ser nulo");
-        notNull(periodoLetivoId, "O id do período letivo não pode ser nulo");
-        isTrue(limiteCreditos > 0, "O limite de créditos deve ser positivo");
+        this(id, estudanteId, periodoLetivoId, limiteCreditos, new ValidacaoRegular());
+    }
+
+    public Matricula(MatriculaId id, EstudanteId estudanteId, PeriodoLetivoId periodoLetivoId,
+                      int limiteCreditos, EstrategiaMatricula estrategia) {
+        notNull(id, "o id da matrícula não pode ser nulo");
+        notNull(estudanteId, "o id do estudante não pode ser nulo");
+        notNull(periodoLetivoId, "o id do período letivo não pode ser nulo");
+        notNull(estrategia, "a estratégia de matrícula não pode ser nula");
+        isTrue(limiteCreditos > 0, "o limite de créditos deve ser positivo");
         this.id = id;
         this.estudanteId = estudanteId;
         this.periodoLetivoId = periodoLetivoId;
@@ -32,7 +38,7 @@ public class Matricula {
         this.status = StatusMatricula.EM_MONTAGEM;
         this.itens = new ArrayList<>();
         this.excecoes = new ArrayList<>();
-        this.estrategia = new ValidacaoRegular();
+        this.estrategia = estrategia;
     }
 
     private Matricula() {}
@@ -40,7 +46,8 @@ public class Matricula {
     public static Matricula reconstituir(MatriculaId id, EstudanteId estudanteId,
                                           PeriodoLetivoId periodoLetivoId, int limiteCreditos,
                                           StatusMatricula status, List<ItemMatricula> itens,
-                                          List<ExcecaoMatricula> excecoes) {
+                                          List<ExcecaoMatricula> excecoes,
+                                          EstrategiaMatricula estrategia) {
         Matricula m = new Matricula();
         m.id = id;
         m.estudanteId = estudanteId;
@@ -49,7 +56,7 @@ public class Matricula {
         m.status = status;
         m.itens = new ArrayList<>(itens);
         m.excecoes = new ArrayList<>(excecoes);
-        m.estrategia = new ValidacaoRegular();
+        m.estrategia = estrategia;
         return m;
     }
 
@@ -85,7 +92,7 @@ public class Matricula {
     }
 
     // US02 — Confirmar matrícula (RN-6 e RN-7)
-    public void confirmar(Map<TurmaId, Integer> vagasPorTurma) {
+    public MatriculaConfirmadaEvento confirmar(Map<TurmaId, Integer> vagasPorTurma) {
         notNull(vagasPorTurma, "O mapa de vagas não pode ser nulo");
         isTrue(status == StatusMatricula.EM_MONTAGEM,
                 "Apenas matrículas em montagem podem ser confirmadas");
@@ -95,7 +102,7 @@ public class Matricula {
             if (item.getStatus() != StatusItemMatricula.SELECIONADO) continue;
             Integer vagas = vagasPorTurma.get(item.getTurmaId());
             isTrue(vagas != null && vagas > 0,
-                    "Não há vagas disponíveis na turma " + item.getTurmaId() + " (RN-6)");
+                    "não há vagas disponíveis na turma " + item.getTurmaId());
         }
 
         verificarConflitoHorario();
@@ -106,6 +113,7 @@ public class Matricula {
             }
         }
         this.status = StatusMatricula.CONFIRMADA;
+        return new MatriculaConfirmadaEvento(this);
     }
 
     // US03 — Ajuste de matrícula (RN-8)
@@ -151,20 +159,22 @@ public class Matricula {
     }
 
     // US07 — Trancar período (RN-11 e RN-12)
-    public void trancarPeriodo(LocalDate hoje, LocalDate inicioTrancamento, LocalDate fimTrancamento,
-                                int totalTrancamentos, int limiteTrancamentos) {
+    public PeriodoTrancadoEvento trancarPeriodo(LocalDate hoje, LocalDate inicioTrancamento,
+                                                 LocalDate fimTrancamento,
+                                                 int totalTrancamentos, int limiteTrancamentos) {
         isTrue(status == StatusMatricula.CONFIRMADA,
-                "O trancamento de período só é permitido em matrículas confirmadas");
+                "trancamento de período só é permitido em matrículas confirmadas");
         isTrue(!hoje.isBefore(inicioTrancamento) && !hoje.isAfter(fimTrancamento),
-                "O trancamento de período só é permitido dentro da janela de trancamento (RN-11)");
+                "trancamento de período fora da janela de trancamento");
         isTrue(totalTrancamentos < limiteTrancamentos,
-                "O estudante atingiu o limite de trancamentos de período permitidos (RN-12)");
+                "limite de trancamentos de período atingido");
         for (ItemMatricula item : itens) {
             if (item.getStatus() == StatusItemMatricula.CONFIRMADO) {
                 item.trancar();
             }
         }
         this.status = StatusMatricula.TRANCADA_PERIODO;
+        return new PeriodoTrancadoEvento(this);
     }
 
     private void verificarConflitoHorario() {
@@ -206,4 +216,18 @@ public class Matricula {
     public StatusMatricula getStatus() { return status; }
     public List<ItemMatricula> getItens() { return Collections.unmodifiableList(itens); }
     public List<ExcecaoMatricula> getExcecoes() { return Collections.unmodifiableList(excecoes); }
+
+    public static abstract class MatriculaEvento {
+        private final Matricula matricula;
+        protected MatriculaEvento(Matricula matricula) { this.matricula = matricula; }
+        public Matricula getMatricula() { return matricula; }
+    }
+
+    public static class MatriculaConfirmadaEvento extends MatriculaEvento {
+        private MatriculaConfirmadaEvento(Matricula matricula) { super(matricula); }
+    }
+
+    public static class PeriodoTrancadoEvento extends MatriculaEvento {
+        private PeriodoTrancadoEvento(Matricula matricula) { super(matricula); }
+    }
 }

@@ -26,27 +26,29 @@ public class MobilidadeAcademica {
         this.planoEstudos = new ArrayList<>();
     }
 
-    public void autorizar(CoordenadorId coordenadorId) {
+    public MobilidadeAutorizadaEvento autorizar(CoordenadorId coordenadorId) {
         if (status != StatusMobilidade.SOLICITADA) {
             throw new IllegalStateException("mobilidade já se encontra autorizada");
         }
         this.status = StatusMobilidade.AUTORIZADA;
         this.coordenadorAutorizacao = coordenadorId;
+        return new MobilidadeAutorizadaEvento(this);
     }
 
-    public void iniciarPeriodoExterno(LocalDate dataInicio) {
+    public PeriodoExternoIniciadoEvento iniciarPeriodoExterno(LocalDate dataInicio) {
         if (status != StatusMobilidade.AUTORIZADA) {
-            throw new IllegalStateException("Mobilidade deve estar autorizada para iniciar");
+            throw new IllegalStateException("mobilidade deve estar autorizada para iniciar");
         }
         this.status = StatusMobilidade.EM_ANDAMENTO;
         this.dataInicioPeriodoExterno = dataInicio;
+        return new PeriodoExternoIniciadoEvento(this);
     }
 
     public void adicionarItemPlano(DisciplinaId disciplinaExterna, DisciplinaId disciplinaEquivalente,
                                    int cargaHorariaExterna, int cargaHorariaEquivalente) {
         var item = new ItemPlanoEstudos(disciplinaExterna, disciplinaEquivalente,
                 cargaHorariaExterna, cargaHorariaEquivalente);
-        item.autorizar(cargaHorariaExterna, cargaHorariaEquivalente);
+        item.autorizar();
         planoEstudos.add(item);
     }
 
@@ -80,11 +82,12 @@ public class MobilidadeAcademica {
         this.justificativaCancelamento = justificativa;
     }
 
-    public void confirmarCancelamento(CoordenadorId coordenadorId) {
+    public MobilidadeCanceladaEvento confirmarCancelamento(CoordenadorId coordenadorId) {
         if (justificativaCancelamento == null) {
             throw new IllegalStateException("não há justificativa de cancelamento registrada");
         }
         this.status = StatusMobilidade.CANCELADA;
+        return new MobilidadeCanceladaEvento(this);
     }
 
     public static MobilidadeAcademica reconstituir(MobilidadeAcademicaId id, EstudanteId estudanteId,
@@ -117,4 +120,22 @@ public class MobilidadeAcademica {
     public List<ItemPlanoEstudos> getPlanoEstudos() { return Collections.unmodifiableList(planoEstudos); }
     public String getJustificativaCancelamento() { return justificativaCancelamento; }
     public CoordenadorId getCoordenadorAutorizacao() { return coordenadorAutorizacao; }
+
+    public static abstract class MobilidadeEvento {
+        private final MobilidadeAcademica mobilidade;
+        protected MobilidadeEvento(MobilidadeAcademica mobilidade) { this.mobilidade = mobilidade; }
+        public MobilidadeAcademica getMobilidade() { return mobilidade; }
+    }
+
+    public static class MobilidadeAutorizadaEvento extends MobilidadeEvento {
+        private MobilidadeAutorizadaEvento(MobilidadeAcademica mobilidade) { super(mobilidade); }
+    }
+
+    public static class PeriodoExternoIniciadoEvento extends MobilidadeEvento {
+        private PeriodoExternoIniciadoEvento(MobilidadeAcademica mobilidade) { super(mobilidade); }
+    }
+
+    public static class MobilidadeCanceladaEvento extends MobilidadeEvento {
+        private MobilidadeCanceladaEvento(MobilidadeAcademica mobilidade) { super(mobilidade); }
+    }
 }

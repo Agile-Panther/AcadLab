@@ -21,12 +21,10 @@ public class ItemPlanoEstudos {
         this.resultadoRegistrado = false;
     }
 
-    public void autorizar(int cargaHorariaExterna, int cargaHorariaEquivalente) {
-        if (cargaHorariaExterna < cargaHorariaEquivalente) {
+    public void autorizar() {
+        if (this.cargaHorariaExterna < this.cargaHorariaEquivalente) {
             throw new IllegalStateException("carga horária externa é inferior à exigida para equivalência");
         }
-        this.cargaHorariaExterna = cargaHorariaExterna;
-        this.cargaHorariaEquivalente = cargaHorariaEquivalente;
         this.status = StatusItemPlano.AUTORIZADO;
     }
 

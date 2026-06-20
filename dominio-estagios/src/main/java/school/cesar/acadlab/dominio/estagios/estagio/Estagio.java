@@ -30,7 +30,7 @@ public class Estagio {
         this.relatorios = new ArrayList<>();
     }
 
-    public void submeterRelatorio(int numero, String descricao) {
+    public RelatorioSubmetidoEvento submeterRelatorio(int numero, String descricao) {
         if (status != StatusEstagio.EM_ANDAMENTO) {
             throw new IllegalStateException("relatório só pode ser submetido com estágio em andamento");
         }
@@ -39,9 +39,10 @@ public class Estagio {
             throw new IllegalStateException("relatório com este número já foi submetido");
         }
         relatorios.add(new Relatorio(numero, descricao));
+        return new RelatorioSubmetidoEvento(this);
     }
 
-    public void avaliarRelatorio(int numero, StatusRelatorio resultado) {
+    public RelatorioAvaliadoEvento avaliarRelatorio(int numero, StatusRelatorio resultado) {
         if (resultado == StatusRelatorio.PENDENTE) {
             throw new IllegalArgumentException("resultado da avaliação não pode ser PENDENTE");
         }
@@ -50,20 +51,41 @@ public class Estagio {
             throw new IllegalStateException("apenas relatórios pendentes podem ser avaliados");
         }
         relatorio.avaliar(resultado);
+        return new RelatorioAvaliadoEvento(this);
     }
 
-    public void solicitarEncerramento() {
+    public EncerramentoSolicitadoEvento solicitarEncerramento() {
         if (status != StatusEstagio.EM_ANDAMENTO) {
             throw new IllegalStateException("encerramento já solicitado para este estágio");
         }
         this.status = StatusEstagio.ENCERRAMENTO_SOLICITADO;
+        return new EncerramentoSolicitadoEvento(this);
     }
 
-    public void homologarEncerramento(CoordenadorId coordenadorId) {
+    public EstagioEncerradoEvento homologarEncerramento(CoordenadorId coordenadorId) {
         if (status != StatusEstagio.ENCERRAMENTO_SOLICITADO) {
             throw new IllegalStateException("não há solicitação de encerramento para homologar");
         }
         this.status = StatusEstagio.ENCERRADO;
+        return new EstagioEncerradoEvento(this);
+    }
+
+    public static abstract class EstagioEvento {
+        private final Estagio estagio;
+        protected EstagioEvento(Estagio estagio) { this.estagio = estagio; }
+        public Estagio getEstagio() { return estagio; }
+    }
+    public static class RelatorioSubmetidoEvento extends EstagioEvento {
+        private RelatorioSubmetidoEvento(Estagio estagio) { super(estagio); }
+    }
+    public static class RelatorioAvaliadoEvento extends EstagioEvento {
+        private RelatorioAvaliadoEvento(Estagio estagio) { super(estagio); }
+    }
+    public static class EncerramentoSolicitadoEvento extends EstagioEvento {
+        private EncerramentoSolicitadoEvento(Estagio estagio) { super(estagio); }
+    }
+    public static class EstagioEncerradoEvento extends EstagioEvento {
+        private EstagioEncerradoEvento(Estagio estagio) { super(estagio); }
     }
 
     public static Estagio reconstituir(EstagioId id, OportunidadeId oportunidadeId,

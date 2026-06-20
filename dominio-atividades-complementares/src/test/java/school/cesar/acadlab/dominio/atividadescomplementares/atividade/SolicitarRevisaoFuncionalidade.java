@@ -1,6 +1,8 @@
 package school.cesar.acadlab.dominio.atividadescomplementares.atividade;
 
-import io.cucumber.java.en.*;
+import io.cucumber.java.pt.Dado;
+import io.cucumber.java.pt.Quando;
+import io.cucumber.java.pt.Entao;
 import org.junit.jupiter.api.Assertions;
 import school.cesar.acadlab.dominio.atividadescomplementares.*;
 import java.time.LocalDate;
@@ -13,7 +15,7 @@ public class SolicitarRevisaoFuncionalidade {
         this.ctx = ctx;
     }
 
-    @Given("uma atividade complementar no estado indeferida")
+    @Dado("uma atividade complementar no estado indeferida")
     public void atividadeNoEstadoIndeferida() {
         ctx.verificadorVinculo.setVinculo(true);
         ctx.verificadorLimite.setExcede(false);
@@ -23,22 +25,22 @@ public class SolicitarRevisaoFuncionalidade {
         ctx.servico.indeferir(atividadeId, "Documentação insuficiente");
     }
 
-    @Given("a atividade não foi contabilizada na integralização curricular")
+    @Dado("a atividade não foi contabilizada na integralização curricular")
     public void atividadeNaoContabilizada() {
         ctx.verificadorContabilizacao.setContabilizada(false);
     }
 
-    @Given("a atividade já foi contabilizada na integralização curricular")
+    @Dado("a atividade já foi contabilizada na integralização curricular")
     public void atividadeJaContabilizada() {
         ctx.verificadorContabilizacao.setContabilizada(true);
     }
 
-    @When("o estudante solicita revisão com justificativa {string}")
+    @Quando("o estudante solicita revisão com justificativa {string}")
     public void estudanteSolicitaRevisao(String justificativa) {
         ctx.servico.solicitarRevisao(atividadeId, justificativa);
     }
 
-    @When("o estudante tenta solicitar revisão da atividade")
+    @Quando("o estudante tenta solicitar revisão da atividade")
     public void estudanteTentaSolicitarRevisao() {
         try {
             ctx.servico.solicitarRevisao(atividadeId, "justificativa");
@@ -47,15 +49,9 @@ public class SolicitarRevisaoFuncionalidade {
         }
     }
 
-    @Then("a atividade deve ter status REVISAO_SOLICITADA")
+    @Entao("a atividade deve ter status REVISAO_SOLICITADA")
     public void atividadeDeveTerStatusRevisaoSolicitada() {
         var atividade = ctx.repositorio.obter(atividadeId);
         Assertions.assertEquals(StatusAtividade.REVISAO_SOLICITADA, atividade.getStatus());
-    }
-
-    @Then("deve ser lançada uma exceção de atividade já contabilizada")
-    public void deveSerLancadaExcecaoContabilizada() {
-        Assertions.assertNotNull(ctx.excecao);
-        Assertions.assertInstanceOf(IllegalStateException.class, ctx.excecao);
     }
 }

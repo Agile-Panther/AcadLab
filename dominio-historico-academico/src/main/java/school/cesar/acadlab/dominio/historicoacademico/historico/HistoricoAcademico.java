@@ -76,7 +76,7 @@ public class HistoricoAcademico {
 
     // RN-1: apenas resultados de turmas encerradas podem ser consolidados
     // RN-2: situação acadêmica final é obrigatória
-    public void consolidarRegistro(RegistroDisciplinaId registroId, DisciplinaId disciplinaId,
+    public RegistroConsolidadoEvento consolidarRegistro(RegistroDisciplinaId registroId, DisciplinaId disciplinaId,
                                     TurmaId turmaId, PeriodoLetivoId periodoLetivoId,
                                     double nota, double frequencia,
                                     SituacaoAcademica situacao, boolean turmaEncerrada) {
@@ -90,10 +90,11 @@ public class HistoricoAcademico {
         }
         registros.add(new RegistroDisciplina(registroId, disciplinaId, turmaId, periodoLetivoId,
                 nota, frequencia, situacao));
+        return new RegistroConsolidadoEvento(this);
     }
 
     // RN-5: atualização manual registrada com trilha de auditoria
-    public void atualizarSituacaoDiscente(SituacaoDiscente novaSituacao, SecretariaId responsavel,
+    public SituacaoDiscenteAtualizadaEvento atualizarSituacaoDiscente(SituacaoDiscente novaSituacao, SecretariaId responsavel,
                                            String justificativa, LocalDate data) {
         notNull(novaSituacao, "A nova situação não pode ser nula");
         notNull(responsavel, "O responsável não pode ser nulo");
@@ -102,6 +103,7 @@ public class HistoricoAcademico {
         trilhaAuditoria.add(new EntradaAuditoria(this.situacaoDiscente, novaSituacao,
                 responsavel, justificativa, data));
         this.situacaoDiscente = novaSituacao;
+        return new SituacaoDiscenteAtualizadaEvento(this);
     }
 
     // RN-4: acompanhamento apenas para estudante com matrícula ativa ou situação regular
@@ -128,7 +130,7 @@ public class HistoricoAcademico {
     }
 
     // RN-8: retificação preserva resultado anterior com rastreabilidade
-    public void retificarRegistro(RetificacaoId retificacaoId, RegistroDisciplinaId registroId,
+    public RetificacaoRegistradaEvento retificarRegistro(RetificacaoId retificacaoId, RegistroDisciplinaId registroId,
                                    SituacaoAcademica novaSituacao, SecretariaId responsavel,
                                    String justificativa, LocalDate data) {
         notNull(retificacaoId, "O id da retificação não pode ser nulo");
@@ -142,10 +144,29 @@ public class HistoricoAcademico {
         retificacoes.add(new Retificacao(retificacaoId, registroId, situacaoAnterior,
                 novaSituacao, responsavel, justificativa, data));
         registro.retificar(novaSituacao);
+        return new RetificacaoRegistradaEvento(this);
     }
 
     // Padrão Iterator: percorre registros sem expor a lista interna
     public IteradorHistorico<RegistroDisciplina> iteradorRegistros() {
         return new IteradorRegistrosDisciplina(Collections.unmodifiableList(registros));
+    }
+
+    public static abstract class HistoricoEvento {
+        private final HistoricoAcademico historico;
+        protected HistoricoEvento(HistoricoAcademico historico) { this.historico = historico; }
+        public HistoricoAcademico getHistorico() { return historico; }
+    }
+
+    public static class RegistroConsolidadoEvento extends HistoricoEvento {
+        private RegistroConsolidadoEvento(HistoricoAcademico historico) { super(historico); }
+    }
+
+    public static class SituacaoDiscenteAtualizadaEvento extends HistoricoEvento {
+        private SituacaoDiscenteAtualizadaEvento(HistoricoAcademico historico) { super(historico); }
+    }
+
+    public static class RetificacaoRegistradaEvento extends HistoricoEvento {
+        private RetificacaoRegistradaEvento(HistoricoAcademico historico) { super(historico); }
     }
 }

@@ -1,6 +1,8 @@
 package school.cesar.acadlab.dominio.gestaofinanceira.cobranca;
 
-import io.cucumber.java.en.*;
+import io.cucumber.java.pt.Dado;
+import io.cucumber.java.pt.Quando;
+import io.cucumber.java.pt.Entao;
 import org.junit.jupiter.api.Assertions;
 import school.cesar.acadlab.dominio.gestaofinanceira.*;
 import java.math.BigDecimal;
@@ -17,7 +19,7 @@ public class ExtratoComprovanteFuncionalidade {
         this.ctx = ctx;
     }
 
-    @Given("o contrato {int} possui {int} cobranças geradas")
+    @Dado("o contrato {int} possui {int} cobranças geradas")
     public void contratoPossuiCobrancasGeradas(int contratoId, int quantidade) {
         ctx.verificadorMatricula.setMatricula(true);
         for (int i = 0; i < quantidade; i++) {
@@ -26,7 +28,7 @@ public class ExtratoComprovanteFuncionalidade {
         }
     }
 
-    @Given("uma cobrança paga com referência {string} para o contrato {int}")
+    @Dado("uma cobrança paga com referência {string} para o contrato {int}")
     public void cobrancaPagaComReferencia(String referencia, int contratoId) {
         ctx.verificadorMatricula.setMatricula(true);
         var cobranca = ctx.servico.gerarCobranca(new ContratoId(contratoId), new EstudanteId(300 + contratoId),
@@ -35,7 +37,7 @@ public class ExtratoComprovanteFuncionalidade {
         ctx.servico.registrarPagamento(cobrancaId, new BigDecimal("1500.00"), LocalDate.now(), referencia);
     }
 
-    @Given("uma cobrança aberta sem pagamento para o contrato {int}")
+    @Dado("uma cobrança aberta sem pagamento para o contrato {int}")
     public void cobrancaAbertaSemPagamento(int contratoId) {
         ctx.verificadorMatricula.setMatricula(true);
         var cobranca = ctx.servico.gerarCobranca(new ContratoId(contratoId), new EstudanteId(400 + contratoId),
@@ -43,17 +45,17 @@ public class ExtratoComprovanteFuncionalidade {
         cobrancaId = cobranca.getId();
     }
 
-    @When("consulto o extrato do contrato {int}")
+    @Quando("consulto o extrato do contrato {int}")
     public void consultoExtrato(int contratoId) {
         extrato = ctx.servico.consultarExtrato(new ContratoId(contratoId));
     }
 
-    @When("solicito o comprovante da cobrança")
+    @Quando("solicito o comprovante da cobrança")
     public void solicitoComprovante() {
         comprovante = ctx.servico.emitirComprovante(cobrancaId);
     }
 
-    @When("solicito o comprovante da cobrança sem pagamento")
+    @Quando("solicito o comprovante da cobrança sem pagamento")
     public void solicitoComprovanteSemPagamento() {
         try {
             ctx.servico.emitirComprovante(cobrancaId);
@@ -62,20 +64,14 @@ public class ExtratoComprovanteFuncionalidade {
         }
     }
 
-    @Then("o extrato deve conter {int} cobranças")
+    @Entao("o extrato deve conter {int} cobranças")
     public void extratoDeveConterCobrancas(int quantidade) {
         Assertions.assertEquals(quantidade, extrato.size());
     }
 
-    @Then("o comprovante deve conter a referência {string}")
+    @Entao("o comprovante deve conter a referência {string}")
     public void comprovanteDeveConterReferencia(String referencia) {
         Assertions.assertNotNull(comprovante);
         Assertions.assertEquals(referencia, comprovante.getReferencia());
-    }
-
-    @Then("deve ser lançada uma exceção de comprovante indisponível")
-    public void deveSerLancadaExcecaoComprovanteIndisponivel() {
-        Assertions.assertNotNull(ctx.excecao);
-        Assertions.assertInstanceOf(IllegalStateException.class, ctx.excecao);
     }
 }

@@ -23,31 +23,49 @@ public class Oportunidade implements OportunidadeBase {
     }
 
     @Override
-    public void publicar(SetorEstagiosId setorId) {
+    public OportunidadePublicadaEvento publicar(SetorEstagiosId setorId) {
         notNull(setorId, "Id do setor de estágios obrigatório para publicação");
         if (status != StatusOportunidade.CADASTRADA) {
             throw new IllegalStateException("publicação só pode ser realizada em oportunidades cadastradas");
         }
         this.status = StatusOportunidade.PUBLICADA;
+        return new OportunidadePublicadaEvento(this);
     }
 
     @Override
-    public void encerrar(MotivoEncerramento motivo) {
+    public OportunidadeEncerradaEvento encerrar(MotivoEncerramento motivo) {
         notNull(motivo, "Motivo de encerramento obrigatório");
         if (status != StatusOportunidade.PUBLICADA) {
             throw new IllegalStateException("somente oportunidades publicadas podem ser encerradas");
         }
         this.status = StatusOportunidade.ENCERRADA;
+        return new OportunidadeEncerradaEvento(this);
     }
 
     @Override
-    public void definirCriterios(SetorEstagiosId setorId, CriterioElegibilidade criterio) {
+    public CriteriosDefinidosEvento definirCriterios(SetorEstagiosId setorId, CriterioElegibilidade criterio) {
         notNull(setorId, "Id do setor de estágios obrigatório");
         notNull(criterio, "Critério de elegibilidade obrigatório");
         if (status == StatusOportunidade.PUBLICADA || status == StatusOportunidade.ENCERRADA) {
             throw new IllegalStateException("critérios não podem ser alterados após a publicação");
         }
         this.criterioElegibilidade = criterio;
+        return new CriteriosDefinidosEvento(this);
+    }
+
+    public static abstract class OportunidadeEvento {
+        private final Oportunidade oportunidade;
+        protected OportunidadeEvento(Oportunidade oportunidade) { this.oportunidade = oportunidade; }
+        public Oportunidade getOportunidade() { return oportunidade; }
+    }
+    public static class OportunidadePublicadaEvento extends OportunidadeEvento {
+        private OportunidadePublicadaEvento(Oportunidade oportunidade) { super(oportunidade); }
+    }
+    public static class OportunidadeEncerradaEvento extends OportunidadeEvento {
+        private OportunidadeEncerradaEvento(Oportunidade oportunidade) { super(oportunidade); }
+    }
+    public static class CriteriosDefinidosEvento extends OportunidadeEvento {
+        private CriteriosDefinidosEvento(Oportunidade oportunidade) { super(oportunidade); }
     }
 
     @Override

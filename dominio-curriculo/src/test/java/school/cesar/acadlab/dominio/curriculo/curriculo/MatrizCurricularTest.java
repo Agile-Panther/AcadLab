@@ -131,7 +131,7 @@ class MatrizCurricularTest {
 
         var excecao = assertThrows(IllegalStateException.class,
                 () -> matriz.adicionarDisciplina(disc2, TipoDisciplina.OPTATIVA, 60, 4));
-        assertTrue(excecao.getMessage().contains("RN-8"));
+        assertTrue(excecao.getMessage().contains("não é possível alterar matriz ativa"));
     }
 
     @Test
@@ -141,7 +141,7 @@ class MatrizCurricularTest {
 
         var excecao = assertThrows(IllegalStateException.class,
                 () -> matriz.removerDisciplina(disc1, repositorio));
-        assertTrue(excecao.getMessage().contains("RN-8"));
+        assertTrue(excecao.getMessage().contains("não é possível alterar matriz ativa"));
     }
 
     @Test
