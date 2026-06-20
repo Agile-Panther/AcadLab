@@ -28,7 +28,7 @@ public class MobilidadeAcademica {
 
     public void autorizar(CoordenadorId coordenadorId) {
         if (status != StatusMobilidade.SOLICITADA) {
-            throw new IllegalStateException("RN-1: Mobilidade não pode ser autorizada neste status");
+            throw new IllegalStateException("mobilidade já se encontra autorizada");
         }
         this.status = StatusMobilidade.AUTORIZADA;
         this.coordenadorAutorizacao = coordenadorId;
@@ -52,14 +52,14 @@ public class MobilidadeAcademica {
 
     public void registrarResultado(DisciplinaId disciplinaExterna, SecretariaId secretariaId) {
         if (secretariaId == null) {
-            throw new IllegalStateException("RN-5: Registro deve ser realizado pela secretaria");
+            throw new IllegalStateException("o registro deve ser realizado pela secretaria");
         }
         var item = encontrarItemPorDisciplinaExterna(disciplinaExterna);
         if (item.getStatus() != StatusItemPlano.AUTORIZADO) {
-            throw new IllegalStateException("RN-2: Apenas disciplinas do plano autorizado podem ter resultado registrado");
+            throw new IllegalStateException("apenas disciplinas do plano autorizado podem ter resultado registrado");
         }
         if (!item.isComprovanteAnexado()) {
-            throw new IllegalStateException("RN-4: Comprovante obrigatório antes do registro do resultado");
+            throw new IllegalStateException("comprovante de resultado é obrigatório");
         }
         item.registrarResultado();
         if (planoEstudos.stream().allMatch(ItemPlanoEstudos::isResultadoRegistrado)) {
@@ -74,15 +74,15 @@ public class MobilidadeAcademica {
 
     public void solicitarCancelamento(String justificativa, LocalDate hoje) {
         if (dataInicioPeriodoExterno != null && !hoje.isBefore(dataInicioPeriodoExterno)) {
-            throw new IllegalStateException("RN-7: Cancelamento restrito a mobilidades ainda não iniciadas");
+            throw new IllegalStateException("mobilidade não pode ser cancelada após o início do período externo");
         }
-        notBlank(justificativa, "RN-8: Justificativa obrigatória para cancelamento");
+        notBlank(justificativa, "justificativa de cancelamento é obrigatória");
         this.justificativaCancelamento = justificativa;
     }
 
     public void confirmarCancelamento(CoordenadorId coordenadorId) {
         if (justificativaCancelamento == null) {
-            throw new IllegalStateException("RN-8: Cancelamento deve ter justificativa antes de ser confirmado");
+            throw new IllegalStateException("não há justificativa de cancelamento registrada");
         }
         this.status = StatusMobilidade.CANCELADA;
     }
@@ -106,7 +106,7 @@ public class MobilidadeAcademica {
         return planoEstudos.stream()
                 .filter(i -> i.getDisciplinaExterna().equals(disciplinaExterna))
                 .findFirst()
-                .orElseThrow(() -> new IllegalStateException("Disciplina não encontrada no plano de estudos"));
+                .orElseThrow(() -> new IllegalStateException("disciplina não consta no plano de estudos autorizado"));
     }
 
     public MobilidadeAcademicaId getId() { return id; }

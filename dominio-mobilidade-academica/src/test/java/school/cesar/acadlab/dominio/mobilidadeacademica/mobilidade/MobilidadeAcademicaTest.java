@@ -34,10 +34,10 @@ class MobilidadeAcademicaTest {
     void autorizar_mobilidadeJaAutorizada_deveLancarExcecao() {
         var m = mobilidadeAutorizada();
         var excecao = assertThrows(IllegalStateException.class, () -> m.autorizar(coordenadorId));
-        assertTrue(excecao.getMessage().contains("RN-1"));
+        assertTrue(excecao.getMessage().contains("mobilidade já se encontra autorizada"));
     }
 
-    // RN-1: mobilidade solicitada pode ser autorizada
+    // mobilidade solicitada pode ser autorizada
     @Test
     void autorizar_mobilidadeSolicitada_deveAlterarStatusParaAutorizada() {
         var m = novaMobilidade();
@@ -61,7 +61,7 @@ class MobilidadeAcademicaTest {
         var m = mobilidadeAutorizada();
         var excecao = assertThrows(IllegalStateException.class,
                 () -> m.adicionarItemPlano(disciplinaExterna, disciplinaEquivalente, 30, 60));
-        assertTrue(excecao.getMessage().contains("RN-3"));
+        assertTrue(excecao.getMessage().contains("carga horária externa é inferior à exigida para equivalência"));
     }
 
     // RN-3: item com carga horária suficiente é autorizado
@@ -79,7 +79,7 @@ class MobilidadeAcademicaTest {
         var m = mobilidadeComItemAutorizado();
         var excecao = assertThrows(IllegalStateException.class,
                 () -> m.registrarResultado(disciplinaExterna, secretariaId));
-        assertTrue(excecao.getMessage().contains("RN-4"));
+        assertTrue(excecao.getMessage().contains("comprovante de resultado é obrigatório"));
     }
 
     // RN-4: registro com comprovante funciona
@@ -98,7 +98,7 @@ class MobilidadeAcademicaTest {
         m.anexarComprovante(disciplinaExterna);
         var excecao = assertThrows(IllegalStateException.class,
                 () -> m.registrarResultado(disciplinaExterna, null));
-        assertTrue(excecao.getMessage().contains("RN-5"));
+        assertTrue(excecao.getMessage().contains("o registro deve ser realizado pela secretaria"));
     }
 
     // RN-7: cancelamento após início do período lança exceção
@@ -110,7 +110,7 @@ class MobilidadeAcademicaTest {
         LocalDate hoje = LocalDate.of(2025, 3, 15);
         var excecao = assertThrows(IllegalStateException.class,
                 () -> m.solicitarCancelamento("Motivo qualquer", hoje));
-        assertTrue(excecao.getMessage().contains("RN-7"));
+        assertTrue(excecao.getMessage().contains("mobilidade não pode ser cancelada após o início do período externo"));
     }
 
     // RN-7: cancelamento antes do início funciona
@@ -128,7 +128,7 @@ class MobilidadeAcademicaTest {
         var m = novaMobilidade();
         var excecao = assertThrows(IllegalStateException.class,
                 () -> m.confirmarCancelamento(coordenadorId));
-        assertTrue(excecao.getMessage().contains("RN-8"));
+        assertTrue(excecao.getMessage().contains("não há justificativa de cancelamento registrada"));
     }
 
     // Status final CONCLUIDA quando todos os itens têm resultado
