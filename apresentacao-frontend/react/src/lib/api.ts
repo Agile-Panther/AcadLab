@@ -37,6 +37,13 @@ async function put<T>(path: string, body?: unknown): Promise<T> {
   return (text ? JSON.parse(text) : undefined) as T;
 }
 
+async function del<T>(path: string): Promise<T> {
+  const res = await fetch(`/backend/${path}`, { method: "DELETE" });
+  if (!res.ok) throw new Error(await parseErrorMessage(res));
+  const text = await res.text();
+  return (text ? JSON.parse(text) : undefined) as T;
+}
+
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 export interface PeriodoLetivoResumo {
@@ -219,6 +226,13 @@ export interface OportunidadeResumo {
   status: string;
 }
 
+export interface CandidaturaResumo {
+  id: number;
+  oportunidadeId: number;
+  estudanteId: number;
+  status: string;
+}
+
 // ─── API ──────────────────────────────────────────────────────────────────────
 
 export const api = {
@@ -330,7 +344,20 @@ export const api = {
     listAll: () => get<OportunidadeResumo[]>(`oportunidades`).then(r => r ?? []),
     getById: (id: number) => get<OportunidadeResumo>(`oportunidades/${id}`),
     criar: (body: { empresaId: number; descricao: string; cargaHorariaTotal: number }) =>
-      post<void>(`oportunidades`, body),
+      post<number>(`oportunidades`, body),
+    publicar: (id: number, setorId: number) =>
+      put<void>(`oportunidades/${id}/publicar`, { setorId }),
+    candidatar: (id: number, estudanteId: number) =>
+      put<number>(`oportunidades/${id}/candidatura`, { estudanteId }),
+    excluir: (id: number) => del<void>(`oportunidades/${id}`),
+  },
+  candidaturas: {
+    listAll: () => get<CandidaturaResumo[]>(`candidaturas`).then(r => r ?? []),
+    listByEstudante: (estudanteId: number) =>
+      get<CandidaturaResumo[]>(`candidaturas/estudante/${estudanteId}`).then(r => r ?? []),
+    deferir: (id: number) => put<void>(`candidaturas/${id}/deferir`),
+    indeferir: (id: number) => put<void>(`candidaturas/${id}/indeferir`),
+    cancelar: (id: number) => put<void>(`candidaturas/${id}/cancelar`),
   },
   estagios: {
     listByEstudante: (estudanteId: number) =>

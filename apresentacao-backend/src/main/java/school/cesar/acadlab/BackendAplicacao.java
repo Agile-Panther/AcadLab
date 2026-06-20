@@ -215,6 +215,12 @@ public class BackendAplicacao {
     }
 
     @Bean
+    school.cesar.acadlab.aplicacao.estagios.CandidaturaServicoAplicacao candidaturaServicoAplicacao(
+            school.cesar.acadlab.aplicacao.estagios.CandidaturaRepositorioAplicacao repositorio) {
+        return new school.cesar.acadlab.aplicacao.estagios.CandidaturaServicoAplicacao(repositorio);
+    }
+
+    @Bean
     IntegralizacaoServico integralizacaoServico(IntegralizacaoRepositorio repositorio) {
         return new IntegralizacaoServico(repositorio);
     }

@@ -1,5 +1,6 @@
 package school.cesar.acadlab.apresentacao.estagios;
 
+import static org.springframework.web.bind.annotation.RequestMethod.DELETE;
 import static org.springframework.web.bind.annotation.RequestMethod.GET;
 import static org.springframework.web.bind.annotation.RequestMethod.POST;
 import static org.springframework.web.bind.annotation.RequestMethod.PUT;
@@ -19,6 +20,7 @@ import school.cesar.acadlab.dominio.estagios.candidatura.CandidaturaId;
 import school.cesar.acadlab.dominio.estagios.oportunidade.EmpresaId;
 import school.cesar.acadlab.dominio.estagios.oportunidade.EstudanteId;
 import school.cesar.acadlab.dominio.estagios.oportunidade.OportunidadeId;
+import school.cesar.acadlab.dominio.estagios.oportunidade.SetorEstagiosId;
 
 @RestController
 @RequestMapping("backend/oportunidades")
@@ -50,6 +52,18 @@ class OportunidadeControlador {
                 request.cargaHorariaTotal()).getValor();
     }
 
+    @RequestMapping(method = PUT, path = "{id}/publicar")
+    void publicar(@PathVariable int id, @RequestBody PublicarRequest request) {
+        servico.publicarOportunidade(
+                new OportunidadeId(id),
+                new SetorEstagiosId(request.setorId()));
+    }
+
+    @RequestMapping(method = DELETE, path = "{id}")
+    void excluir(@PathVariable int id) {
+        servicoAplicacao.excluir(id);
+    }
+
     @RequestMapping(method = PUT, path = "{id}/candidatura")
     int candidatar(@PathVariable int id, @RequestBody CandidatarRequest request) {
         return servico.registrarCandidatura(
@@ -77,6 +91,7 @@ class OportunidadeControlador {
     }
 
     record CadastrarOportunidadeRequest(int empresaId, String descricao, int cargaHorariaTotal) {}
+    record PublicarRequest(int setorId) {}
     record CandidatarRequest(int estudanteId) {}
     record EmpresaRequest(int empresaId) {}
 }
