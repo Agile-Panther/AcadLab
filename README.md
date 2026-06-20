@@ -8,6 +8,8 @@
 
 As seções [Mapa por Integrante](#mapa-por-integrante) e [Padrões de Projeto — Mapa de Arquivos](#padrões-de-projeto--mapa-de-arquivos) foram criadas para localizar rapidamente, por aluno, os arquivos de cada funcionalidade e os arquivos onde cada padrão de projeto está implementado.
 
+O mapa de histórias do usuário está disponível no Miro: [User Story Map — AcadLab](https://miro.com/app/board/uXjVHD2I-jQ=/?share_link_id=491267891599)
+
 ---
 
 ## Visão Geral
@@ -26,9 +28,9 @@ O sistema se organiza em três eixos:
 
 | Integrante | Funcionalidades | Padrão de Projeto | Módulo(s) |
 |---|---|---|---|
-| **Julia** | F-01 · Gestão Curricular · F-06 · Histórico Acadêmico | Iterator | `dominio-curriculo` · `dominio-historico-academico` |
-| **Neto** | F-02 · Período Letivo · F-05 · Gestão Pedagógica | Template Method | `dominio-oferta-academica` · `dominio-gestao-pedagogica` |
-| **Clara** | F-03 · Oferta de Turmas · F-14 · Estágios | Decorator | `dominio-oferta-academica` · `dominio-estagios` |
+| **Julia Torres** | F-01 · Gestão Curricular · F-06 · Histórico Acadêmico | Iterator | `dominio-curriculo` · `dominio-historico-academico` |
+| **Maria Claudia** | F-02 · Período Letivo · F-05 · Gestão Pedagógica | Template Method | `dominio-oferta-academica` · `dominio-gestao-pedagogica` |
+| **Maria Clara** | F-03 · Oferta de Turmas · F-14 · Estágios | Decorator | `dominio-oferta-academica` · `dominio-estagios` |
 | **Vinicius** | F-04 · Matrícula · F-12 · Mobilidade Acadêmica | Strategy | `dominio-matricula` · `dominio-mobilidade-academica` |
 | **Bernardo** | F-07 · Secretaria Virtual · F-08 · Integralização | Proxy | `dominio-secretaria-virtual` · `dominio-integralizacao-curricular` |
 | **Matheus** | F-10 · Permanência Acadêmica · F-11 · Apoio Psicopedagógico | Observer | `dominio-permanencia-academica` |
@@ -44,7 +46,7 @@ O prefixo `src/main/java/school/cesar/acadlab/` é omitido nos caminhos abaixo p
 
 ---
 
-### Iterator — Julia Teixeira
+### Iterator — Julia Torres
 
 **Intenção:** fornecer uma forma de percorrer os registros do histórico acadêmico sem expor a estrutura interna da coleção (`List<RegistroDisciplina>`).
 
@@ -59,7 +61,7 @@ O prefixo `src/main/java/school/cesar/acadlab/` é omitido nos caminhos abaixo p
 
 ---
 
-### Template Method — Neto
+### Template Method — Maria Claudia
 
 **Intenção:** definir o esqueleto do fluxo pedagógico — abertura → registro de aulas → frequência → avaliações → lançamento de notas → fechamento do resultado — no serviço base, delegando cada passo ao agregado `DiarioTurma`.
 
@@ -77,7 +79,7 @@ O prefixo `src/main/java/school/cesar/acadlab/` é omitido nos caminhos abaixo p
 
 ---
 
-### Decorator — Clara
+### Decorator — Maria Clara
 
 **Intenção:** adicionar comportamentos opcionais — lista de espera e modalidade online — às turmas ofertadas, e critério de elegibilidade às oportunidades de estágio, sem alterar as classes base.
 
@@ -181,12 +183,12 @@ O prefixo `src/main/java/school/cesar/acadlab/` é omitido nos caminhos abaixo p
 
 | F | Funcionalidade | Responsável | Padrão | Resumo |
 |---|---|---|---|---|
-| **F-01** | Gestão Curricular do Curso | Julia | Iterator | Criar e versionar matriz curricular com disciplinas, pré-requisitos, correquisitos e ciclo de vida ativo/inativo |
-| **F-02** | Planejamento do Período Letivo | Neto | Template Method | Definir semestre acadêmico com janelas que habilitam ou bloqueiam operações por intervalo de datas |
-| **F-03** | Oferta de Turmas | Clara | Decorator | Configurar turmas com professor, sala e horário; adicionar comportamentos dinâmicos sem alterar a classe base |
+| **F-01** | Gestão Curricular do Curso | Julia Torres | Iterator | Criar e versionar matriz curricular com disciplinas, pré-requisitos, correquisitos e ciclo de vida ativo/inativo |
+| **F-02** | Planejamento do Período Letivo | Maria Claudia | Template Method | Definir semestre acadêmico com janelas que habilitam ou bloqueiam operações por intervalo de datas |
+| **F-03** | Oferta de Turmas | Maria Clara | Decorator | Configurar turmas com professor, sala e horário; adicionar comportamentos dinâmicos sem alterar a classe base |
 | **F-04** | Montagem e Ajuste de Matrícula | Vinicius | Strategy | Plano de matrícula, confirmação, ajustes e trancamento com validação de elegibilidade por estratégia intercambiável |
-| **F-05** | Gestão Pedagógica da Turma | Neto | Template Method | Diário de turma: registro de aulas, frequência, avaliações, notas e resultado final com recuperação |
-| **F-06** | Gestão do Histórico Acadêmico | Julia | Iterator | Consolidação de resultados, aproveitamentos externos, retificações e acompanhamentos; histórico oficial via Iterator |
+| **F-05** | Gestão Pedagógica da Turma | Maria Claudia | Template Method | Diário de turma: registro de aulas, frequência, avaliações, notas e resultado final com recuperação |
+| **F-06** | Gestão do Histórico Acadêmico | Julia Torres | Iterator | Consolidação de resultados, aproveitamentos externos, retificações e acompanhamentos; histórico oficial via Iterator |
 | **F-07** | Secretaria Virtual Acadêmica | Bernardo | Proxy | Abertura e tramitação de protocolos acadêmicos com controle de permissões via Proxy |
 | **F-08** | Validação de Integralização e Colação | Bernardo | Proxy | Análise de cumprimento de requisitos curriculares e registro formal da colação de grau |
 | **F-09** | Atividades Complementares | Jera | Observer | Submissão e análise de horas extracurriculares; eventos de deferimento notificam outros contextos |
@@ -194,19 +196,19 @@ O prefixo `src/main/java/school/cesar/acadlab/` é omitido nos caminhos abaixo p
 | **F-11** | Apoio Psicopedagógico | Matheus | Observer | Solicitação, triagem, atendimentos e encerramento de caso com sigilo de atendimento |
 | **F-12** | Mobilidade Acadêmica | Vinicius | Strategy | Intercâmbio externo com plano de estudos, equivalências e registro de resultados no histórico |
 | **F-13** | Gestão Financeira Acadêmica | Jera | Observer | Cobranças, pagamentos, descontos, contestações e comprovantes; eventos de pagamento notificam outros contextos |
-| **F-14** | Centro de Estágios e Oportunidades | Clara | Decorator | Publicação de vagas, candidatura, formalização do estágio e entrega de relatórios |
+| **F-14** | Centro de Estágios e Oportunidades | Maria Clara | Decorator | Publicação de vagas, candidatura, formalização do estágio e entrega de relatórios |
 
 <details>
 <summary><strong>Regras de negócio selecionadas por funcionalidade</strong></summary>
 
-### F-01 — Gestão Curricular (Julia)
+### F-01 — Gestão Curricular (Julia Torres)
 - A mesma disciplina não pode aparecer mais de uma vez na mesma matriz curricular
 - A matriz só pode ser ativada se a carga horária e os créditos das disciplinas forem suficientes para o mínimo exigido
 - Apenas uma versão da matriz pode estar ativa por curso ao mesmo tempo
 - Pré-requisitos cíclicos são rejeitados — o sistema percorre o grafo e detecta caminhos circulares
 - Correquisitos devem pertencer à mesma matriz curricular
 
-### F-02 — Período Letivo (Neto)
+### F-02 — Período Letivo (Maria Claudia)
 - Janela acadêmica define o intervalo em que uma operação é permitida; fora da janela, a operação é bloqueada
 - O período encerrado torna os registros imutáveis sem reabertura formal autorizada
 
@@ -214,10 +216,10 @@ O prefixo `src/main/java/school/cesar/acadlab/` é omitido nos caminhos abaixo p
 - O plano de matrícula é provisório — não gera vínculo acadêmico até a confirmação
 - A elegibilidade é verificada por estratégia (regular, exceção, mobilidade), sem alterar o serviço principal
 
-### F-05 — Gestão Pedagógica (Neto)
+### F-05 — Gestão Pedagógica (Maria Claudia)
 - Reprovação por frequência é aplicada quando a presença fica abaixo do mínimo, independentemente da média
 
-### F-06 — Histórico Acadêmico (Julia)
+### F-06 — Histórico Acadêmico (Julia Torres)
 - Apenas resultados de turmas encerradas podem ser consolidados (RN-1)
 - O histórico oficial retorna somente registros consolidados de períodos encerrados, via Iterator (RN-10)
 - Retificação exige responsável, justificativa e registra trilha de auditoria
@@ -236,18 +238,18 @@ O prefixo `src/main/java/school/cesar/acadlab/` é omitido nos caminhos abaixo p
 acadlab-pai/
 │
 ├── dominio-compartilhado/            ← Shared Kernel — EstudanteId, CursoId, eventos de domínio
-├── dominio-curriculo/                ← F-01 (Julia)
-├── dominio-oferta-academica/         ← F-02 (Neto) + F-03 (Clara) — sub-pacotes separados
+├── dominio-curriculo/                ← F-01 (Julia Torres)
+├── dominio-oferta-academica/         ← F-02 (Maria Claudia) + F-03 (Maria Clara) — sub-pacotes separados
 ├── dominio-matricula/                ← F-04 (Vinicius)
-├── dominio-gestao-pedagogica/        ← F-05 (Neto)
-├── dominio-historico-academico/      ← F-06 (Julia)
+├── dominio-gestao-pedagogica/        ← F-05 (Maria Claudia)
+├── dominio-historico-academico/      ← F-06 (Julia Torres)
 ├── dominio-secretaria-virtual/       ← F-07 (Bernardo)
 ├── dominio-integralizacao-curricular/← F-08 (Bernardo)
 ├── dominio-atividades-complementares/← F-09 (Jera)
 ├── dominio-permanencia-academica/    ← F-10 + F-11 (Matheus) — dois bounded contexts
 ├── dominio-mobilidade-academica/     ← F-12 (Vinicius)
 ├── dominio-gestao-financeira/        ← F-13 (Jera)
-├── dominio-estagios/                 ← F-14 (Clara)
+├── dominio-estagios/                 ← F-14 (Maria Clara)
 │
 ├── aplicacao/                        ← Orquestração cross-domínio e DTOs (*Resumo)
 ├── infraestrutura/                   ← JPA, adaptadores de persistência
@@ -402,15 +404,14 @@ mvn test
 
 | Integrante | Funcionalidades | Padrão |
 |---|---|---|
-| Julia Teixeira | F-01 · Gestão Curricular · F-06 · Histórico Acadêmico | Iterator |
+| Julia Torres   | F-01 · Gestão Curricular · F-06 · Histórico Acadêmico | Iterator |
 | Matheus Veríssimo | F-10 · Permanência Acadêmica · F-11 · Apoio Psicopedagógico | Observer |
 | Vinicius | F-04 · Matrícula · F-12 · Mobilidade Acadêmica | Strategy |
 | Bernardo | F-07 · Secretaria Virtual · F-08 · Integralização e Colação | Proxy |
-| Clara | F-03 · Oferta de Turmas · F-14 · Estágios | Decorator |
-| Neto | F-02 · Período Letivo · F-05 · Gestão Pedagógica | Template Method |
+| Maria Clara    | F-03 · Oferta de Turmas · F-14 · Estágios | Decorator |
+| Maria Claudia  | F-02 · Período Letivo · F-05 · Gestão Pedagógica | Template Method |
 | Jera | F-09 · Atividades Complementares · F-13 · Gestão Financeira | Observer |
 
-**Professor:** Saulo Meira Araujo — Disciplina de Requisitos, Projeto de Software e Validação · CESAR School
 
 ---
 
