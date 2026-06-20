@@ -6,19 +6,23 @@ import school.cesar.acadlab.dominio.atividadescomplementares.*;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 
-public class SubmeterAtividadeFuncionalidade extends AtividadesComplementaresFuncionalidade {
+public class SubmeterAtividadeFuncionalidade {
     private static final DateTimeFormatter FMT = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+    private final AtividadesComplementaresFuncionalidade ctx;
     private AtividadeComplementar resultado;
-    private Exception excecao;
+
+    public SubmeterAtividadeFuncionalidade(AtividadesComplementaresFuncionalidade ctx) {
+        this.ctx = ctx;
+    }
 
     @Given("um estudante com vínculo ativo no período de realização da atividade")
     public void estudanteComVinculoAtivo() {
-        verificadorVinculo.setVinculo(true);
+        ctx.verificadorVinculo.setVinculo(true);
     }
 
     @Given("um estudante sem vínculo ativo na data de realização")
     public void estudanteSemVinculoAtivo() {
-        verificadorVinculo.setVinculo(false);
+        ctx.verificadorVinculo.setVinculo(false);
     }
 
     @Given("o certificado {string} ainda não foi utilizado")
@@ -28,22 +32,22 @@ public class SubmeterAtividadeFuncionalidade extends AtividadesComplementaresFun
 
     @Given("o certificado {string} já foi utilizado anteriormente")
     public void certificadoJaUtilizado(String cert) {
-        verificadorCertificado.marcarUtilizado(cert);
+        ctx.verificadorCertificado.marcarUtilizado(cert);
     }
 
     @When("o estudante submete a atividade da categoria {int} com {int} horas realizada em {string} com certificado {string}")
     public void submeteAtividade(int categoriaId, int horas, String data, String cert) {
-        resultado = servico.submeter(new EstudanteId(1), new CategoriaAtividadeId(categoriaId),
+        resultado = ctx.servico.submeter(new EstudanteId(1), new CategoriaAtividadeId(categoriaId),
                 horas, LocalDate.parse(data, FMT), cert, "Descrição da atividade");
     }
 
     @When("o estudante tenta submeter a atividade da categoria {int} com {int} horas realizada em {string} com certificado {string}")
     public void tentaSubmeterAtividade(int categoriaId, int horas, String data, String cert) {
         try {
-            servico.submeter(new EstudanteId(1), new CategoriaAtividadeId(categoriaId),
+            ctx.servico.submeter(new EstudanteId(1), new CategoriaAtividadeId(categoriaId),
                     horas, LocalDate.parse(data, FMT), cert, "Descrição da atividade");
-        } catch (Exception e) {
-            excecao = e;
+        } catch (RuntimeException e) {
+            ctx.excecao = e;
         }
     }
 
@@ -55,13 +59,13 @@ public class SubmeterAtividadeFuncionalidade extends AtividadesComplementaresFun
 
     @Then("deve ser lançada uma exceção de vínculo inativo")
     public void deveSerLancadaExcecaoVinculo() {
-        Assertions.assertNotNull(excecao);
-        Assertions.assertInstanceOf(IllegalStateException.class, excecao);
+        Assertions.assertNotNull(ctx.excecao);
+        Assertions.assertInstanceOf(IllegalStateException.class, ctx.excecao);
     }
 
     @Then("deve ser lançada uma exceção de certificado duplicado")
     public void deveSerLancadaExcecaoCertificado() {
-        Assertions.assertNotNull(excecao);
-        Assertions.assertInstanceOf(IllegalStateException.class, excecao);
+        Assertions.assertNotNull(ctx.excecao);
+        Assertions.assertInstanceOf(IllegalStateException.class, ctx.excecao);
     }
 }

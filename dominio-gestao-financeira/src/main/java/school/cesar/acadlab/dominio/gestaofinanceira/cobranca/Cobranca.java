@@ -48,9 +48,9 @@ public class Cobranca {
     public ContestacaoRegistradaEvento contestar(EstudanteId requerente, String justificativa, LocalDate data) {
         notNull(requerente, "requerente obrigatório");
         if (!this.estudanteId.equals(requerente))
-            throw new IllegalStateException("RN1: Apenas o estudante titular do contrato pode contestar a cobrança");
+            throw new IllegalStateException("estudante não é titular desta cobrança");
         if (contestacao != null && contestacao.getStatus() == StatusContestacao.PENDENTE)
-            throw new IllegalStateException("RN2: Não pode haver duas contestações pendentes para a mesma cobrança");
+            throw new IllegalStateException("já existe uma contestação em aberto para esta cobrança");
         this.contestacao = new Contestacao(requerente, justificativa, data);
         this.status = StatusCobranca.CONTESTADA;
         return new ContestacaoRegistradaEvento(this);

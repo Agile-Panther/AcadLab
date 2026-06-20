@@ -7,54 +7,58 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 
-public class ExtratoComprovanteFuncionalidade extends GestaoFinanceiraFuncionalidade {
+public class ExtratoComprovanteFuncionalidade {
+    private final GestaoFinanceiraFuncionalidade ctx;
     private CobrancaId cobrancaId;
     private List<Cobranca> extrato;
     private Pagamento comprovante;
-    private Exception excecao;
+
+    public ExtratoComprovanteFuncionalidade(GestaoFinanceiraFuncionalidade ctx) {
+        this.ctx = ctx;
+    }
 
     @Given("o contrato {int} possui {int} cobranças geradas")
     public void contratoPossuiCobrancasGeradas(int contratoId, int quantidade) {
-        verificadorMatricula.setMatricula(true);
+        ctx.verificadorMatricula.setMatricula(true);
         for (int i = 0; i < quantidade; i++) {
-            servico.gerarCobranca(new ContratoId(contratoId), new EstudanteId(200 + contratoId + i),
+            ctx.servico.gerarCobranca(new ContratoId(contratoId), new EstudanteId(200 + contratoId + i),
                     new PeriodoLetivoId(1), new BigDecimal("1500.00"), LocalDate.of(2025, 2, 10));
         }
     }
 
     @Given("uma cobrança paga com referência {string} para o contrato {int}")
     public void cobrancaPagaComReferencia(String referencia, int contratoId) {
-        verificadorMatricula.setMatricula(true);
-        var cobranca = servico.gerarCobranca(new ContratoId(contratoId), new EstudanteId(300 + contratoId),
+        ctx.verificadorMatricula.setMatricula(true);
+        var cobranca = ctx.servico.gerarCobranca(new ContratoId(contratoId), new EstudanteId(300 + contratoId),
                 new PeriodoLetivoId(1), new BigDecimal("1500.00"), LocalDate.of(2025, 2, 10));
         cobrancaId = cobranca.getId();
-        servico.registrarPagamento(cobrancaId, new BigDecimal("1500.00"), LocalDate.now(), referencia);
+        ctx.servico.registrarPagamento(cobrancaId, new BigDecimal("1500.00"), LocalDate.now(), referencia);
     }
 
     @Given("uma cobrança aberta sem pagamento para o contrato {int}")
     public void cobrancaAbertaSemPagamento(int contratoId) {
-        verificadorMatricula.setMatricula(true);
-        var cobranca = servico.gerarCobranca(new ContratoId(contratoId), new EstudanteId(400 + contratoId),
+        ctx.verificadorMatricula.setMatricula(true);
+        var cobranca = ctx.servico.gerarCobranca(new ContratoId(contratoId), new EstudanteId(400 + contratoId),
                 new PeriodoLetivoId(1), new BigDecimal("1500.00"), LocalDate.of(2025, 2, 10));
         cobrancaId = cobranca.getId();
     }
 
     @When("consulto o extrato do contrato {int}")
     public void consultoExtrato(int contratoId) {
-        extrato = servico.consultarExtrato(new ContratoId(contratoId));
+        extrato = ctx.servico.consultarExtrato(new ContratoId(contratoId));
     }
 
     @When("solicito o comprovante da cobrança")
     public void solicitoComprovante() {
-        comprovante = servico.emitirComprovante(cobrancaId);
+        comprovante = ctx.servico.emitirComprovante(cobrancaId);
     }
 
     @When("solicito o comprovante da cobrança sem pagamento")
     public void solicitoComprovanteSemPagamento() {
         try {
-            servico.emitirComprovante(cobrancaId);
-        } catch (Exception e) {
-            excecao = e;
+            ctx.servico.emitirComprovante(cobrancaId);
+        } catch (RuntimeException e) {
+            ctx.excecao = e;
         }
     }
 
@@ -71,7 +75,7 @@ public class ExtratoComprovanteFuncionalidade extends GestaoFinanceiraFuncionali
 
     @Then("deve ser lançada uma exceção de comprovante indisponível")
     public void deveSerLancadaExcecaoComprovanteIndisponivel() {
-        Assertions.assertNotNull(excecao);
-        Assertions.assertInstanceOf(IllegalStateException.class, excecao);
+        Assertions.assertNotNull(ctx.excecao);
+        Assertions.assertInstanceOf(IllegalStateException.class, ctx.excecao);
     }
 }
