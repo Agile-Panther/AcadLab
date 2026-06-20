@@ -1,9 +1,17 @@
 // Typed API client — all requests are proxied by Vite to http://localhost:8080
 
+async function parseErrorMessage(res: Response): Promise<string> {
+  try {
+    const json = await res.json();
+    if (json.mensagem) return json.mensagem;
+  } catch { /* fallback */ }
+  return `${res.status} ${res.statusText}`;
+}
+
 async function get<T>(path: string): Promise<T | null> {
   const res = await fetch(`/backend/${path}`);
   if (res.status === 404) return null;
-  if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+  if (!res.ok) throw new Error(await parseErrorMessage(res));
   return res.json() as Promise<T>;
 }
 
@@ -13,7 +21,7 @@ async function post<T>(path: string, body?: unknown): Promise<T> {
     headers: body !== undefined ? { "Content-Type": "application/json" } : {},
     body: body !== undefined ? JSON.stringify(body) : undefined,
   });
-  if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+  if (!res.ok) throw new Error(await parseErrorMessage(res));
   const text = await res.text();
   return (text ? JSON.parse(text) : undefined) as T;
 }
@@ -24,7 +32,7 @@ async function put<T>(path: string, body?: unknown): Promise<T> {
     headers: body !== undefined ? { "Content-Type": "application/json" } : {},
     body: body !== undefined ? JSON.stringify(body) : undefined,
   });
-  if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+  if (!res.ok) throw new Error(await parseErrorMessage(res));
   const text = await res.text();
   return (text ? JSON.parse(text) : undefined) as T;
 }
@@ -251,12 +259,38 @@ export const api = {
     getById: (id: number) => get<HistoricoAcademicoResumo>(`historicos/${id}`),
   },
   solicitacoes: {
+    listByEstudante: (estudanteId: number) =>
+      get<SolicitacaoAcademicaResumo[]>(`solicitacoes/estudante/${estudanteId}`).then(r => r ?? []),
     listPendentes: () =>
       get<SolicitacaoAcademicaResumo[]>(`solicitacoes/pendentes`).then(r => r ?? []),
     listTodas: () =>
       get<SolicitacaoAcademicaResumo[]>(`solicitacoes/todas`).then(r => r ?? []),
     getById: (id: number) =>
       get<SolicitacaoAcademicaResumo>(`solicitacoes/${id}`),
+    estatisticas: () =>
+      get<Record<string, number>>(`solicitacoes/estatisticas`).then(r => r ?? {}),
+    // ─── Estudante ───
+    abrir: (body: {
+      estudanteId: number; periodoLetivoId: number; tipo: string;
+      descricao: string; documentos: { tipo: string; nomeArquivo: string }[];
+    }) => post<number>(`solicitacoes`, body),
+    complementar: (id: number, body: { tipo: string; nomeArquivo: string }) =>
+      put<void>(`solicitacoes/${id}/complementar`, body),
+    cancelar: (id: number) =>
+      put<void>(`solicitacoes/${id}/cancelar`),
+    // ─── Secretaria ───
+    iniciarAnalise: (id: number, analistaId: number) =>
+      put<void>(`solicitacoes/${id}/iniciar-analise`, { analistaId }),
+    deferir: (id: number, body: { analistaId: number; justificativa: string; impactoAcademico: boolean }) =>
+      put<void>(`solicitacoes/${id}/deferir`, body),
+    indeferir: (id: number, body: { analistaId: number; justificativa: string }) =>
+      put<void>(`solicitacoes/${id}/indeferir`, body),
+    solicitarComplementacao: (id: number, analistaId: number) =>
+      put<void>(`solicitacoes/${id}/solicitar-complementacao`, { analistaId }),
+    concluir: (id: number) =>
+      put<void>(`solicitacoes/${id}/concluir`),
+    vincularEConcluir: (id: number) =>
+      put<void>(`solicitacoes/${id}/vincular-e-concluir`),
   },
   integralizacao: {
     listAll: () => get<IntegralizacaoResumo[]>(`integralizacoes`).then(r => r ?? []),
