@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -50,6 +51,7 @@ class OportunidadeRepositorioImpl implements OportunidadeRepositorio, Oportunida
     }
 
     @Override
+    @Transactional
     public void salvar(Oportunidade oportunidade) {
         repository.save(toJpa(oportunidade));
     }

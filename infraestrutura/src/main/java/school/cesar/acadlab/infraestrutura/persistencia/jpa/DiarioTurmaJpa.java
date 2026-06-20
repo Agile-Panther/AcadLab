@@ -12,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.CollectionTable;
@@ -189,6 +190,7 @@ class DiarioTurmaRepositorioImpl implements DiarioTurmaRepositorio, DiarioTurmaR
     }
 
     @Override
+    @Transactional
     public void salvar(DiarioTurma diario) {
         diarioRepository.save(toJpa(diario));
     }

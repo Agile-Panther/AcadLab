@@ -6,6 +6,7 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -76,6 +77,7 @@ class AtividadeComplementarRepositorioImpl implements
     }
 
     @Override
+    @Transactional
     public void salvar(AtividadeComplementar atividade) {
         var jpa = toJpa(atividade);
         repositorio.findById(jpa.id).ifPresent(

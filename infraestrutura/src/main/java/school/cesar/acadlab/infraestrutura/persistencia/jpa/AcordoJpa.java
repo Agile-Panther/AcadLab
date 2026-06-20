@@ -6,6 +6,7 @@ import java.time.LocalDateTime;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -36,6 +37,7 @@ class AcordoRepositorioImpl implements AcordoRepositorioAplicacao {
     AcordoJpaRepository jpaRepository;
 
     @Override
+    @Transactional
     public void registrar(int estudanteId, LocalDate prazo, int descontoPercentual, String observacoes) {
         var acordo = new AcordoJpa();
         acordo.estudanteId = estudanteId;
