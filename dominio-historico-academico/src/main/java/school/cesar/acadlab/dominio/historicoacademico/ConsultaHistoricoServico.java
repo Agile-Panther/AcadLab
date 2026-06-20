@@ -17,7 +17,7 @@ public class ConsultaHistoricoServico {
     // RN-10: histórico oficial contém apenas registros consolidados de períodos encerrados
     public List<RegistroDisciplina> obterHistoricoOficial(EstudanteId estudanteId) {
         var historico = repositorio.buscarPorEstudante(estudanteId)
-                .orElseThrow(() -> new IllegalArgumentException("Histórico não encontrado para o estudante"));
+                .orElseThrow(() -> new IllegalArgumentException("estudante não possui histórico cadastrado"));
         var resultado = new ArrayList<RegistroDisciplina>();
         IteradorHistorico<RegistroDisciplina> iterador = historico.iteradorRegistros();
         while (iterador.temProximo()) {
