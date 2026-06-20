@@ -18,8 +18,13 @@ import school.cesar.acadlab.dominio.atividadescomplementares.AtividadeComplement
 import school.cesar.acadlab.dominio.atividadescomplementares.CategoriaAtividadeId;
 import school.cesar.acadlab.dominio.atividadescomplementares.EstudanteId;
 import school.cesar.acadlab.dominio.atividadescomplementares.StatusAtividade;
+import school.cesar.acadlab.dominio.atividadescomplementares.VerificadorCertificadoDuplicado;
+import school.cesar.acadlab.dominio.atividadescomplementares.VerificadorContabilizacaoIntegralizacao;
+import school.cesar.acadlab.dominio.atividadescomplementares.VerificadorLimiteCategoria;
+import school.cesar.acadlab.dominio.atividadescomplementares.VerificadorVinculoEstudante;
 import school.cesar.acadlab.dominio.atividadescomplementares.atividade.AtividadeComplementar;
 import school.cesar.acadlab.dominio.atividadescomplementares.atividade.AtividadeComplementarRepositorio;
+import school.cesar.acadlab.dominio.matricula.matricula.StatusMatricula;
 
 @Entity
 @Table(name = "ATIVIDADE_COMPLEMENTAR")
@@ -34,6 +39,7 @@ class AtividadeComplementarJpa {
     int horasSubmetidas;
     int horasAprovadas;
     LocalDate dataRealizacao;
+    boolean contabilizadaIntegralizacao;
 
     @Enumerated(EnumType.STRING)
     StatusAtividade status;
@@ -48,9 +54,21 @@ interface AtividadeComplementarJpaRepository extends JpaRepository<AtividadeComp
 }
 
 @Repository
-class AtividadeComplementarRepositorioImpl implements AtividadeComplementarRepositorio, AtividadeComplementarRepositorioAplicacao {
+class AtividadeComplementarRepositorioImpl implements
+        AtividadeComplementarRepositorio,
+        AtividadeComplementarRepositorioAplicacao,
+        VerificadorVinculoEstudante,
+        VerificadorCertificadoDuplicado,
+        VerificadorLimiteCategoria,
+        VerificadorContabilizacaoIntegralizacao {
     @Autowired
     AtividadeComplementarJpaRepository repositorio;
+
+    @Autowired
+    MatriculaJpaRepository matriculaRepositorio;
+
+    @Autowired
+    CategoriaAtividadeJpaRepository categoriaRepositorio;
 
     @Override
     public AtividadeComplementarId proximoId() {
@@ -59,7 +77,10 @@ class AtividadeComplementarRepositorioImpl implements AtividadeComplementarRepos
 
     @Override
     public void salvar(AtividadeComplementar atividade) {
-        repositorio.save(toJpa(atividade));
+        var jpa = toJpa(atividade);
+        repositorio.findById(jpa.id).ifPresent(
+                existente -> jpa.contabilizadaIntegralizacao = existente.contabilizadaIntegralizacao);
+        repositorio.save(jpa);
     }
 
     @Override
@@ -100,6 +121,41 @@ class AtividadeComplementarRepositorioImpl implements AtividadeComplementarRepos
                         jpa.horasAprovadas,
                         jpa.status.name()))
                 .toList();
+    }
+
+    @Override
+    public boolean estaNoVinculo(EstudanteId estudanteId, LocalDate data) {
+        return matriculaRepositorio.findByEstudanteId(estudanteId.valor()).stream()
+                .anyMatch(matricula -> matricula.status == StatusMatricula.CONFIRMADA);
+    }
+
+    @Override
+    public boolean jaUtilizado(EstudanteId estudanteId, String identificadorCertificado) {
+        return repositorio.findByEstudanteId(estudanteId.valor()).stream()
+                .anyMatch(atividade -> java.util.Objects.equals(
+                        atividade.identificadorCertificado, identificadorCertificado));
+    }
+
+    @Override
+    public boolean excedeLimite(
+            EstudanteId estudanteId,
+            CategoriaAtividadeId categoriaId,
+            int horasAdicionais) {
+        var categoria = categoriaRepositorio.findById(categoriaId.valor())
+                .orElseThrow(() -> new IllegalArgumentException("categoria de atividade não encontrada"));
+        int horasDeferidas = repositorio.findByEstudanteId(estudanteId.valor()).stream()
+                .filter(atividade -> atividade.categoriaId == categoriaId.valor())
+                .filter(atividade -> atividade.status == StatusAtividade.DEFERIDA)
+                .mapToInt(atividade -> atividade.horasAprovadas)
+                .sum();
+        return horasDeferidas + horasAdicionais > categoria.limiteHoras;
+    }
+
+    @Override
+    public boolean foiContabilizada(AtividadeComplementarId id) {
+        return repositorio.findById(id.valor())
+                .map(atividade -> atividade.contabilizadaIntegralizacao)
+                .orElse(false);
     }
 
     private AtividadeComplementarJpa toJpa(AtividadeComplementar atividade) {

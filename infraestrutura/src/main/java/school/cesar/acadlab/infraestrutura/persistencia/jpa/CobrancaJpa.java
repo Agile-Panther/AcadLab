@@ -99,6 +99,8 @@ interface CobrancaJpaRepository extends JpaRepository<CobrancaJpa, Integer> {
 
     List<CobrancaJpa> findByContestacaoStatus(StatusContestacao status);
 
+    List<CobrancaJpa> findByStatusAndVencimentoBefore(StatusCobranca status, java.time.LocalDate vencimento);
+
     @Query("SELECT COALESCE(MAX(c.id), 0) + 1 FROM CobrancaJpa c")
     int proximoId();
 }

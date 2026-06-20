@@ -42,11 +42,22 @@ export type CobrancaResumo = {
   descontos: DescontoResumo[];
 };
 
+/* ===== Inadimplentes ===== */
+
+export type InadimplentesResumo = {
+  matriculaId: number;
+  estudanteId: number;
+  valorEmAtraso: number;
+  diasAtraso: number;
+  statusMatricula: string;
+};
+
 /* ===== Query keys ===== */
 
 const keys = {
   extrato: (contratoId: number) => ["financeiro", "extrato", contratoId] as const,
   contestacoes: ["financeiro", "contestacoes-abertas"] as const,
+  inadimplentes: ["financeiro", "inadimplentes"] as const,
 };
 
 /* ===== Consultas ===== */
@@ -55,6 +66,13 @@ export function useExtrato(contratoId = USUARIO_ATUAL.contratoId) {
   return useQuery({
     queryKey: keys.extrato(contratoId),
     queryFn: () => api.get<CobrancaResumo[]>(`cobrancas/contrato/${contratoId}`),
+  });
+}
+
+export function useInadimplentes() {
+  return useQuery({
+    queryKey: keys.inadimplentes,
+    queryFn: () => api.get<InadimplentesResumo[]>("inadimplentes"),
   });
 }
 
@@ -118,6 +136,23 @@ export function useIndeferirContestacao() {
     mutationFn: (vars: { id: number; parecer: string }) =>
       api.post(`cobrancas/${vars.id}/indeferir-contestacao`, { parecer: vars.parecer }),
     onSuccess: invalidate,
+  });
+}
+
+export function useBloqueioMatricula() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (matriculaId: number) => api.put(`matriculas/${matriculaId}/bloquear`),
+    onSuccess: () => qc.invalidateQueries({ queryKey: keys.inadimplentes }),
+  });
+}
+
+export function useRegistrarAcordo() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (vars: { estudanteId: number; prazo: string; descontoPercentual: number; observacoes: string }) =>
+      api.post("acordos", vars),
+    onSuccess: () => qc.invalidateQueries({ queryKey: keys.inadimplentes }),
   });
 }
 

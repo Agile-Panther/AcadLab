@@ -158,6 +158,11 @@ public class Matricula {
         excecao.deferir(coordenadorId);
     }
 
+    public void bloquear() {
+        isTrue(status != StatusMatricula.BLOQUEADA, "Matrícula já está bloqueada");
+        this.status = StatusMatricula.BLOQUEADA;
+    }
+
     // US07 — Trancar período (RN-11 e RN-12)
     public PeriodoTrancadoEvento trancarPeriodo(LocalDate hoje, LocalDate inicioTrancamento,
                                                  LocalDate fimTrancamento,
