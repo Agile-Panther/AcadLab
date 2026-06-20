@@ -89,7 +89,7 @@ function Page() {
     mobilidades.find((m) => m.status !== "CANCELADA") ?? null;
 
   const [view, setView] = useState<View>("overview");
-  const [step, setStep] = useState<0 | 1 | 2 | 3>(0);
+  const [step, setStep] = useState<0 | 1 | 2>(0);
 
   const cancelarMob = useMutation({
     mutationFn: () =>
@@ -103,6 +103,17 @@ function Page() {
       toast.info("Solicitação de cancelamento registrada.");
     },
     onError: (e: Error) => toast.error(e.message || "Erro ao cancelar."),
+  });
+
+  const iniciarMob = useMutation({
+    mutationFn: (dataInicio: string) =>
+      api.mobilidade.iniciarPeriodoExterno(mobData!.id, dataInicio),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["mobilidades"] });
+      refetchMob();
+      toast.success("Início do período externo registrado. Mobilidade em curso.");
+    },
+    onError: (e: Error) => toast.error(e.message || "Erro ao registrar início."),
   });
 
   const subtitle = perfil === "coordenador"
@@ -150,6 +161,8 @@ function Page() {
           onAnexar={() => setView("comprovantes")}
           onCancelar={() => cancelarMob.mutate()}
           cancelando={cancelarMob.isPending}
+          onIniciar={(data) => iniciarMob.mutate(data)}
+          iniciando={iniciarMob.isPending}
         />
       )}
 
@@ -174,15 +187,19 @@ function Page() {
 }
 
 // ─── Overview do estudante ────────────────────────────────────────────────────
-function OverviewEstudante({ mob, onAnexar, onCancelar, cancelando }: {
+function OverviewEstudante({ mob, onAnexar, onCancelar, cancelando, onIniciar, iniciando }: {
   mob: MobilidadeAcademicaResumo;
   onAnexar: () => void;
   onCancelar: () => void;
   cancelando: boolean;
+  onIniciar: (dataInicio: string) => void;
+  iniciando: boolean;
 }) {
   const label = STATUS_LABEL[mob.status] ?? mob.status;
   const tone = statusTone(mob.status);
   const comProva = mob.plano.filter((i) => i.comprovanteAnexado).length;
+  const [iniciarOpen, setIniciarOpen] = useState(false);
+  const [dataInicio, setDataInicio] = useState(HOJE);
 
   return (
     <div className="space-y-5">
@@ -222,10 +239,21 @@ function OverviewEstudante({ mob, onAnexar, onCancelar, cancelando }: {
         </ValidationCallout>
       )}
 
+      {mob.status === "AUTORIZADA" && (
+        <ValidationCallout tone="info">
+          Mobilidade autorizada. Ao viajar, <strong>registre o início do período externo</strong> — depois disso ela não pode mais ser cancelada (RN 7).
+        </ValidationCallout>
+      )}
+      {mob.status === "EM_ANDAMENTO" && mob.dataInicioPeriodoExterno && (
+        <ValidationCallout tone="info">
+          Período externo iniciado em <strong>{new Date(mob.dataInicioPeriodoExterno).toLocaleDateString("pt-BR")}</strong>. Anexe os comprovantes de conclusão para a secretaria registrar os resultados.
+        </ValidationCallout>
+      )}
+
       <div className="flex flex-wrap gap-2">
         {mob.status === "AUTORIZADA" && (
           <>
-            <Button variant="outline" onClick={onAnexar}>Anexar comprovantes</Button>
+            <Button onClick={() => setIniciarOpen(true)}>Registrar início do intercâmbio</Button>
             <Button variant="destructive" onClick={onCancelar} disabled={cancelando}>
               {cancelando ? "Cancelando…" : "Cancelar mobilidade"}
             </Button>
@@ -235,6 +263,26 @@ function OverviewEstudante({ mob, onAnexar, onCancelar, cancelando }: {
           <Button onClick={onAnexar}>Anexar comprovantes</Button>
         )}
       </div>
+
+      <Dialog open={iniciarOpen} onOpenChange={setIniciarOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Registrar início do período externo</DialogTitle>
+            <DialogDescription>
+              Informe a data de início das atividades em {mob.instituicaoDestino}. A mobilidade passará para "Em curso" e não poderá mais ser cancelada.
+            </DialogDescription>
+          </DialogHeader>
+          <FormField label="Data de início" required>
+            <Input type="date" className="h-10" value={dataInicio} onChange={(e) => setDataInicio(e.target.value)} />
+          </FormField>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIniciarOpen(false)}>Cancelar</Button>
+            <Button disabled={!dataInicio || iniciando} onClick={() => { onIniciar(dataInicio); setIniciarOpen(false); }}>
+              {iniciando ? "Registrando…" : "Confirmar início"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
@@ -243,13 +291,12 @@ function OverviewEstudante({ mob, onAnexar, onCancelar, cancelando }: {
 const wizardSteps = [
   { key: "inst", label: "Instituição" },
   { key: "plano", label: "Plano de estudos" },
-  { key: "doc", label: "Documentos" },
-  { key: "ok", label: "Envio" },
+  { key: "ok", label: "Concluído" },
 ];
 
 function Wizard({ step, onStep, onCriada, onCancelar }: {
-  step: 0 | 1 | 2 | 3;
-  onStep: (s: 0 | 1 | 2 | 3) => void;
+  step: 0 | 1 | 2;
+  onStep: (s: 0 | 1 | 2) => void;
   onCriada: () => void;
   onCancelar: () => void;
 }) {
@@ -283,14 +330,6 @@ function Wizard({ step, onStep, onCriada, onCancelar }: {
     },
     onSuccess: () => onStep(2),
     onError: (e: Error) => toast.error(e.message || "Erro ao salvar plano."),
-  });
-
-  const finalizarMut = useMutation({
-    mutationFn: () => Promise.resolve(),
-    onSuccess: () => {
-      toast.success("Candidatura enviada! Protocolo: MOB-" + Math.floor(Math.random() * 10000));
-      onStep(3);
-    },
   });
 
   const addLinha = () => setPlanoItems((p) => [
@@ -384,26 +423,8 @@ function Wizard({ step, onStep, onCriada, onCancelar }: {
       )}
 
       {step === 2 && (
-        <div className="rounded-xl border bg-card p-6 shadow-card">
-          <SectionTitle title="Documentos" />
-          <FormField className="mt-3" label="Carta de aceite" required full>
-            <Input type="file" className="h-10" />
-          </FormField>
-          <FormField label="Plano em PDF" full>
-            <Input type="file" className="h-10" />
-          </FormField>
-          <div className="mt-4 flex justify-end gap-2">
-            <Button variant="outline" onClick={() => onStep(1)}>Voltar</Button>
-            <Button onClick={() => finalizarMut.mutate()} disabled={finalizarMut.isPending}>
-              {finalizarMut.isPending ? "Enviando…" : "Enviar"}
-            </Button>
-          </div>
-        </div>
-      )}
-
-      {step === 3 && (
         <div className="space-y-4">
-          <SuccessBanner title="Solicitação enviada!" description="A coordenação analisará o plano em até 15 dias úteis." />
+          <SuccessBanner title="Solicitação enviada!" description="A coordenação vai analisar e autorizar o plano de estudos." />
           <Button onClick={onCriada}>Ver status</Button>
         </div>
       )}
