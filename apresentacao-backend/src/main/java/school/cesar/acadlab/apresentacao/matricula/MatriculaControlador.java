@@ -105,6 +105,16 @@ public class MatriculaControlador {
                 req.hoje(), req.inicio(), req.fim());
     }
 
+    @PutMapping("/{id}/itens/{turmaId}/destrancar")
+    public void destrancarDisciplina(@PathVariable int id, @PathVariable int turmaId) {
+        servico.destrancarDisciplina(new MatriculaId(id), new TurmaId(turmaId));
+    }
+
+    @PutMapping("/{id}/destrancar-periodo")
+    public void destrancarPeriodo(@PathVariable int id) {
+        servico.destrancarPeriodo(new MatriculaId(id));
+    }
+
     @PostMapping("/{id}/excecoes")
     public void solicitarExcecao(@PathVariable int id,
                                   @RequestBody SolicitarExcecaoRequest req) {

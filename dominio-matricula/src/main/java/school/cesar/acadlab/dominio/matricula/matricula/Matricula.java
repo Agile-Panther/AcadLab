@@ -184,6 +184,26 @@ public class Matricula {
         return new PeriodoTrancadoEvento(this);
     }
 
+    // Reverte US04 — Destrancar disciplina (volta o item trancado para confirmado)
+    public void destrancarDisciplina(TurmaId turmaId) {
+        notNull(turmaId, "O id da turma não pode ser nulo");
+        isTrue(status == StatusMatricula.CONFIRMADA,
+                "O destrancamento de disciplina só é permitido em matrículas confirmadas");
+        buscarItem(turmaId).destrancar();
+    }
+
+    // Reverte US07 — Destrancar período (reativa os itens e volta a matrícula para confirmada)
+    public void destrancarPeriodo() {
+        isTrue(status == StatusMatricula.TRANCADA_PERIODO,
+                "O destrancamento de período só é permitido em matrículas com período trancado");
+        for (ItemMatricula item : itens) {
+            if (item.getStatus() == StatusItemMatricula.TRANCADO) {
+                item.destrancar();
+            }
+        }
+        this.status = StatusMatricula.CONFIRMADA;
+    }
+
     private void verificarConflitoHorario() {
         List<ItemMatricula> ativos = itens.stream()
                 .filter(i -> i.getStatus() == StatusItemMatricula.SELECIONADO)

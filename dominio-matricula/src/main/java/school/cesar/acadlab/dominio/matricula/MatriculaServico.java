@@ -110,4 +110,18 @@ public class MatriculaServico {
                 totalTrancamentos, limiteTrancamentos);
         repositorio.salvar(matricula);
     }
+
+    public void destrancarDisciplina(MatriculaId matriculaId, TurmaId turmaId) {
+        notNull(matriculaId, "O id da matrícula não pode ser nulo");
+        var matricula = repositorio.buscarPorId(matriculaId).orElseThrow();
+        matricula.destrancarDisciplina(turmaId);
+        repositorio.salvar(matricula);
+    }
+
+    public void destrancarPeriodo(MatriculaId matriculaId) {
+        notNull(matriculaId, "O id da matrícula não pode ser nulo");
+        var matricula = repositorio.buscarPorId(matriculaId).orElseThrow();
+        matricula.destrancarPeriodo();
+        repositorio.salvar(matricula);
+    }
 }

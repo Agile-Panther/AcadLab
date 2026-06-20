@@ -262,6 +262,10 @@ export const api = {
       put<void>(`matriculas/${id}/itens/${turmaId}/cancelar`, body),
     trancarDisciplina: (id: number, turmaId: number, body: { hoje: string; inicio: string; fim: string }) =>
       put<void>(`matriculas/${id}/itens/${turmaId}/trancar`, body),
+    destrancarDisciplina: (id: number, turmaId: number) =>
+      put<void>(`matriculas/${id}/itens/${turmaId}/destrancar`),
+    destrancarPeriodo: (id: number) =>
+      put<void>(`matriculas/${id}/destrancar-periodo`),
     confirmar: (id: number, vagasPorTurma: Record<number, number>) =>
       put<void>(`matriculas/${id}/confirmar`, vagasPorTurma),
     aprovarSecretaria: (id: number) =>

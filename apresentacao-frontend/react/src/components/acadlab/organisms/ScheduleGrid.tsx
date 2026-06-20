@@ -31,7 +31,11 @@ export function ScheduleGrid({
   endHour?: number;
   className?: string;
 }) {
-  const hours = Array.from({ length: endHour - startHour }, (_, i) => startHour + i);
+  // Ajusta a faixa de horas para sempre comportar todos os blocos (ex.: aulas
+  // noturnas 19-21 não devem ficar de fora). O padrão é a faixa mínima exibida.
+  const effStart = blocks.length ? Math.min(startHour, ...blocks.map((b) => b.start)) : startHour;
+  const effEnd = blocks.length ? Math.max(endHour, ...blocks.map((b) => b.start + b.duration)) : endHour;
+  const hours = Array.from({ length: effEnd - effStart }, (_, i) => effStart + i);
   const bodyHeight = hours.length * ROW_H;
 
   return (
@@ -85,7 +89,7 @@ export function ScheduleGrid({
                       colorMap[b.color],
                     )}
                     style={{
-                      top: (b.start - startHour) * ROW_H + 2,
+                      top: (b.start - effStart) * ROW_H + 2,
                       height: b.duration * ROW_H - 4,
                     }}
                   >
