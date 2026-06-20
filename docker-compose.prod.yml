@@ -1,0 +1,42 @@
+# Compose de PRODUÇÃO do backend — distinto do docker-compose.yml (desenvolvimento).
+# O backend roda a partir do JAR executável empacotado na imagem (sem Maven em runtime,
+# sem código-fonte montado). Frontend de produção ainda não incluído (ver nota abaixo).
+#
+# Uso: docker compose -f docker-compose.prod.yml up --build
+#
+# NOTA (frontend): o app React é TanStack Start (SSR) cujo build nitro tem o Cloudflare
+# como alvo padrão (definido em @lovable.dev/vite-tanstack-config). Servir em um contêiner
+# Node exige fixar o preset nitro de node-server e validar o artefato — pendente.
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: acadlab
+      POSTGRES_USER: acadlab
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-acadlab}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U acadlab -d acadlab"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: .
+      dockerfile: apresentacao-backend/Dockerfile
+    ports:
+      - "8080:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/acadlab
+      SPRING_DATASOURCE_USERNAME: acadlab
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-acadlab}
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+
+volumes:
+  postgres_data:
