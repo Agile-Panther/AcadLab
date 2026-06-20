@@ -49,33 +49,49 @@ BoundedContext CurriculoContext implements AcademicoSubdomain {
     type FEATURE
 
     Aggregate MatrizCurricular {
-        enum StatusMatriz { ATIVA, INATIVA }
+        enum StatusMatriz { RASCUNHO, ATIVA, INATIVA }
+        enum TipoDisciplina { OBRIGATORIA, OPTATIVA }
+
+        ValueObject MatrizCurricularId { int valor }
+        ValueObject CursoId { int valor }
+        ValueObject DisciplinaId { int valor }
 
         Entity MatrizCurricular {
             aggregateRoot
-            int id
-            int cursoId
+            - MatrizCurricularId id
+            - CursoId cursoId
             String nome
             int cargaHorariaMinima
             int creditosExigidos
+            int maximoTrancamentos
             - StatusMatriz status
             - List<ItemMatriz> itens
+            - Map<DisciplinaId, List<DisciplinaId>> preRequisitos
+            - Map<DisciplinaId, List<DisciplinaId>> correquisitos
         }
         Entity ItemMatriz {
-            int disciplinaId
-            String nomeDisciplina
+            - DisciplinaId disciplinaId
+            - TipoDisciplina tipo
             int cargaHoraria
             int creditos
-            boolean obrigatoria
-            - List<Integer> preRequisitos
-            - List<Integer> correquisitos
         }
+        Repository MatrizCurricularRepositorio {
+            void salvar(@MatrizCurricular matriz);
+            @MatrizCurricular buscarPorId(@MatrizCurricularId id);
+            List<@MatrizCurricular> buscarPorCurso(@CursoId cursoId);
+            @MatrizCurricularId proximaMatrizId;
+        }
+        // Portas de saída (ACL) implementadas pela infraestrutura:
+        // ConsultaMatrizAtivaPorta.existeMatrizAtivaParaCurso(CursoId)
+        // ConsultaTurmasPorta.existeTurmaParaDisciplina(DisciplinaId)
         Service MatrizCurricularServico {
-            @MatrizCurricular criarMatriz(@MatrizCurricular matriz);
-            void adicionarDisciplina(int matrizId, @ItemMatriz item);
-            void configurarPreRequisito(int matrizId, int disciplinaId, int preRequisitoId);
-            void ativar(int matrizId);
-            void desativar(int matrizId);
+            @MatrizCurricular criar(@CursoId cursoId, String nome, int cargaHorariaMinima, int creditosExigidos, int maximoTrancamentos);
+            void adicionarDisciplina(@MatrizCurricularId matrizId, @DisciplinaId disciplinaId, @TipoDisciplina tipo, int cargaHoraria, int creditos);
+            void removerDisciplina(@MatrizCurricularId matrizId, @DisciplinaId disciplinaId);
+            void adicionarPreRequisito(@MatrizCurricularId matrizId, @DisciplinaId disciplina, @DisciplinaId preRequisito);
+            void adicionarCorrequisito(@MatrizCurricularId matrizId, @DisciplinaId disciplina, @DisciplinaId correquisito);
+            void ativar(@MatrizCurricularId matrizId);
+            void desativar(@MatrizCurricularId matrizId);
         }
     }
 }
