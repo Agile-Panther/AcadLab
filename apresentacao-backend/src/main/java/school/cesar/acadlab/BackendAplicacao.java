@@ -18,6 +18,10 @@ import school.cesar.acadlab.aplicacao.atividadescomplementares.CategoriaHorasRep
 import school.cesar.acadlab.aplicacao.atividadescomplementares.CategoriaHorasServicoAplicacao;
 import school.cesar.acadlab.aplicacao.curriculo.MatrizCurricularRepositorioAplicacao;
 import school.cesar.acadlab.aplicacao.curriculo.MatrizCurricularServicoAplicacao;
+import school.cesar.acadlab.dominio.curriculo.MatrizCurricularRepositorio;
+import school.cesar.acadlab.dominio.curriculo.MatrizCurricularServico;
+import school.cesar.acadlab.dominio.curriculo.porta.ConsultaMatrizAtivaPorta;
+import school.cesar.acadlab.dominio.curriculo.porta.ConsultaTurmasPorta;
 import school.cesar.acadlab.aplicacao.estagios.EstagioRepositorioAplicacao;
 import school.cesar.acadlab.aplicacao.estagios.EstagioServicoAplicacao;
 import school.cesar.acadlab.aplicacao.estagios.OportunidadeRepositorioAplicacao;
@@ -111,6 +115,14 @@ import school.cesar.acadlab.dominio.secretariavirtual.solicitacaoAcademica.Solic
 
 @SpringBootApplication
 public class BackendAplicacao {
+
+    @Bean
+    MatrizCurricularServico matrizCurricularServico(
+            MatrizCurricularRepositorio repositorio,
+            ConsultaMatrizAtivaPorta consultaMatrizAtiva,
+            ConsultaTurmasPorta consultaTurmas) {
+        return new MatrizCurricularServico(repositorio, consultaMatrizAtiva, consultaTurmas);
+    }
 
     @Bean
     MatrizCurricularServicoAplicacao matrizCurricularServicoAplicacao(
