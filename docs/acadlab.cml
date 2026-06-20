@@ -343,6 +343,14 @@ BoundedContext HistoricoAcademicoContext implements AcademicoSubdomain {
             void retificarRegistro(int historicoId, int registroId, @SituacaoAcademica novaSituacao, int responsavelId, String justificativa, java.time.LocalDate data);
             void atualizarSituacaoDiscente(int historicoId, @SituacaoDiscente novaSituacao, int responsavelId, String justificativa, java.time.LocalDate data);
         }
+        // Padrão Iterator (IteradorHistorico<T>): HistoricoAcademico.iteradorRegistros()
+        // devolve um IteradorRegistrosDisciplina sobre uma view imutável dos registros,
+        // percorrendo-os em ordem sem expor a coleção interna. ConsultaHistoricoServico
+        // consome o iterador para montar o histórico oficial.
+        Service IteradorHistorico {
+            boolean temProximo;
+            @RegistroDisciplina proximo;
+        }
         Service ConsultaHistoricoServico {
             List<@RegistroDisciplina> obterHistoricoOficial(@EstudanteId estudanteId);
         }
