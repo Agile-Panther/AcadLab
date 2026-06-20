@@ -41,7 +41,7 @@ public class RegistroAula {
         notNull(professorId, "O professor não pode ser nulo");
         notNull(novoConteudo, "O novo conteúdo não pode ser nulo");
         if (!this.professorId.equals(professorId)) {
-            throw new IllegalStateException("RN-11: Apenas o professor responsável pela aula pode corrigi-la");
+            throw new IllegalStateException("apenas o professor responsável pela aula pode corrigi-la");
         }
         if (!diarioAberto) {
             throw new IllegalStateException("diário de turma está fechado");

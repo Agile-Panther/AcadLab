@@ -21,3 +21,13 @@ Funcionalidade: Registrar aulas no diário de turma
     Dado um registro de aula com diário explicitamente fechado
     Quando o professor tenta corrigir o conteúdo com diário fechado
     Então o sistema deve rejeitar informando "diário de turma está fechado"
+
+  Cenário: Professor tenta registrar aula fora do período letivo é rejeitado
+    Dado um diário de turma com professor responsável cadastrado
+    Quando o professor responsável tenta registrar uma aula fora do período
+    Então o sistema deve rejeitar informando "aula deve ser registrada dentro do período letivo"
+
+  Cenário: Professor diferente tenta corrigir aula é rejeitado
+    Dado um diário de turma com um registro de aula existente
+    Quando outro professor tenta corrigir o conteúdo da aula
+    Então o sistema deve rejeitar informando "apenas o professor responsável pela aula pode corrigi-la"

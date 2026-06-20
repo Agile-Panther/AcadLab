@@ -111,7 +111,7 @@ public class DiarioTurma {
             throw new IllegalStateException("professor não é o responsável pelo diário");
         }
         if (data.isBefore(dataInicioPeriodo) || data.isAfter(dataFimPeriodo)) {
-            throw new IllegalStateException("RN-2: Aula deve ser registrada dentro do período letivo");
+            throw new IllegalStateException("aula deve ser registrada dentro do período letivo");
         }
         aulas.add(new RegistroAula(aulaId, professorId, data, conteudo));
     }
@@ -219,7 +219,7 @@ public class DiarioTurma {
         }
         var resultado = obterResultado(estudanteId);
         if (resultado.getSituacao() != SituacaoResultado.RECUPERACAO) {
-            throw new IllegalStateException("RN-12: Estudante não está em situação de recuperação");
+            throw new IllegalStateException("estudante não está em situação de recuperação");
         }
         resultado.lancarRecuperacao(nota);
         resultado.atualizarSituacaoRecuperacao(nota >= mediaMinima ? SituacaoResultado.APROVADO : SituacaoResultado.REPROVADO_NOTA);

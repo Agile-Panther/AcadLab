@@ -1,6 +1,9 @@
 package school.cesar.acadlab.dominio.gestaofinanceira.cobranca;
 
-import io.cucumber.java.en.*;
+import io.cucumber.java.pt.Dado;
+import io.cucumber.java.pt.Quando;
+import io.cucumber.java.pt.Entao;
+import io.cucumber.java.pt.E;
 import org.junit.jupiter.api.Assertions;
 import school.cesar.acadlab.dominio.gestaofinanceira.*;
 import java.math.BigDecimal;
@@ -15,17 +18,17 @@ public class GerarCobrancaFuncionalidade {
         this.ctx = ctx;
     }
 
-    @Given("o estudante {int} possui matrícula confirmada no período letivo {int}")
+    @Dado("o estudante {int} possui matrícula confirmada no período letivo {int}")
     public void estudantePossuiMatriculaConfirmada(int estudanteId, int periodoId) {
         ctx.verificadorMatricula.setMatricula(true);
     }
 
-    @Given("o estudante {int} não possui matrícula confirmada no período letivo {int}")
+    @Dado("o estudante {int} não possui matrícula confirmada no período letivo {int}")
     public void estudanteNaoPossuiMatriculaConfirmada(int estudanteId, int periodoId) {
         ctx.verificadorMatricula.setMatricula(false);
     }
 
-    @Given("uma cobrança foi gerada para o estudante {int} no contrato {int}")
+    @E("uma cobrança foi gerada para o estudante {int} no contrato {int}")
     public void cobrancaFoiGeradaParaEstudante(int estudanteId, int contratoId) {
         ctx.verificadorMatricula.setMatricula(true);
         var cobranca = ctx.servico.gerarCobranca(new ContratoId(contratoId), new EstudanteId(estudanteId),
@@ -33,7 +36,7 @@ public class GerarCobrancaFuncionalidade {
         cobrancaId = cobranca.getId();
     }
 
-    @When("gero uma cobrança para o estudante {int} no contrato {int} com valor {double}")
+    @Quando("gero uma cobrança para o estudante {int} no contrato {int} com valor {double}")
     public void geroCobranca(int estudanteId, int contratoId, double valor) {
         var cobranca = ctx.servico.gerarCobranca(new ContratoId(contratoId), new EstudanteId(estudanteId),
                 new PeriodoLetivoId(1), BigDecimal.valueOf(valor).setScale(2, RoundingMode.HALF_UP),
@@ -41,7 +44,7 @@ public class GerarCobrancaFuncionalidade {
         cobrancaId = cobranca.getId();
     }
 
-    @When("tento gerar uma cobrança para o estudante {int} no contrato {int} com valor {double}")
+    @Quando("tento gerar uma cobrança para o estudante {int} no contrato {int} com valor {double}")
     public void tentoGerarCobranca(int estudanteId, int contratoId, double valor) {
         try {
             ctx.servico.gerarCobranca(new ContratoId(contratoId), new EstudanteId(estudanteId),
@@ -52,24 +55,18 @@ public class GerarCobrancaFuncionalidade {
         }
     }
 
-    @When("gero nova versão da cobrança com motivo {string} e valor {double}")
+    @Quando("gero nova versão da cobrança com motivo {string} e valor {double}")
     public void geroNovaVersao(String motivo, double valor) {
         ctx.servico.gerarNovaVersao(cobrancaId, motivo,
                 BigDecimal.valueOf(valor).setScale(2, RoundingMode.HALF_UP));
     }
 
-    @Then("a cobrança deve ser gerada com status ABERTA")
+    @Entao("a cobrança deve ser gerada com status ABERTA")
     public void cobrancaDeveSerGeradaComStatusAberta() {
         Assertions.assertEquals(StatusCobranca.ABERTA, ctx.repositorio.obter(cobrancaId).getStatus());
     }
 
-    @Then("deve ser lançada uma exceção de matrícula não confirmada")
-    public void deveSerLancadaExcecaoMatriculaNaoConfirmada() {
-        Assertions.assertNotNull(ctx.excecao);
-        Assertions.assertInstanceOf(IllegalStateException.class, ctx.excecao);
-    }
-
-    @Then("a cobrança deve estar na versão {int} com valor {double}")
+    @Entao("a cobrança deve estar na versão {int} com valor {double}")
     public void cobrancaDeveEstarNaVersao(int versao, double valor) {
         var cobranca = ctx.repositorio.obter(cobrancaId);
         Assertions.assertEquals(versao, cobranca.getVersao());

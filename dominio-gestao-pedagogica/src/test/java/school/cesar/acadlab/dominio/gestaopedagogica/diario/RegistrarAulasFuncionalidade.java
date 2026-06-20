@@ -96,4 +96,23 @@ public class RegistrarAulasFuncionalidade {
             ctx.excecao = e;
         }
     }
+
+    @Quando("o professor responsável tenta registrar uma aula fora do período")
+    public void professor_tenta_registrar_fora_do_periodo() {
+        aulaId = ctx.repositorio.proximoAulaId();
+        try {
+            diario.registrarAula(aulaId, professorResponsavel, LocalDate.of(2025, 9, 1), "Conteúdo fora do período");
+        } catch (RuntimeException e) {
+            ctx.excecao = e;
+        }
+    }
+
+    @Quando("outro professor tenta corrigir o conteúdo da aula")
+    public void outro_professor_tenta_corrigir() {
+        try {
+            diario.corrigirAula(aulaId, outroProfesor, "Conteúdo alterado");
+        } catch (RuntimeException e) {
+            ctx.excecao = e;
+        }
+    }
 }

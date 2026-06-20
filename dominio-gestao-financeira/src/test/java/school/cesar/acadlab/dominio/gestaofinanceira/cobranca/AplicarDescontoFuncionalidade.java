@@ -1,6 +1,9 @@
 package school.cesar.acadlab.dominio.gestaofinanceira.cobranca;
 
-import io.cucumber.java.en.*;
+import io.cucumber.java.pt.Dado;
+import io.cucumber.java.pt.Quando;
+import io.cucumber.java.pt.Entao;
+import io.cucumber.java.pt.E;
 import org.junit.jupiter.api.Assertions;
 import school.cesar.acadlab.dominio.gestaofinanceira.*;
 import java.math.BigDecimal;
@@ -15,7 +18,7 @@ public class AplicarDescontoFuncionalidade {
         this.ctx = ctx;
     }
 
-    @Given("uma cobrança aberta de {double} para o estudante {int}")
+    @Dado("uma cobrança aberta de {double} para o estudante {int}")
     public void cobrancaAbertaDeValor(double valor, int estudanteId) {
         ctx.verificadorMatricula.setMatricula(true);
         var cobranca = ctx.servico.gerarCobranca(new ContratoId(estudanteId * 10), new EstudanteId(estudanteId),
@@ -24,17 +27,17 @@ public class AplicarDescontoFuncionalidade {
         cobrancaId = cobranca.getId();
     }
 
-    @Given("a autorização {string} é válida")
+    @E("a autorização {string} é válida")
     public void autorizacaoEValida(String autorizacaoId) {
         ctx.verificadorAutorizacao.marcarValida(autorizacaoId);
     }
 
-    @When("aplico um desconto de {int} por cento com autorização {string}")
+    @Quando("aplico um desconto de {int} por cento com autorização {string}")
     public void aplicoDesconto(int percentual, String autorizacaoId) {
         ctx.servico.aplicarDesconto(cobrancaId, new BigDecimal(percentual), autorizacaoId);
     }
 
-    @When("tento aplicar um desconto de {int} por cento com autorização {string}")
+    @Quando("tento aplicar um desconto de {int} por cento com autorização {string}")
     public void tentoAplicarDesconto(int percentual, String autorizacaoId) {
         try {
             ctx.servico.aplicarDesconto(cobrancaId, new BigDecimal(percentual), autorizacaoId);
@@ -43,16 +46,10 @@ public class AplicarDescontoFuncionalidade {
         }
     }
 
-    @Then("o valor atual da cobrança deve ser {double}")
+    @Entao("o valor atual da cobrança deve ser {double}")
     public void valorAtualDeveSerIgualA(double valor) {
         var cobranca = ctx.repositorio.obter(cobrancaId);
         Assertions.assertEquals(0,
                 BigDecimal.valueOf(valor).setScale(2, RoundingMode.HALF_UP).compareTo(cobranca.getValorAtual()));
-    }
-
-    @Then("deve ser lançada uma exceção de autorização inválida")
-    public void deveSerLancadaExcecaoAutorizacaoInvalida() {
-        Assertions.assertNotNull(ctx.excecao);
-        Assertions.assertInstanceOf(IllegalStateException.class, ctx.excecao);
     }
 }

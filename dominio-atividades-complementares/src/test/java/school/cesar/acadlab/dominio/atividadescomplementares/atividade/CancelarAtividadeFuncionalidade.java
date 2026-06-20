@@ -1,6 +1,8 @@
 package school.cesar.acadlab.dominio.atividadescomplementares.atividade;
 
-import io.cucumber.java.en.*;
+import io.cucumber.java.pt.Dado;
+import io.cucumber.java.pt.Quando;
+import io.cucumber.java.pt.Entao;
 import org.junit.jupiter.api.Assertions;
 import school.cesar.acadlab.dominio.atividadescomplementares.*;
 import java.time.LocalDate;
@@ -13,7 +15,7 @@ public class CancelarAtividadeFuncionalidade {
         this.ctx = ctx;
     }
 
-    @Given("uma atividade complementar com status pendente aguardando cancelamento")
+    @Dado("uma atividade complementar com status pendente aguardando cancelamento")
     public void atividadePendenteAguardandoCancelamento() {
         ctx.verificadorVinculo.setVinculo(true);
         var atividade = ctx.servico.submeter(new EstudanteId(1), new CategoriaAtividadeId(1),
@@ -21,7 +23,7 @@ public class CancelarAtividadeFuncionalidade {
         atividadeId = atividade.getId();
     }
 
-    @Given("uma atividade complementar com status deferida aguardando cancelamento")
+    @Dado("uma atividade complementar com status deferida aguardando cancelamento")
     public void atividadeDeferidaAguardandoCancelamento() {
         ctx.verificadorVinculo.setVinculo(true);
         ctx.verificadorLimite.setExcede(false);
@@ -31,12 +33,12 @@ public class CancelarAtividadeFuncionalidade {
         ctx.servico.deferir(atividadeId, 30);
     }
 
-    @When("o estudante solicita o cancelamento da submissão")
+    @Quando("o estudante solicita o cancelamento da submissão")
     public void estudanteSolicitaCancelamento() {
         ctx.servico.cancelar(atividadeId);
     }
 
-    @When("o estudante tenta solicitar o cancelamento da submissão")
+    @Quando("o estudante tenta solicitar o cancelamento da submissão")
     public void estudanteTentaSolicitarCancelamento() {
         try {
             ctx.servico.cancelar(atividadeId);
@@ -45,15 +47,9 @@ public class CancelarAtividadeFuncionalidade {
         }
     }
 
-    @Then("a atividade deve ter status CANCELADA")
+    @Entao("a atividade deve ter status CANCELADA")
     public void atividadeDeveTerStatusCancelada() {
         var atividade = ctx.repositorio.obter(atividadeId);
         Assertions.assertEquals(StatusAtividade.CANCELADA, atividade.getStatus());
-    }
-
-    @Then("deve ser lançada uma exceção de cancelamento inválido")
-    public void deveSerLancadaExcecaoCancelamentoInvalido() {
-        Assertions.assertNotNull(ctx.excecao);
-        Assertions.assertInstanceOf(IllegalStateException.class, ctx.excecao);
     }
 }

@@ -22,3 +22,13 @@ Funcionalidade: Configurar pré-requisitos e correquisitos
     Dado uma matriz curricular com uma disciplina de id 1
     Quando o coordenador tenta definir a disciplina 99 como correquisito da disciplina 1
     Então o sistema deve rejeitar informando "disciplina correquisito não pertence à matriz curricular"
+
+  Cenário: Adicionar pré-requisito em matriz ATIVA é rejeitado
+    Dado uma matriz curricular ATIVA com as disciplinas 1 e 2
+    Quando o coordenador tenta definir a disciplina 1 como pré-requisito da disciplina 2
+    Então o sistema deve rejeitar informando "não é possível alterar matriz ativa"
+
+  Cenário: Adicionar correquisito em matriz ATIVA é rejeitado
+    Dado uma matriz curricular ATIVA com as disciplinas 1 e 2
+    Quando o coordenador tenta definir a disciplina 1 como correquisito da disciplina 2
+    Então o sistema deve rejeitar informando "não é possível alterar matriz ativa"

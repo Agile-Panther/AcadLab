@@ -89,6 +89,14 @@ public class CobrancaServico {
         barramento.postar(evento);
     }
 
+    public void cancelarCobranca(CobrancaId id, String motivo) {
+        notNull(id, "id obrigatório");
+        var cobranca = repositorio.obter(id);
+        var evento = cobranca.cancelar(motivo);
+        repositorio.salvar(cobranca);
+        barramento.postar(evento);
+    }
+
     public Pagamento emitirComprovante(CobrancaId id) {
         notNull(id, "id obrigatório");
         var cobranca = repositorio.obter(id);

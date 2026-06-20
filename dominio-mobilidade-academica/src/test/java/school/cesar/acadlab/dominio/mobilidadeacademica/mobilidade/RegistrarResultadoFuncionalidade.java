@@ -57,4 +57,9 @@ public class RegistrarResultadoFuncionalidade {
             ctx.excecao = e;
         }
     }
+
+    @Entao("a mobilidade deve estar com status CONCLUIDA")
+    public void a_mobilidade_deve_estar_com_status_concluida() {
+        assertEquals(StatusMobilidade.CONCLUIDA, mobilidade.getStatus());
+    }
 }

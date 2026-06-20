@@ -17,32 +17,54 @@ public class Candidatura {
         this.status = StatusCandidatura.EM_ANALISE;
     }
 
-    public void cancelar() {
+    public CandidaturaCanceladaEvento cancelar() {
         if (status != StatusCandidatura.EM_ANALISE) {
             throw new IllegalStateException("candidatura não pode ser cancelada pois não está em análise");
         }
         this.status = StatusCandidatura.CANCELADA;
+        return new CandidaturaCanceladaEvento(this);
     }
 
-    public void deferir() {
+    public CandidaturaDeferidaEvento deferir() {
         if (status != StatusCandidatura.EM_ANALISE) {
             throw new IllegalStateException("candidatura precisa estar em análise para ser deferida");
         }
         this.status = StatusCandidatura.DEFERIDA;
+        return new CandidaturaDeferidaEvento(this);
     }
 
-    public void indeferir() {
+    public CandidaturaIndeferidaEvento indeferir() {
         if (status != StatusCandidatura.EM_ANALISE) {
             throw new IllegalStateException("candidatura precisa estar em análise para ser indeferida");
         }
         this.status = StatusCandidatura.INDEFERIDA;
+        return new CandidaturaIndeferidaEvento(this);
     }
 
-    public void encaminhar() {
+    public CandidaturaEncaminhadaEvento encaminhar() {
         if (status != StatusCandidatura.DEFERIDA) {
             throw new IllegalStateException("candidatura precisa estar deferida para gerar encaminhamento");
         }
         this.status = StatusCandidatura.ENCAMINHADA;
+        return new CandidaturaEncaminhadaEvento(this);
+    }
+
+    public static abstract class CandidaturaEvento {
+        private final Candidatura candidatura;
+        protected CandidaturaEvento(Candidatura candidatura) { this.candidatura = candidatura; }
+        public Candidatura getCandidatura() { return candidatura; }
+    }
+    public static class CandidaturaCanceladaEvento extends CandidaturaEvento {
+        private CandidaturaCanceladaEvento(Candidatura candidatura) { super(candidatura); }
+    }
+    public static class CandidaturaDeferidaEvento extends CandidaturaEvento {
+        private CandidaturaDeferidaEvento(Candidatura candidatura) { super(candidatura); }
+    }
+    public static class CandidaturaIndeferidaEvento extends CandidaturaEvento {
+        private CandidaturaIndeferidaEvento(Candidatura candidatura) { super(candidatura); }
+    }
+    public static class CandidaturaEncaminhadaEvento extends CandidaturaEvento {
+        private CandidaturaEncaminhadaEvento(Candidatura candidatura) { super(candidatura); }
     }
 
     public static Candidatura reconstituir(CandidaturaId id, OportunidadeId oportunidadeId,
