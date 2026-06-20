@@ -44,6 +44,7 @@ import school.cesar.acadlab.dominio.ofertaturmas.turma.StatusTurma;
 import school.cesar.acadlab.dominio.ofertaturmas.turma.Turma;
 import school.cesar.acadlab.dominio.ofertaturmas.turma.TurmaId;
 import school.cesar.acadlab.dominio.ofertaturmas.turma.TurmaRepositorio;
+import school.cesar.acadlab.dominio.ofertaturmas.turma.decorator.EstudanteId;
 
 // ===================== JPA Entities =====================
 
@@ -84,6 +85,14 @@ class TurmaJpa {
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "HORARIO_AULA", joinColumns = @JoinColumn(name = "turmaId"))
     List<HorarioAulaTurmaJpa> horarios = new ArrayList<>();
+
+    // Estado dos decorators (TurmaOnline / TurmaComListaEspera)
+    String linkAcesso;
+
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "TURMA_LISTA_ESPERA", joinColumns = @JoinColumn(name = "turmaId"))
+    @Column(name = "estudanteId")
+    List<Integer> listaEspera = new ArrayList<>();
 }
 
 @Embeddable
@@ -233,6 +242,11 @@ class TurmaRepositorioImpl implements TurmaRepositorio, TurmaRepositorioAplicaca
             hjpa.horaFim = h.getHoraFim();
             jpa.horarios.add(hjpa);
         }
+        jpa.linkAcesso = turma.getLinkAcesso();
+        jpa.listaEspera.clear();
+        for (var e : turma.getListaEspera()) {
+            jpa.listaEspera.add(e.getValor());
+        }
         repository.save(jpa);
     }
 
@@ -273,7 +287,7 @@ class TurmaRepositorioImpl implements TurmaRepositorio, TurmaRepositorioAplicaca
         var horarios = jpa.horarios.stream()
                 .map(h -> new HorarioAula(h.diaSemana, h.horaInicio, h.horaFim))
                 .toList();
-        return Turma.reconstituir(
+        var turma = Turma.reconstituir(
                 new TurmaId(jpa.id),
                 new PeriodoLetivoId(jpa.periodoLetivoId),
                 new DisciplinaId(jpa.disciplinaId),
@@ -283,6 +297,9 @@ class TurmaRepositorioImpl implements TurmaRepositorio, TurmaRepositorioAplicaca
                 jpa.capacidade,
                 jpa.status,
                 horarios);
+        turma.definirLinkAcesso(jpa.linkAcesso);
+        turma.registrarListaEspera(jpa.listaEspera.stream().map(EstudanteId::new).toList());
+        return turma;
     }
 
     private TurmaResumo toResumo(TurmaJpa jpa) {

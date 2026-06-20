@@ -13,6 +13,14 @@ public class TurmaComListaEspera extends TurmaDecorador {
         super(turma);
     }
 
+    /** Reidrata o decorator a partir da lista de espera já persistida na turma. */
+    public TurmaComListaEspera(TurmaOferecida turma, List<EstudanteId> existentes) {
+        super(turma);
+        if (existentes != null) {
+            listaEspera.addAll(existentes);
+        }
+    }
+
     public void entrarListaEspera(EstudanteId estudanteId) {
         notNull(estudanteId, "O estudante não pode ser nulo");
         if (listaEspera.contains(estudanteId))
