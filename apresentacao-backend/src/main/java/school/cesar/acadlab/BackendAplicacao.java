@@ -98,7 +98,9 @@ import school.cesar.acadlab.dominio.mobilidadeacademica.mobilidade.MobilidadeAca
 import school.cesar.acadlab.dominio.ofertaturmas.ConsultaTurmaServico;
 import school.cesar.acadlab.dominio.ofertaturmas.OfertaTurmaServico;
 import school.cesar.acadlab.dominio.ofertaturmas.professor.ProfessorRepositorio;
+import school.cesar.acadlab.dominio.ofertaturmas.professor.ProfessorServico;
 import school.cesar.acadlab.dominio.ofertaturmas.sala.SalaRepositorio;
+import school.cesar.acadlab.dominio.ofertaturmas.sala.SalaServico;
 import school.cesar.acadlab.dominio.ofertaturmas.turma.TurmaRepositorio;
 import school.cesar.acadlab.dominio.permanenciaacademica.BeneficioRepositorio;
 import school.cesar.acadlab.dominio.permanenciaacademica.BeneficioServico;
@@ -260,8 +262,18 @@ public class BackendAplicacao {
     }
 
     @Bean
+    SalaServico salaServico(SalaRepositorio repositorio) {
+        return new SalaServico(repositorio);
+    }
+
+    @Bean
     ProfessorServicoAplicacao professorServicoAplicacao(ProfessorRepositorioAplicacao repositorio) {
         return new ProfessorServicoAplicacao(repositorio);
+    }
+
+    @Bean
+    ProfessorServico professorServico(ProfessorRepositorio repositorio) {
+        return new ProfessorServico(repositorio);
     }
 
     @Bean
