@@ -173,6 +173,23 @@ function Page() {
 
   const [grade, setGrade] = useState<ClassBlock[]>(() => carregarGrade());
   const [trancados, setTrancados] = useState<Trancados>(() => carregarTrancados());
+  const [solicitacoes, setSolicitacoes] = useState<SolicitacaoAjuste[]>(() => carregarSolicitacoes());
+
+  const decidirSolicitacao = (turmaId: number, aprovado: boolean) => {
+    const sol = solicitacoes.find((s) => s.turmaId === turmaId);
+    const novas = solicitacoes.filter((s) => s.turmaId !== turmaId);
+    salvarSolicitacoes(novas);
+    setSolicitacoes(novas);
+    if (aprovado && sol) {
+      const codigo = DISC[sol.disciplinaId]?.codigo;
+      if (codigo) {
+        const novaGrade = grade.filter((b) => b.code !== codigo);
+        localStorage.setItem(GRADE_KEY, JSON.stringify(novaGrade));
+        setGrade(novaGrade);
+      }
+      refetchMatricula();
+    }
+  };
   const selecionadas = ofertasVisiveis.filter((o) => o.status === "Selecionada");
   const creditos = selecionadas.reduce((s, o) => s + o.creditos, 0);
   const temConflito = selecionadas.some((o) => o.disciplinaId === 501) && selecionadas.some((o) => o.disciplinaId === 601);
@@ -210,11 +227,12 @@ function Page() {
 
   return (
     <AppShell title="Matrícula" subtitle={subtitle}>
-      {perfil === "secretaria" && <SecretariaView matriculaId={MATRICULA_ID} aguardandoSecretaria={aguardandoSecretaria} onAprovada={() => refetchMatricula()} />}
+      {perfil === "secretaria" && <SecretariaView matriculaId={MATRICULA_ID} aguardandoSecretaria={aguardandoSecretaria} onAprovada={() => refetchMatricula()} solicitacoes={solicitacoes} onDecidiu={decidirSolicitacao} />}
       {perfil === "estudante" && view.kind === "overview" && (
         <Overview
           jaConfirmada={jaConfirmada}
           aguardandoSecretaria={aguardandoSecretaria}
+          solicitacoes={solicitacoes}
           grade={grade}
           trancados={trancados}
           onNova={() => { setOfertas(ofertasFromDB); salvarSessaoWizard(0, ofertasFromDB); setView({ kind: "wizard", step: 0 }); }}
@@ -244,6 +262,18 @@ function Page() {
         <Ajuste
           itensMatricula={matricula?.itens ?? []}
           onBack={() => setView({ kind: "overview" })}
+          onSolicitar={(pendentes) => {
+            const novas: SolicitacaoAjuste[] = pendentes.map((p) => ({
+              turmaId: p.turmaId,
+              disciplinaId: p.disciplinaId,
+              estudante: "Maria Santos",
+              dataHora: new Date().toISOString(),
+            }));
+            const todas = [...solicitacoes, ...novas];
+            salvarSolicitacoes(todas);
+            setSolicitacoes(todas);
+            setView({ kind: "overview" });
+          }}
         />
       )}
       {perfil === "estudante" && view.kind === "trancarDisc" && (
@@ -274,8 +304,9 @@ function Page() {
   );
 }
 
-function SecretariaView({ matriculaId, aguardandoSecretaria, onAprovada }: {
+function SecretariaView({ matriculaId, aguardandoSecretaria, onAprovada, solicitacoes, onDecidiu }: {
   matriculaId: number; aguardandoSecretaria: boolean; onAprovada: () => void;
+  solicitacoes: SolicitacaoAjuste[]; onDecidiu: (turmaId: number, aprovado: boolean) => void;
 }) {
   const [pedidos, setPedidos] = useState<Pedido[]>([
     { id: "MAT-2025-0231", aluno: "Maria Santos", tipo: "Exceção — pré-requisito", aberta: "12/03/2025", status: "Em análise" },
@@ -297,10 +328,38 @@ function SecretariaView({ matriculaId, aguardandoSecretaria, onAprovada }: {
     <div className="space-y-5">
       <StatsRow stats={[
         { label: "Matrículas confirmadas", value: 1284, tone: "success" },
-        { label: "Em análise", value: pedidos.filter((p) => p.status === "Em análise").length, tone: "warning" },
+        { label: "Em análise", value: pedidos.filter((p) => p.status === "Em análise").length + solicitacoes.length, tone: "warning" },
         { label: "Trancamentos abertos", value: 8, tone: "info" },
         { label: "Exceções deferidas", value: pedidos.filter((p) => p.status === "Deferida").length, tone: "success" },
       ]} />
+      {solicitacoes.length > 0 && (
+        <>
+          <SectionTitle title="Solicitações de ajuste" subtitle="Cancelamentos solicitados por estudantes aguardando análise." />
+          <DataTable
+            columns={[
+              { key: "estudante", header: "Estudante" },
+              { key: "disciplina", header: "Disciplina", render: (r: SolicitacaoAjuste) => {
+                const d = DISC[r.disciplinaId];
+                return d ? `${d.codigo} — ${d.nome}` : `Turma ${r.turmaId}`;
+              }},
+              { key: "data", header: "Solicitado em", render: (r: SolicitacaoAjuste) =>
+                new Date(r.dataHora).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })
+              },
+              { key: "acoes", header: "", align: "right" as const, render: (r: SolicitacaoAjuste) => (
+                <div className="flex justify-end gap-2">
+                  <RowActionButton onClick={() => { onDecidiu(r.turmaId, false); toast.success("Cancelamento rejeitado."); }}>Rejeitar</RowActionButton>
+                  <RowActionButton tone="info" onClick={() => {
+                    api.matricula.cancelarItem(matriculaId, r.turmaId, { hoje: HOJE, inicio: HOJE, fim: HOJE })
+                      .then(() => { onDecidiu(r.turmaId, true); toast.success("Cancelamento aprovado."); })
+                      .catch((e: Error) => toast.error(e.message || "Erro ao aprovar."));
+                  }}>Aprovar</RowActionButton>
+                </div>
+              )},
+            ]}
+            rows={solicitacoes}
+          />
+        </>
+      )}
       <SectionTitle title="Solicitações de matrícula" subtitle="Exceções, trancamentos e ajustes aguardando triagem." />
       <DataTable
         columns={[
@@ -337,8 +396,8 @@ function SecretariaView({ matriculaId, aguardandoSecretaria, onAprovada }: {
   );
 }
 
-function Overview({ jaConfirmada, aguardandoSecretaria, grade, trancados, onNova, onAjuste, onTrancarDisc, onTrancarPer, onDestrancarDisc, onDestrancarPer }: {
-  jaConfirmada: boolean; aguardandoSecretaria: boolean; grade: ClassBlock[]; trancados: Trancados;
+function Overview({ jaConfirmada, aguardandoSecretaria, solicitacoes, grade, trancados, onNova, onAjuste, onTrancarDisc, onTrancarPer, onDestrancarDisc, onDestrancarPer }: {
+  jaConfirmada: boolean; aguardandoSecretaria: boolean; solicitacoes: SolicitacaoAjuste[]; grade: ClassBlock[]; trancados: Trancados;
   onNova: () => void; onAjuste: () => void; onTrancarDisc: () => void; onTrancarPer: () => void;
   onDestrancarDisc: () => void; onDestrancarPer: () => void;
 }) {
@@ -351,6 +410,12 @@ function Overview({ jaConfirmada, aguardandoSecretaria, grade, trancados, onNova
       {aguardandoSecretaria && (
         <ValidationCallout tone="warning">
           Matrícula enviada — <strong>aguardando aprovação da secretaria</strong>. Você será notificado quando for confirmada.
+        </ValidationCallout>
+      )}
+      {solicitacoes.length > 0 && (
+        <ValidationCallout tone="info">
+          <strong>{solicitacoes.length} disciplina(s)</strong> com solicitação de cancelamento aguardando análise da secretaria:{" "}
+          {solicitacoes.map((s) => DISC[s.disciplinaId]?.codigo ?? `Turma ${s.turmaId}`).join(", ")}.
         </ValidationCallout>
       )}
       {jaConfirmada && !aguardandoSecretaria
@@ -563,9 +628,27 @@ function salvarTrancados(t: Trancados) {
   localStorage.setItem(TRANCADOS_KEY, JSON.stringify(t));
 }
 
+// ─── Solicitações de ajuste (cancelamento via secretaria) ────────────────────
+const AJUSTE_SOL_KEY = "ajuste_solicitacoes_v1";
+type SolicitacaoAjuste = { turmaId: number; disciplinaId: number; estudante: string; dataHora: string };
+
+function carregarSolicitacoes(): SolicitacaoAjuste[] {
+  try {
+    const raw = localStorage.getItem(AJUSTE_SOL_KEY);
+    return raw ? (JSON.parse(raw) as SolicitacaoAjuste[]) : [];
+  } catch { return []; }
+}
+function salvarSolicitacoes(s: SolicitacaoAjuste[]) {
+  localStorage.setItem(AJUSTE_SOL_KEY, JSON.stringify(s));
+}
+
 type AjustePendente = { turmaId: number; disciplinaId: number };
 
-function Ajuste({ itensMatricula, onBack }: { itensMatricula: ItemMatriculaResumo[]; onBack: () => void }) {
+function Ajuste({ itensMatricula, onBack, onSolicitar }: {
+  itensMatricula: ItemMatriculaResumo[];
+  onBack: () => void;
+  onSolicitar: (pendentes: AjustePendente[]) => void;
+}) {
   const { data: turmas = [] } = useQuery({
     queryKey: ["turmas", "periodo", 1],
     queryFn: () => api.turmas.listByPeriodo(1),
@@ -575,10 +658,12 @@ function Ajuste({ itensMatricula, onBack }: { itensMatricula: ItemMatriculaResum
   const [pendentes, setPendentes] = useState<AjustePendente[]>([]);
 
   // Apenas itens com statusItem CONFIRMADO podem ser cancelados no ajuste
+  // Exclui os que já estão marcados para cancelar (desaparecem da lista ao marcar)
+  const idsPendentes = new Set(pendentes.map((p) => p.turmaId));
   const idsConfirmados = new Set(
     itensMatricula.filter((i) => i.statusItem === "CONFIRMADO").map((i) => i.turmaId)
   );
-  const matriculadas = turmas.filter((t) => idsConfirmados.has(t.id));
+  const matriculadas = turmas.filter((t) => idsConfirmados.has(t.id) && !idsPendentes.has(t.id));
 
   const marcarExcluir = (t: typeof turmas[0]) => {
     if (pendentes.some((p) => p.turmaId === t.id)) return;
@@ -599,8 +684,8 @@ function Ajuste({ itensMatricula, onBack }: { itensMatricula: ItemMatriculaResum
         )
       ),
     onSuccess: () => {
-      toast.success("Ajustes confirmados.");
-      onBack();
+      toast.success(`${pendentes.length} solicitação(es) de cancelamento enviada(s) para a secretaria.`);
+      onSolicitar(pendentes);
     },
     onError: (e: Error) => toast.error(e.message || "Erro ao confirmar ajustes."),
   });
@@ -653,7 +738,7 @@ function Ajuste({ itensMatricula, onBack }: { itensMatricula: ItemMatriculaResum
       <div className="flex justify-end gap-2">
         <Button variant="outline" onClick={onBack}>Cancelar</Button>
         <Button onClick={() => confirmar.mutate()} disabled={confirmar.isPending || pendentes.length === 0}>
-          {confirmar.isPending ? "Confirmando…" : `Confirmar cancelamentos${pendentes.length > 0 ? ` (${pendentes.length})` : ""}`}
+          {confirmar.isPending ? "Enviando…" : `Solicitar cancelamento${pendentes.length > 0 ? ` (${pendentes.length})` : ""}`}
         </Button>
       </div>
     </div>
