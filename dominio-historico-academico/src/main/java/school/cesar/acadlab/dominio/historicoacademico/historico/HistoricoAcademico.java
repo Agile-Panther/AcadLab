@@ -83,10 +83,10 @@ public class HistoricoAcademico {
         notNull(registroId, "O id do registro não pode ser nulo");
         notNull(disciplinaId, "A disciplina não pode ser nula");
         if (!turmaEncerrada) {
-            throw new IllegalStateException("RN-1: Apenas resultados de turmas encerradas podem ser consolidados");
+            throw new IllegalStateException("a turma ainda não foi encerrada");
         }
         if (situacao == null) {
-            throw new IllegalStateException("RN-2: Situação acadêmica final é obrigatória na consolidação");
+            throw new IllegalStateException("situação acadêmica não informada");
         }
         registros.add(new RegistroDisciplina(registroId, disciplinaId, turmaId, periodoLetivoId,
                 nota, frequencia, situacao));
@@ -97,7 +97,7 @@ public class HistoricoAcademico {
                                            String justificativa, LocalDate data) {
         notNull(novaSituacao, "A nova situação não pode ser nula");
         notNull(responsavel, "O responsável não pode ser nulo");
-        notBlank(justificativa, "A justificativa não pode ser vazia");
+        notBlank(justificativa, "justificativa obrigatória para alteração de situação");
         notNull(data, "A data não pode ser nula");
         trilhaAuditoria.add(new EntradaAuditoria(this.situacaoDiscente, novaSituacao,
                 responsavel, justificativa, data));
@@ -109,7 +109,7 @@ public class HistoricoAcademico {
                                          LocalDate data, boolean estudanteComVinculoAtivo) {
         notNull(acompanhamentoId, "O id do acompanhamento não pode ser nulo");
         if (!estudanteComVinculoAtivo) {
-            throw new IllegalStateException("RN-4: Acompanhamento apenas para estudante com matrícula ativa ou situação regular");
+            throw new IllegalStateException("estudante não possui vínculo ativo");
         }
         acompanhamentos.add(new AcompanhamentoAcademico(acompanhamentoId, observacao, data));
     }
@@ -121,7 +121,7 @@ public class HistoricoAcademico {
         notNull(aproveitamentoId, "O id do aproveitamento não pode ser nulo");
         notNull(disciplinaEquivalente, "A disciplina equivalente não pode ser nula");
         if (cargaHorariaExterna < cargaHorariaRequerida) {
-            throw new IllegalStateException("RN-7: Carga horária da disciplina externa insuficiente para aproveitamento");
+            throw new IllegalStateException("carga horária externa insuficiente para aproveitamento");
         }
         aproveitamentos.add(new Aproveitamento(aproveitamentoId, disciplinaEquivalente,
                 cargaHorariaExterna, cargaHorariaRequerida, instituicaoOrigem, disciplinaOrigem));
@@ -137,7 +137,7 @@ public class HistoricoAcademico {
         var registro = registros.stream()
                 .filter(r -> r.getId().equals(registroId))
                 .findFirst()
-                .orElseThrow(() -> new IllegalArgumentException("Registro não encontrado: " + registroId));
+                .orElseThrow(() -> new IllegalArgumentException("registro não encontrado no histórico"));
         SituacaoAcademica situacaoAnterior = registro.getSituacao();
         retificacoes.add(new Retificacao(retificacaoId, registroId, situacaoAnterior,
                 novaSituacao, responsavel, justificativa, data));

@@ -1,8 +1,9 @@
 package school.cesar.acadlab.dominio.historicoacademico;
 
 public class HistoricoFuncionalidade {
-    protected RepositorioEmMemoria repositorio;
-    protected HistoricoAcademicoServico servico;
+    public RepositorioEmMemoria repositorio;
+    public HistoricoAcademicoServico servico;
+    public RuntimeException excecao;
 
     public HistoricoFuncionalidade() {
         repositorio = new RepositorioEmMemoria();

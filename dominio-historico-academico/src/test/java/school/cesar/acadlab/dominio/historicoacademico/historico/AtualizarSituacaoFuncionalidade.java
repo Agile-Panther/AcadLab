@@ -8,18 +8,22 @@ import io.cucumber.java.pt.Entao;
 import io.cucumber.java.pt.Quando;
 import school.cesar.acadlab.dominio.historicoacademico.HistoricoFuncionalidade;
 
-public class AtualizarSituacaoFuncionalidade extends HistoricoFuncionalidade {
+public class AtualizarSituacaoFuncionalidade {
+    private final HistoricoFuncionalidade ctx;
     private HistoricoAcademico historico;
-    private RuntimeException excecao;
     private final SecretariaId secretaria = new SecretariaId(1);
+
+    public AtualizarSituacaoFuncionalidade(HistoricoFuncionalidade ctx) {
+        this.ctx = ctx;
+    }
 
     @Dado("um histórico de estudante para atualização de situação discente")
     public void historicoParaAtualizacao() {
         historico = new HistoricoAcademico(
-                repositorio.proximoId(),
+                ctx.repositorio.proximoId(),
                 new EstudanteId(3),
                 new MatrizCurricularId(1));
-        repositorio.salvar(historico);
+        ctx.repositorio.salvar(historico);
     }
 
     @Quando("a secretaria atualiza a situação do estudante para {string}")
@@ -30,15 +34,15 @@ public class AtualizarSituacaoFuncionalidade extends HistoricoFuncionalidade {
                     secretaria,
                     "Estudante cumpriu todos os requisitos",
                     LocalDate.of(2025, 12, 1));
-            repositorio.salvar(historico);
+            ctx.repositorio.salvar(historico);
         } catch (RuntimeException e) {
-            excecao = e;
+            ctx.excecao = e;
         }
     }
 
     @Entao("a situação do estudante é {string}")
     public void situacaoAtualizada(String situacaoEsperada) {
-        assertNull(excecao, "Não deveria ter lançado exceção");
+        assertNull(ctx.excecao, "Não deveria ter lançado exceção");
         assertEquals(SituacaoDiscente.valueOf(situacaoEsperada), historico.getSituacaoDiscente());
     }
 
@@ -61,12 +65,7 @@ public class AtualizarSituacaoFuncionalidade extends HistoricoFuncionalidade {
                     "",
                     LocalDate.of(2025, 12, 1));
         } catch (RuntimeException e) {
-            excecao = e;
+            ctx.excecao = e;
         }
-    }
-
-    @Entao("o sistema rejeita a atualização de situação")
-    public void sistemaRejeitaAtualizacao() {
-        assertNotNull(excecao);
     }
 }
