@@ -10,16 +10,20 @@ import school.cesar.acadlab.dominio.secretariavirtual.analista.SecretariaId;
 import school.cesar.acadlab.dominio.secretariavirtual.estudante.EstudanteId;
 import school.cesar.acadlab.dominio.secretariavirtual.periodo.PeriodoLetivoId;
 
-public class CancelarSolicitacaoFuncionalidade extends SecretariaVirtualFuncionalidade {
+public class CancelarSolicitacaoFuncionalidade {
+    private final SecretariaVirtualFuncionalidade ctx;
     private final EstudanteId estudanteId = new EstudanteId(40);
     private final PeriodoLetivoId periodoLetivoId = new PeriodoLetivoId(40);
     private final SecretariaId secretariaId = new SecretariaId(3);
     private SolicitacaoAcademicaId solicitacaoId;
-    private RuntimeException excecao;
+
+    public CancelarSolicitacaoFuncionalidade(SecretariaVirtualFuncionalidade ctx) {
+        this.ctx = ctx;
+    }
 
     private SolicitacaoAcademica criarSolicitacaoBase() {
-        calendarioDentroDoPrazo = true;
-        return solicitacaoServico.abrirSolicitacao(
+        ctx.calendarioDentroDoPrazo = true;
+        return ctx.solicitacaoServico.abrirSolicitacao(
                 estudanteId, periodoLetivoId, TipoSolicitacao.SEGUNDA_VIA_DOCUMENTO,
                 "Solicitação para cancelamento", List.of());
     }
@@ -34,45 +38,39 @@ public class CancelarSolicitacaoFuncionalidade extends SecretariaVirtualFunciona
     public void uma_solicitacao_em_analise() {
         var solicitacao = criarSolicitacaoBase();
         solicitacaoId = solicitacao.getId();
-        analiseServico.iniciarAnalise(solicitacaoId, secretariaId);
+        ctx.analiseServico.iniciarAnalise(solicitacaoId, secretariaId);
     }
 
     @Dado("uma solicitação com status deferida para cancelamento")
     public void uma_solicitacao_deferida() {
         var solicitacao = criarSolicitacaoBase();
         solicitacaoId = solicitacao.getId();
-        analiseServico.iniciarAnalise(solicitacaoId, secretariaId);
-        analiseServico.deferir(solicitacaoId, secretariaId, "Ok", false);
+        ctx.analiseServico.iniciarAnalise(solicitacaoId, secretariaId);
+        ctx.analiseServico.deferir(solicitacaoId, secretariaId, "Ok", false);
     }
 
     @Quando("o estudante cancela a solicitação")
     public void o_estudante_cancela() {
         try {
-            solicitacaoServico.cancelarSolicitacao(solicitacaoId);
+            ctx.solicitacaoServico.cancelarSolicitacao(solicitacaoId);
         } catch (RuntimeException e) {
-            excecao = e;
+            ctx.excecao = e;
         }
     }
 
     @Quando("o estudante tenta cancelar a solicitação")
     public void o_estudante_tenta_cancelar() {
         try {
-            solicitacaoServico.cancelarSolicitacao(solicitacaoId);
+            ctx.solicitacaoServico.cancelarSolicitacao(solicitacaoId);
         } catch (RuntimeException e) {
-            excecao = e;
+            ctx.excecao = e;
         }
     }
 
     @Entao("a solicitação é cancelada com sucesso")
     public void a_solicitacao_e_cancelada() {
-        assertNull(excecao, "Não deveria ter lançado exceção");
-        var solicitacao = consultaServico.obterPorId(solicitacaoId);
+        assertNull(ctx.excecao, "Não deveria ter lançado exceção");
+        var solicitacao = ctx.consultaServico.obterPorId(solicitacaoId);
         assertEquals(StatusSolicitacao.CANCELADA, solicitacao.getStatus());
-    }
-
-    @Entao("o sistema rejeita o cancelamento")
-    public void o_sistema_rejeita_cancelamento() {
-        assertNotNull(excecao);
-        assertInstanceOf(IllegalStateException.class, excecao);
     }
 }

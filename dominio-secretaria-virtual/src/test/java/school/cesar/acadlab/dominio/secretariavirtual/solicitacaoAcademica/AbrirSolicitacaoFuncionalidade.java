@@ -13,13 +13,17 @@ import school.cesar.acadlab.dominio.secretariavirtual.periodo.PeriodoLetivoId;
 import school.cesar.acadlab.dominio.secretariavirtual.protocolo.Protocolo;
 import school.cesar.acadlab.dominio.secretariavirtual.protocolo.ProtocoloId;
 
-public class AbrirSolicitacaoFuncionalidade extends SecretariaVirtualFuncionalidade {
+public class AbrirSolicitacaoFuncionalidade {
+    private final SecretariaVirtualFuncionalidade ctx;
     private final EstudanteId estudanteId = new EstudanteId(1);
     private final PeriodoLetivoId periodoLetivoId = new PeriodoLetivoId(1);
     private TipoSolicitacao tipoSolicitacao;
     private List<Documento> documentos;
     private SolicitacaoAcademica solicitacaoCriada;
-    private RuntimeException excecao;
+
+    public AbrirSolicitacaoFuncionalidade(SecretariaVirtualFuncionalidade ctx) {
+        this.ctx = ctx;
+    }
 
     @Dado("um estudante sem solicitação aberta do tipo {string}")
     public void um_estudante_sem_solicitacao_aberta(String tipo) {
@@ -29,9 +33,9 @@ public class AbrirSolicitacaoFuncionalidade extends SecretariaVirtualFuncionalid
     @Dado("um estudante com solicitação aberta do tipo {string}")
     public void um_estudante_com_solicitacao_aberta(String tipo) {
         this.tipoSolicitacao = TipoSolicitacao.valueOf(tipo);
-        calendarioDentroDoPrazo = true;
+        ctx.calendarioDentroDoPrazo = true;
         var docs = criarDocumentosPara(tipoSolicitacao);
-        solicitacaoServico.abrirSolicitacao(estudanteId, periodoLetivoId, tipoSolicitacao,
+        ctx.solicitacaoServico.abrirSolicitacao(estudanteId, periodoLetivoId, tipoSolicitacao,
                 "Solicitação existente", docs);
     }
 
@@ -47,22 +51,22 @@ public class AbrirSolicitacaoFuncionalidade extends SecretariaVirtualFuncionalid
 
     @Dado("o prazo do calendário acadêmico está vigente")
     public void o_prazo_esta_vigente() {
-        calendarioDentroDoPrazo = true;
+        ctx.calendarioDentroDoPrazo = true;
     }
 
     @Dado("o prazo do calendário acadêmico está encerrado")
     public void o_prazo_esta_encerrado() {
-        calendarioDentroDoPrazo = false;
+        ctx.calendarioDentroDoPrazo = false;
     }
 
     @Quando("o estudante abre a solicitação acadêmica")
     public void o_estudante_abre_solicitacao() {
         try {
-            solicitacaoCriada = solicitacaoServico.abrirSolicitacao(
+            solicitacaoCriada = ctx.solicitacaoServico.abrirSolicitacao(
                     estudanteId, periodoLetivoId, tipoSolicitacao,
                     "Solicitação de teste", documentos);
         } catch (RuntimeException e) {
-            excecao = e;
+            ctx.excecao = e;
         }
     }
 
@@ -70,17 +74,17 @@ public class AbrirSolicitacaoFuncionalidade extends SecretariaVirtualFuncionalid
     public void o_estudante_abre_outra_revisao_de_nota() {
         try {
             documentos = criarDocumentosPara(TipoSolicitacao.REVISAO_DE_NOTA);
-            solicitacaoCriada = solicitacaoServico.abrirSolicitacao(
+            solicitacaoCriada = ctx.solicitacaoServico.abrirSolicitacao(
                     estudanteId, periodoLetivoId, TipoSolicitacao.REVISAO_DE_NOTA,
                     "Nova revisão de nota", documentos);
         } catch (RuntimeException e) {
-            excecao = e;
+            ctx.excecao = e;
         }
     }
 
     @Entao("o sistema registra a solicitação com sucesso")
     public void o_sistema_registra_com_sucesso() {
-        assertNull(excecao, "Não deveria ter lançado exceção");
+        assertNull(ctx.excecao, "Não deveria ter lançado exceção");
         assertNotNull(solicitacaoCriada);
     }
 
@@ -92,24 +96,6 @@ public class AbrirSolicitacaoFuncionalidade extends SecretariaVirtualFuncionalid
     @E("um protocolo é gerado para a solicitação")
     public void um_protocolo_e_gerado() {
         assertNotNull(solicitacaoCriada.getProtocolo());
-    }
-
-    @Entao("o sistema rejeita a abertura por prazo expirado")
-    public void o_sistema_rejeita_por_prazo() {
-        assertNotNull(excecao);
-        assertTrue(excecao.getMessage().contains("prazo"));
-    }
-
-    @Entao("o sistema rejeita a abertura por duplicidade")
-    public void o_sistema_rejeita_por_duplicidade() {
-        assertNotNull(excecao);
-        assertTrue(excecao.getMessage().contains("Já existe"));
-    }
-
-    @Entao("o sistema rejeita a abertura por documentação incompleta")
-    public void o_sistema_rejeita_por_documentacao() {
-        assertNotNull(excecao);
-        assertTrue(excecao.getMessage().contains("obrigatório"));
     }
 
     private List<Documento> criarDocumentosPara(TipoSolicitacao tipo) {

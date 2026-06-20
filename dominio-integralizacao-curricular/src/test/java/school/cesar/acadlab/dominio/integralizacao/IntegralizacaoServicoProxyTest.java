@@ -51,7 +51,7 @@ class IntegralizacaoServicoProxyTest {
 
         var excecao = assertThrows(IllegalStateException.class,
                 () -> proxy.iniciarAnalise(estudanteId, matrizId));
-        assertTrue(excecao.getMessage().contains("RN1"));
+        assertTrue(excecao.getMessage().contains("período letivo ainda não foi encerrado"));
     }
 
     @Test
@@ -60,7 +60,7 @@ class IntegralizacaoServicoProxyTest {
 
         var excecao = assertThrows(IllegalStateException.class,
                 () -> proxy.iniciarAnalise(estudanteId, matrizId));
-        assertTrue(excecao.getMessage().contains("RN2"));
+        assertTrue(excecao.getMessage().contains("estudante possui pendências acadêmicas"));
     }
 
     @Test
@@ -73,7 +73,7 @@ class IntegralizacaoServicoProxyTest {
 
         var excecao = assertThrows(IllegalStateException.class,
                 () -> proxy.aprovarAptidao(integralizacao.getId(), coordenadorId));
-        assertTrue(excecao.getMessage().contains("RN6"));
+        assertTrue(excecao.getMessage().contains("requisitos curriculares não foram cumpridos"));
     }
 
     @Test
