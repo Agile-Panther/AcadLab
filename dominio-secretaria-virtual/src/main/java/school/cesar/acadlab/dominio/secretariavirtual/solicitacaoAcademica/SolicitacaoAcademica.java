@@ -111,8 +111,7 @@ public class SolicitacaoAcademica {
                 .toList();
         for (String obrigatorio : obrigatorios) {
             if (!tiposAnexados.contains(obrigatorio)) {
-                throw new IllegalStateException(
-                        "Documento obrigatório ausente: " + obrigatorio);
+                throw new IllegalStateException("documentação obrigatória não foi anexada");
             }
         }
     }
@@ -120,10 +119,10 @@ public class SolicitacaoAcademica {
     // RN5: complementação não permitida em solicitações encerradas ou indeferidas
     public SolicitacaoComplementadaEvento complementar(Documento documento) {
         notNull(documento, "O documento não pode ser nulo");
-        if (status == StatusSolicitacao.CONCLUIDA || status == StatusSolicitacao.INDEFERIDA) {
-            throw new IllegalStateException(
-                    "Solicitações concluídas ou indeferidas não podem receber complementação");
-        }
+        if (status == StatusSolicitacao.CONCLUIDA)
+            throw new IllegalStateException("solicitação concluída não pode ser complementada");
+        if (status == StatusSolicitacao.INDEFERIDA)
+            throw new IllegalStateException("solicitação indeferida não pode ser complementada");
         documentos.add(documento);
         if (status == StatusSolicitacao.PENDENTE_COMPLEMENTACAO) {
             this.status = StatusSolicitacao.PENDENTE_ANALISE;
@@ -202,7 +201,7 @@ public class SolicitacaoAcademica {
         }
         if (possuiImpactoAcademico && !alteracoesVinculadas) {
             throw new IllegalStateException(
-                    "Solicitação com impacto acadêmico requer vinculação de alterações antes da conclusão");
+                    "solicitação deferida com impacto acadêmico requer vinculação de alterações");
         }
         this.status = StatusSolicitacao.CONCLUIDA;
         return new SolicitacaoConcluidaEvento(this);
@@ -210,10 +209,12 @@ public class SolicitacaoAcademica {
 
     // RN6: cancelamento apenas para solicitações pendentes de análise
     public SolicitacaoCanceladaEvento cancelar() {
-        if (status != StatusSolicitacao.PENDENTE_ANALISE) {
-            throw new IllegalStateException(
-                    "Apenas solicitações pendentes de análise podem ser canceladas");
-        }
+        if (status == StatusSolicitacao.EM_ANALISE)
+            throw new IllegalStateException("solicitação em análise não pode ser cancelada");
+        if (status == StatusSolicitacao.DEFERIDA)
+            throw new IllegalStateException("solicitação deferida não pode ser cancelada");
+        if (status != StatusSolicitacao.PENDENTE_ANALISE)
+            throw new IllegalStateException("solicitação com status " + status + " não pode ser cancelada");
         this.status = StatusSolicitacao.CANCELADA;
         return new SolicitacaoCanceladaEvento(this);
     }

@@ -37,12 +37,10 @@ public class IntegralizacaoServicoProxy implements IntegralizacaoOperacoes {
     public IntegralizacaoCurricular iniciarAnalise(EstudanteId estudanteId,
                                                     MatrizCurricularId matrizId) {
         if (!consultaPeriodoLetivo.ultimoPeriodoEncerrado(estudanteId)) {
-            throw new IllegalStateException(
-                    "RN1: A solicitação só pode ser iniciada após o encerramento do último período letivo");
+            throw new IllegalStateException("período letivo ainda não foi encerrado");
         }
         if (consultaPendencias.possuiPendencias(estudanteId)) {
-            throw new IllegalStateException(
-                    "RN2: Pendências acadêmicas ou documentais impedem o início da análise");
+            throw new IllegalStateException("estudante possui pendências acadêmicas");
         }
         return real.iniciarAnalise(estudanteId, matrizId);
     }
@@ -63,8 +61,7 @@ public class IntegralizacaoServicoProxy implements IntegralizacaoOperacoes {
         IntegralizacaoCurricular integralizacao = repositorio.obter(integralizacaoId);
         if (!consultaRequisitos.cumpreTodosRequisitos(
                 integralizacao.getEstudanteId(), integralizacao.getMatrizCurricularId())) {
-            throw new IllegalStateException(
-                    "RN6: O estudante não cumpriu todos os requisitos da matriz curricular");
+            throw new IllegalStateException("requisitos curriculares não foram cumpridos");
         }
         real.aprovarAptidao(integralizacaoId, aprovadorId);
     }

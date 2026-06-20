@@ -15,64 +15,62 @@ import school.cesar.acadlab.dominio.integralizacao.checklist.TipoItemChecklist;
 import school.cesar.acadlab.dominio.integralizacao.integralizacao.IntegralizacaoId;
 import school.cesar.acadlab.dominio.integralizacao.integralizacao.StatusIntegralizacao;
 
-public class RegistrarColacaoFuncionalidade extends IntegralizacaoFuncionalidade {
+public class RegistrarColacaoFuncionalidade {
 
+    private final IntegralizacaoFuncionalidade ctx;
     private final EstudanteId estudanteId = new EstudanteId(1);
     private final MatrizCurricularId matrizId = new MatrizCurricularId(1);
     private final CoordenadorId coordenadorId = new CoordenadorId(1);
     private IntegralizacaoId integralizacaoId;
     private ColacaoDeGrau colacaoRegistrada;
-    private RuntimeException excecao;
+
+    public RegistrarColacaoFuncionalidade(IntegralizacaoFuncionalidade ctx) {
+        this.ctx = ctx;
+    }
 
     @Dado("um estudante com aptidão formalmente aprovada")
     public void estudante_com_aptidao_aprovada() {
-        var integralizacao = integralizacaoServico.iniciarAnalise(estudanteId, matrizId);
+        var integralizacao = ctx.integralizacaoServico.iniciarAnalise(estudanteId, matrizId);
         integralizacaoId = integralizacao.getId();
         var itens = List.of(
                 new ItemChecklist(TipoItemChecklist.DISCIPLINAS_OBRIGATORIAS, "Cumpridas", true),
                 new ItemChecklist(TipoItemChecklist.HORAS_COMPLEMENTARES, "Cumpridas", true)
         );
-        integralizacaoServico.gerarChecklist(integralizacaoId, itens);
-        integralizacaoServico.registrarResultado(integralizacaoId, StatusIntegralizacao.APTO);
-        integralizacaoServico.aprovarAptidao(integralizacaoId, coordenadorId);
+        ctx.integralizacaoServico.gerarChecklist(integralizacaoId, itens);
+        ctx.integralizacaoServico.registrarResultado(integralizacaoId, StatusIntegralizacao.APTO);
+        ctx.integralizacaoServico.aprovarAptidao(integralizacaoId, coordenadorId);
     }
 
     @Dado("um estudante sem aptidão aprovada")
     public void estudante_sem_aptidao() {
-        var integralizacao = integralizacaoServico.iniciarAnalise(estudanteId, matrizId);
+        var integralizacao = ctx.integralizacaoServico.iniciarAnalise(estudanteId, matrizId);
         integralizacaoId = integralizacao.getId();
     }
 
     @Quando("a secretaria registra a colação de grau com data válida")
     public void registrar_colacao_data_valida() {
         try {
-            colacaoRegistrada = colacaoServico.registrar(
+            colacaoRegistrada = ctx.colacaoServico.registrar(
                     integralizacaoId, LocalDate.now().plusMonths(1), "Auditório Central");
         } catch (RuntimeException e) {
-            excecao = e;
+            ctx.excecao = e;
         }
     }
 
     @Quando("a secretaria tenta registrar colação sem aptidão aprovada")
     public void registrar_colacao_sem_aptidao() {
         try {
-            colacaoRegistrada = colacaoServico.registrar(
+            colacaoRegistrada = ctx.colacaoServico.registrar(
                     integralizacaoId, LocalDate.now().plusMonths(1), "Auditório Central");
         } catch (RuntimeException e) {
-            excecao = e;
+            ctx.excecao = e;
         }
     }
 
     @Entao("a colação de grau é registrada com sucesso")
     public void colacao_registrada() {
-        assertNull(excecao, "Não deveria ter lançado exceção");
+        assertNull(ctx.excecao, "Não deveria ter lançado exceção");
         assertNotNull(colacaoRegistrada);
         assertNotNull(colacaoRegistrada.getDataCerimonia());
-    }
-
-    @Entao("o sistema rejeita o registro da colação por ausência de aptidão")
-    public void colacao_rejeitada() {
-        assertNotNull(excecao);
-        assertInstanceOf(IllegalStateException.class, excecao);
     }
 }

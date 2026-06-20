@@ -10,28 +10,30 @@ import school.cesar.acadlab.dominio.integralizacao.ConsultaPeriodoLetivoPorta;
 import school.cesar.acadlab.dominio.integralizacao.ConsultaRequisitosIntegralizacaoPorta;
 import school.cesar.acadlab.dominio.integralizacao.EstudanteId;
 import school.cesar.acadlab.dominio.integralizacao.IntegralizacaoFuncionalidade;
-import school.cesar.acadlab.dominio.integralizacao.IntegralizacaoRepositorioTest;
-import school.cesar.acadlab.dominio.integralizacao.IntegralizacaoServico;
 import school.cesar.acadlab.dominio.integralizacao.IntegralizacaoServicoProxy;
 import school.cesar.acadlab.dominio.integralizacao.MatrizCurricularId;
 
-public class SolicitarAnaliseFuncionalidade extends IntegralizacaoFuncionalidade {
+public class SolicitarAnaliseFuncionalidade {
 
+    private final IntegralizacaoFuncionalidade ctx;
     private final EstudanteId estudanteId = new EstudanteId(1);
     private final MatrizCurricularId matrizId = new MatrizCurricularId(1);
     private IntegralizacaoCurricular integralizacaoCriada;
-    private RuntimeException excecao;
     private IntegralizacaoServicoProxy proxy;
 
     private boolean periodoEncerrado = true;
     private boolean possuiPendencias = false;
+
+    public SolicitarAnaliseFuncionalidade(IntegralizacaoFuncionalidade ctx) {
+        this.ctx = ctx;
+    }
 
     private void criarProxy() {
         ConsultaPeriodoLetivoPorta periodoPorta = e -> periodoEncerrado;
         ConsultaPendenciasPorta pendenciasPorta = e -> possuiPendencias;
         ConsultaRequisitosIntegralizacaoPorta requisitosPorta = (e, m) -> true;
         proxy = new IntegralizacaoServicoProxy(
-                integralizacaoServico, integralizacaoRepositorio,
+                ctx.integralizacaoServico, ctx.integralizacaoRepositorio,
                 periodoPorta, pendenciasPorta, requisitosPorta);
     }
 
@@ -61,7 +63,7 @@ public class SolicitarAnaliseFuncionalidade extends IntegralizacaoFuncionalidade
         try {
             integralizacaoCriada = proxy.iniciarAnalise(estudanteId, matrizId);
         } catch (RuntimeException e) {
-            excecao = e;
+            ctx.excecao = e;
         }
     }
 
@@ -70,32 +72,18 @@ public class SolicitarAnaliseFuncionalidade extends IntegralizacaoFuncionalidade
         try {
             integralizacaoCriada = proxy.iniciarAnalise(estudanteId, matrizId);
         } catch (RuntimeException e) {
-            excecao = e;
+            ctx.excecao = e;
         }
     }
 
     @Entao("a análise de integralização é iniciada com sucesso")
     public void analise_iniciada_com_sucesso() {
-        assertNull(excecao, "Não deveria ter lançado exceção");
+        assertNull(ctx.excecao, "Não deveria ter lançado exceção");
         assertNotNull(integralizacaoCriada);
     }
 
     @E("o status da integralização é {string}")
     public void status_integralizacao(String statusEsperado) {
         assertEquals(StatusIntegralizacao.valueOf(statusEsperado), integralizacaoCriada.getStatus());
-    }
-
-    @Entao("o sistema rejeita a solicitação por período não encerrado")
-    public void rejeita_periodo_nao_encerrado() {
-        assertNotNull(excecao);
-        assertInstanceOf(IllegalStateException.class, excecao);
-        assertTrue(excecao.getMessage().contains("RN1"));
-    }
-
-    @Entao("o sistema rejeita a solicitação por pendências existentes")
-    public void rejeita_pendencias() {
-        assertNotNull(excecao);
-        assertInstanceOf(IllegalStateException.class, excecao);
-        assertTrue(excecao.getMessage().contains("RN2"));
     }
 }

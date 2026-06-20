@@ -36,7 +36,7 @@ public class ColacaoServico {
         var integralizacao = integralizacaoRepositorio.obter(integralizacaoId);
 
         if (!integralizacao.aptidaoAprovada()) {
-            throw new IllegalStateException("RN7: A colação só pode ser registrada para estudante com aptidão aprovada");
+            throw new IllegalStateException("estudante não possui aptidão aprovada para colação de grau");
         }
 
         var id = colacaoRepositorio.proximoId();
