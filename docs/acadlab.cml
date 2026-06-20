@@ -745,6 +745,18 @@ BoundedContext EstagiosContext implements ServicosAcademicosSubdomain {
 
 /* CONTEXT MAP */
 
+/* RAIZ DE COMPOSIÇÃO (wiring de beans)
+   O backend não concentra o wiring em uma única classe: cada bounded context
+   tem sua própria @Configuration em school.cesar.acadlab.configuracao
+   (CurriculoConfig, OfertaTurmasConfig, MatriculaConfig, GestaoPedagogicaConfig,
+   HistoricoAcademicoConfig, SecretariaVirtualConfig, IntegralizacaoConfig,
+   AtividadesComplementaresConfig, PermanenciaAcademicaConfig,
+   ApoioPsicopedagogicoConfig, MobilidadeAcademicaConfig, GestaoFinanceiraConfig,
+   EstagiosConfig, PeriodoLetivoConfig), descobertas pelo component scan.
+   BackendAplicacao fica apenas como ponto de inicialização. Cada Config monta
+   o serviço de domínio, o serviço de aplicação e — quando há padrão Observer —
+   registra o observador concreto no EventoBarramento. */
+
 ContextMap AcadLab {
     contains CompartilhadoContext
     contains CurriculoContext
