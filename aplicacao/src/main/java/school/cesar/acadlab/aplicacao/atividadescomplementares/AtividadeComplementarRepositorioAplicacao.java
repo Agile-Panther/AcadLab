@@ -4,4 +4,5 @@ import java.util.List;
 
 public interface AtividadeComplementarRepositorioAplicacao {
     List<AtividadeComplementarResumo> pesquisarPorEstudante(int estudanteId);
+    List<AtividadeComplementarResumo> pesquisarPorStatus(String status);
 }

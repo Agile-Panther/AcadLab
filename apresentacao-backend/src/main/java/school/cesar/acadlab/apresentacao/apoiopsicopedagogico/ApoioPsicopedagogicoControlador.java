@@ -5,6 +5,7 @@ import static org.springframework.web.bind.annotation.RequestMethod.POST;
 import static org.springframework.web.bind.annotation.RequestMethod.PUT;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -17,6 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import school.cesar.acadlab.aplicacao.apoiopsicopedagogico.ApoioPsicopedagogicoServicoAplicacao;
 import school.cesar.acadlab.aplicacao.apoiopsicopedagogico.CasoResumo;
+import school.cesar.acadlab.dominio.apoiopsicopedagogico.AgendamentoServico;
 import school.cesar.acadlab.dominio.apoiopsicopedagogico.ApoioServico;
 import school.cesar.acadlab.dominio.apoiopsicopedagogico.AtendimentoServico;
 import school.cesar.acadlab.dominio.apoiopsicopedagogico.TriagemServico;
@@ -34,6 +36,7 @@ class ApoioPsicopedagogicoControlador {
     @Autowired private ApoioServico apoioServico;
     @Autowired private TriagemServico triagemServico;
     @Autowired private AtendimentoServico atendimentoServico;
+    @Autowired private AgendamentoServico agendamentoServico;
     @Autowired private ApoioPsicopedagogicoServicoAplicacao servicoAplicacao;
 
     /* ===== Casos ===== */
@@ -48,6 +51,16 @@ class ApoioPsicopedagogicoControlador {
         return servicoAplicacao.buscarCasosPorResponsavel(responsavelId);
     }
 
+    @RequestMapping(method = GET, path = "casos/abertos")
+    List<CasoResumo> buscarCasosAbertos() {
+        return servicoAplicacao.buscarCasosAbertos();
+    }
+
+    @RequestMapping(method = GET, path = "estudantes/{estudanteId}/casos")
+    List<CasoResumo> buscarCasosPorEstudante(@PathVariable int estudanteId) {
+        return servicoAplicacao.buscarCasosPorEstudante(estudanteId);
+    }
+
     @RequestMapping(method = GET, path = "estudantes/{estudanteId}/caso-ativo")
     Optional<CasoResumo> buscarCasoAtivoPorEstudante(@PathVariable int estudanteId) {
         return servicoAplicacao.buscarCasoAtivoPorEstudante(estudanteId);
@@ -58,6 +71,11 @@ class ApoioPsicopedagogicoControlador {
     @RequestMapping(method = POST, path = "solicitacoes")
     void solicitar(@RequestBody SolicitarRequest request) {
         apoioServico.solicitar(new EstudanteId(request.estudanteId()), request.descricao());
+    }
+
+    @RequestMapping(method = PUT, path = "casos/{casoId}/reabrir")
+    void reabrirCaso(@PathVariable int casoId) {
+        apoioServico.reabrir(new CasoId(casoId));
     }
 
     /* ===== Triagem ===== */
@@ -87,6 +105,19 @@ class ApoioPsicopedagogicoControlador {
         atendimentoServico.encerrarCaso(new CasoId(casoId));
     }
 
+    /* ===== Agendamento ===== */
+
+    @RequestMapping(method = POST, path = "casos/{casoId}/agendamento")
+    void agendar(@PathVariable int casoId, @RequestBody AgendarRequest request) {
+        agendamentoServico.agendar(new CasoId(casoId), request.dataHora(), LocalDateTime.now());
+    }
+
+    @RequestMapping(method = POST, path = "casos/{casoId}/agendamento/contestacao")
+    void contestarAgendamento(@PathVariable int casoId, @RequestBody ContestarAgendamentoRequest request) {
+        agendamentoServico.contestar(new CasoId(casoId), request.justificativa(),
+                request.horarioSugerido(), LocalDateTime.now());
+    }
+
     /* ===== Records ===== */
 
     record SolicitarRequest(int estudanteId, String descricao) {}
@@ -95,4 +126,8 @@ class ApoioPsicopedagogicoControlador {
 
     record AtendimentoRequest(String observacoes, String encaminhamento,
                                boolean conclusaoFinal, LocalDate data) {}
+
+    record AgendarRequest(LocalDateTime dataHora) {}
+
+    record ContestarAgendamentoRequest(String justificativa, LocalDateTime horarioSugerido) {}
 }

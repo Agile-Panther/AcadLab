@@ -20,6 +20,14 @@ public class ApoioPsicopedagogicoServicoAplicacao {
         return repositorio.buscarCasosPorResponsavel(responsavelId);
     }
 
+    public List<CasoResumo> buscarCasosPorEstudante(int estudanteId) {
+        return repositorio.buscarCasosPorEstudante(estudanteId);
+    }
+
+    public List<CasoResumo> buscarCasosAbertos() {
+        return repositorio.buscarCasosAbertos();
+    }
+
     public Optional<CasoResumo> buscarCasoAtivoPorEstudante(int estudanteId) {
         return repositorio.buscarCasoAtivoPorEstudante(estudanteId);
     }

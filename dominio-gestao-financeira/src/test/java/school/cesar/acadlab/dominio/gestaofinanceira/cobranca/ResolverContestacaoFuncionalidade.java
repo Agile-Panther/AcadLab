@@ -41,41 +41,58 @@ public class ResolverContestacaoFuncionalidade {
                 new PeriodoLetivoId(1), new BigDecimal("1500.00"), LocalDate.of(2025, 2, 10));
         cobrancaId = cobranca.getId();
         ctx.servico.contestar(cobrancaId, new EstudanteId(800 + contratoId), "Contestação inicial");
-        ctx.servico.resolverContestacao(cobrancaId, "Primeira resolução");
+        ctx.servico.indeferirContestacao(cobrancaId, "Primeira resolução");
     }
 
-    @Quando("o setor financeiro resolve a contestação com parecer {string}")
-    public void setorFinanceiroResolveContestacao(String parecer) {
-        ctx.servico.resolverContestacao(cobrancaId, parecer);
+    @Quando("o setor financeiro indefere a contestação com parecer {string}")
+    public void indefere(String parecer) {
+        ctx.servico.indeferirContestacao(cobrancaId, parecer);
     }
 
-    @Quando("o setor financeiro tenta resolver a contestação")
-    public void setorFinanceiroTentaResolverContestacao() {
+    @Quando("o setor financeiro defere a contestação com {int} por cento e parecer {string}")
+    public void deferePercentual(int pct, String parecer) {
+        ctx.servico.deferirContestacao(cobrancaId, ModoAjuste.PERCENTUAL, new BigDecimal(pct), parecer);
+    }
+
+    @Quando("o setor financeiro defere a contestação com o valor {string} e parecer {string}")
+    public void defereValor(String valor, String parecer) {
+        ctx.servico.deferirContestacao(cobrancaId, ModoAjuste.VALOR,
+                new BigDecimal(valor).setScale(2, java.math.RoundingMode.HALF_UP), parecer);
+    }
+
+    @Quando("o setor financeiro tenta indeferir a contestação")
+    public void tentaIndeferir() {
         try {
-            ctx.servico.resolverContestacao(cobrancaId, "parecer");
+            ctx.servico.indeferirContestacao(cobrancaId, "parecer");
         } catch (RuntimeException e) {
             ctx.excecao = e;
         }
     }
 
-    @Quando("o setor financeiro tenta resolver a contestação novamente")
-    public void setorFinanceiroTentaResolverNovamente() {
+    @Quando("o setor financeiro tenta indeferir a contestação novamente")
+    public void tentaIndeferirNovamente() {
         try {
-            ctx.servico.resolverContestacao(cobrancaId, "novo parecer");
+            ctx.servico.indeferirContestacao(cobrancaId, "novo parecer");
         } catch (RuntimeException e) {
             ctx.excecao = e;
         }
     }
 
-    @Entao("a contestação deve ter status RESOLVIDA")
-    public void contestacaoDeveTerStatusResolvida() {
+    @Entao("a contestação deve ter status {string}")
+    public void contestacaoDeveTerStatus(String status) {
         var contestacao = ctx.repositorio.obter(cobrancaId).getContestacao();
         Assertions.assertNotNull(contestacao);
-        Assertions.assertEquals(StatusContestacao.RESOLVIDA, contestacao.getStatus());
+        Assertions.assertEquals(StatusContestacao.valueOf(status), contestacao.getStatus());
     }
 
     @E("a cobrança deve retornar ao status ABERTA após resolução")
     public void cobrancaDeveRetornarAoStatusAbertaAposResolucao() {
         Assertions.assertEquals(StatusCobranca.ABERTA, ctx.repositorio.obter(cobrancaId).getStatus());
+    }
+
+    @E("o valor atual da cobrança permanece {string}")
+    public void valorAtualPermanece(String valor) {
+        Assertions.assertEquals(0, new BigDecimal(valor).setScale(2, java.math.RoundingMode.HALF_UP)
+                .compareTo(ctx.repositorio.obter(cobrancaId).getValorAtual()));
     }
 }

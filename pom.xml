@@ -29,6 +29,7 @@
         <module>dominio-integralizacao-curricular</module>
         <module>dominio-atividades-complementares</module>
         <module>dominio-permanencia-academica</module>
+        <module>dominio-apoio-psicopedagogico</module>
         <module>dominio-mobilidade-academica</module>
         <module>dominio-gestao-financeira</module>
         <module>dominio-estagios</module>

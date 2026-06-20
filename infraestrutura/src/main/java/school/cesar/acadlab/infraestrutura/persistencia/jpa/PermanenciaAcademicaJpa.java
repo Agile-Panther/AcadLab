@@ -210,6 +210,11 @@ class PermanenciaAcademicaRepositorioImpl
     /* --- PermanenciaAcademicaRepositorioAplicacao --- */
 
     @Override
+    public List<EditalResumo> buscarTodosEditais() {
+        return editalRepo.findAll().stream().map(this::toResumoEdital).toList();
+    }
+
+    @Override
     public List<EditalResumo> buscarEditaisPorPrograma(String programa) {
         return editalRepo.findByPrograma(programa).stream().map(this::toResumoEdital).toList();
     }
@@ -217,6 +222,11 @@ class PermanenciaAcademicaRepositorioImpl
     @Override
     public Optional<EditalResumo> buscarEditalPorId(int id) {
         return editalRepo.findById(id).map(this::toResumoEdital);
+    }
+
+    @Override
+    public List<InscricaoResumo> buscarTodasInscricoes() {
+        return inscricaoRepo.findAll().stream().map(this::toResumoInscricao).toList();
     }
 
     @Override

@@ -1,0 +1,150 @@
+===== F-13 SUB0 UNIT A (BACKEND) REVIEW PACKAGE =====
+
+### Modified tracked files (git diff HEAD) ###
+diff --git a/aplicacao/src/main/java/school/cesar/acadlab/aplicacao/gestaofinanceira/CobrancaRepositorioAplicacao.java b/aplicacao/src/main/java/school/cesar/acadlab/aplicacao/gestaofinanceira/CobrancaRepositorioAplicacao.java
+index 6e108d4..faceb1c 100644
+--- a/aplicacao/src/main/java/school/cesar/acadlab/aplicacao/gestaofinanceira/CobrancaRepositorioAplicacao.java
++++ b/aplicacao/src/main/java/school/cesar/acadlab/aplicacao/gestaofinanceira/CobrancaRepositorioAplicacao.java
+@@ -4,4 +4,6 @@ import java.util.List;
+ 
+ public interface CobrancaRepositorioAplicacao {
+     List<CobrancaResumo> pesquisarPorContrato(int contratoId);
++
++    List<CobrancaResumo> pesquisarContestacoesAbertas();
+ }
+diff --git a/aplicacao/src/main/java/school/cesar/acadlab/aplicacao/gestaofinanceira/CobrancaResumo.java b/aplicacao/src/main/java/school/cesar/acadlab/aplicacao/gestaofinanceira/CobrancaResumo.java
+index 733314a..aee02be 100644
+--- a/aplicacao/src/main/java/school/cesar/acadlab/aplicacao/gestaofinanceira/CobrancaResumo.java
++++ b/aplicacao/src/main/java/school/cesar/acadlab/aplicacao/gestaofinanceira/CobrancaResumo.java
+@@ -2,6 +2,7 @@ package school.cesar.acadlab.aplicacao.gestaofinanceira;
+ 
+ import java.math.BigDecimal;
+ import java.time.LocalDate;
++import java.util.List;
+ 
+ public record CobrancaResumo(
+         int id,
+@@ -12,4 +13,7 @@ public record CobrancaResumo(
+         BigDecimal valorAtual,
+         LocalDate vencimento,
+         int versao,
+-        String status) {}
++        String status,
++        PagamentoResumo pagamento,
++        ContestacaoResumo contestacao,
++        List<DescontoResumo> descontos) {}
+diff --git a/aplicacao/src/main/java/school/cesar/acadlab/aplicacao/gestaofinanceira/CobrancaServicoAplicacao.java b/aplicacao/src/main/java/school/cesar/acadlab/aplicacao/gestaofinanceira/CobrancaServicoAplicacao.java
+index 40ff9c7..a51a796 100644
+--- a/aplicacao/src/main/java/school/cesar/acadlab/aplicacao/gestaofinanceira/CobrancaServicoAplicacao.java
++++ b/aplicacao/src/main/java/school/cesar/acadlab/aplicacao/gestaofinanceira/CobrancaServicoAplicacao.java
+@@ -12,4 +12,8 @@ public class CobrancaServicoAplicacao {
+     public List<CobrancaResumo> pesquisarPorContrato(int contratoId) {
+         return repositorio.pesquisarPorContrato(contratoId);
+     }
++
++    public List<CobrancaResumo> pesquisarContestacoesAbertas() {
++        return repositorio.pesquisarContestacoesAbertas();
++    }
+ }
+diff --git a/apresentacao-backend/src/main/java/school/cesar/acadlab/apresentacao/gestaofinanceira/CobrancaControlador.java b/apresentacao-backend/src/main/java/school/cesar/acadlab/apresentacao/gestaofinanceira/CobrancaControlador.java
+index c1affee..b3394ca 100644
+--- a/apresentacao-backend/src/main/java/school/cesar/acadlab/apresentacao/gestaofinanceira/CobrancaControlador.java
++++ b/apresentacao-backend/src/main/java/school/cesar/acadlab/apresentacao/gestaofinanceira/CobrancaControlador.java
+@@ -37,6 +37,11 @@ class CobrancaControlador {
+         return servicoAplicacao.pesquisarPorContrato(contratoId);
+     }
+ 
++    @RequestMapping(method = GET, path = "contestacoes-abertas")
++    List<CobrancaResumo> pesquisarContestacoesAbertas() {
++        return servicoAplicacao.pesquisarContestacoesAbertas();
++    }
++
+     @RequestMapping(method = POST, path = "gerar")
+     void gerarCobranca(@RequestBody GerarCobrancaRequest request) {
+         servico.gerarCobranca(
+diff --git a/infraestrutura/src/main/java/school/cesar/acadlab/infraestrutura/persistencia/jpa/CobrancaJpa.java b/infraestrutura/src/main/java/school/cesar/acadlab/infraestrutura/persistencia/jpa/CobrancaJpa.java
+index 1987d6f..4757b17 100644
+--- a/infraestrutura/src/main/java/school/cesar/acadlab/infraestrutura/persistencia/jpa/CobrancaJpa.java
++++ b/infraestrutura/src/main/java/school/cesar/acadlab/infraestrutura/persistencia/jpa/CobrancaJpa.java
+@@ -23,6 +23,9 @@ import jakarta.persistence.JoinColumn;
+ import jakarta.persistence.Table;
+ import school.cesar.acadlab.aplicacao.gestaofinanceira.CobrancaResumo;
+ import school.cesar.acadlab.aplicacao.gestaofinanceira.CobrancaRepositorioAplicacao;
++import school.cesar.acadlab.aplicacao.gestaofinanceira.PagamentoResumo;
++import school.cesar.acadlab.aplicacao.gestaofinanceira.ContestacaoResumo;
++import school.cesar.acadlab.aplicacao.gestaofinanceira.DescontoResumo;
+ import school.cesar.acadlab.dominio.gestaofinanceira.CobrancaId;
+ import school.cesar.acadlab.dominio.gestaofinanceira.ContratoId;
+ import school.cesar.acadlab.dominio.gestaofinanceira.EstudanteId;
+@@ -94,6 +97,8 @@ class AplicacaoDescontoJpa {
+ interface CobrancaJpaRepository extends JpaRepository<CobrancaJpa, Integer> {
+     List<CobrancaJpa> findByContratoId(int contratoId);
+ 
++    List<CobrancaJpa> findByContestacaoStatus(StatusContestacao status);
++
+     @Query("SELECT COALESCE(MAX(c.id), 0) + 1 FROM CobrancaJpa c")
+     int proximoId();
+ }
+@@ -128,11 +133,32 @@ class CobrancaRepositorioImpl implements CobrancaRepositorio, CobrancaRepositori
+     @Override
+     public List<CobrancaResumo> pesquisarPorContrato(int contratoId) {
+         return repositorio.findByContratoId(contratoId).stream()
+-                .map(jpa -> new CobrancaResumo(
+-                        jpa.id, jpa.contratoId, jpa.estudanteId, jpa.periodoLetivoId,
+-                        jpa.valorBase, jpa.valorAtual, jpa.vencimento, jpa.versao,
+-                        jpa.status.name()))
++                .map(this::toResumo)
++                .toList();
++    }
++
++    @Override
++    public List<CobrancaResumo> pesquisarContestacoesAbertas() {
++        return repositorio.findByContestacaoStatus(StatusContestacao.PENDENTE).stream()
++                .map(this::toResumo)
++                .toList();
++    }
++
++    private CobrancaResumo toResumo(CobrancaJpa jpa) {
++        PagamentoResumo pagamento = jpa.pagamentoValor == null ? null
++                : new PagamentoResumo(jpa.pagamentoValor, jpa.pagamentoData, jpa.pagamentoReferencia,
++                        jpa.pagamentoStatus == null ? null : jpa.pagamentoStatus.name());
++        ContestacaoResumo contestacao = jpa.contestacaoRequerente == null ? null
++                : new ContestacaoResumo(jpa.contestacaoRequerente, jpa.contestacaoJustificativa,
++                        jpa.contestacaoData,
++                        jpa.contestacaoStatus == null ? null : jpa.contestacaoStatus.name(),
++                        jpa.contestacaoParecer);
++        List<DescontoResumo> descontos = jpa.descontos.stream()
++                .map(d -> new DescontoResumo(d.percentual, d.autorizacaoId, d.dataAplicacao))
+                 .toList();
++        return new CobrancaResumo(jpa.id, jpa.contratoId, jpa.estudanteId, jpa.periodoLetivoId,
++                jpa.valorBase, jpa.valorAtual, jpa.vencimento, jpa.versao, jpa.status.name(),
++                pagamento, contestacao, descontos);
+     }
+ 
+     private CobrancaJpa toJpa(Cobranca c) {
+
+### NEW sub-DTO files (full content) ###
+--- aplicacao/src/main/java/school/cesar/acadlab/aplicacao/gestaofinanceira/PagamentoResumo.java ---
+package school.cesar.acadlab.aplicacao.gestaofinanceira;
+
+import java.math.BigDecimal;
+import java.time.LocalDate;
+
+public record PagamentoResumo(BigDecimal valor, LocalDate data, String referencia, String status) {}
+
+--- aplicacao/src/main/java/school/cesar/acadlab/aplicacao/gestaofinanceira/ContestacaoResumo.java ---
+package school.cesar.acadlab.aplicacao.gestaofinanceira;
+
+import java.time.LocalDate;
+
+public record ContestacaoResumo(Integer requerenteId, String justificativa, LocalDate data,
+        String status, String parecer) {}
+
+--- aplicacao/src/main/java/school/cesar/acadlab/aplicacao/gestaofinanceira/DescontoResumo.java ---
+package school.cesar.acadlab.aplicacao.gestaofinanceira;
+
+import java.math.BigDecimal;
+import java.time.LocalDate;
+
+public record DescontoResumo(BigDecimal percentual, String autorizacaoId, LocalDate dataAplicacao) {}
+

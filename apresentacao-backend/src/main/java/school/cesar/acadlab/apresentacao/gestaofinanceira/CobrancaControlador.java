@@ -21,6 +21,7 @@ import school.cesar.acadlab.dominio.gestaofinanceira.CobrancaServico;
 import school.cesar.acadlab.dominio.gestaofinanceira.ContratoId;
 import school.cesar.acadlab.dominio.gestaofinanceira.EstudanteId;
 import school.cesar.acadlab.dominio.gestaofinanceira.PeriodoLetivoId;
+import school.cesar.acadlab.dominio.gestaofinanceira.cobranca.ModoAjuste;
 import school.cesar.acadlab.dominio.gestaofinanceira.cobranca.Pagamento;
 
 @RestController
@@ -35,6 +36,11 @@ class CobrancaControlador {
     @RequestMapping(method = GET, path = "contrato/{contratoId}")
     List<CobrancaResumo> pesquisarPorContrato(@PathVariable int contratoId) {
         return servicoAplicacao.pesquisarPorContrato(contratoId);
+    }
+
+    @RequestMapping(method = GET, path = "contestacoes-abertas")
+    List<CobrancaResumo> pesquisarContestacoesAbertas() {
+        return servicoAplicacao.pesquisarContestacoesAbertas();
     }
 
     @RequestMapping(method = POST, path = "gerar")
@@ -62,9 +68,15 @@ class CobrancaControlador {
         servico.contestar(new CobrancaId(id), new EstudanteId(request.estudanteId()), request.justificativa());
     }
 
-    @RequestMapping(method = POST, path = "{id}/resolver-contestacao")
-    void resolverContestacao(@PathVariable int id, @RequestBody String parecer) {
-        servico.resolverContestacao(new CobrancaId(id), parecer);
+    @RequestMapping(method = POST, path = "{id}/deferir-contestacao")
+    void deferirContestacao(@PathVariable int id, @RequestBody DeferirContestacaoRequest request) {
+        servico.deferirContestacao(new CobrancaId(id), ModoAjuste.valueOf(request.modo()),
+                request.valor(), request.parecer());
+    }
+
+    @RequestMapping(method = POST, path = "{id}/indeferir-contestacao")
+    void indeferirContestacao(@PathVariable int id, @RequestBody IndeferirContestacaoRequest request) {
+        servico.indeferirContestacao(new CobrancaId(id), request.parecer());
     }
 
     @RequestMapping(method = POST, path = "{id}/registrar-pagamento")
@@ -94,4 +106,8 @@ class CobrancaControlador {
     record RegistrarPagamentoRequest(BigDecimal valor, LocalDate data, String referencia) {}
 
     record CancelarPagamentoRequest(String justificativa, String responsavel) {}
+
+    record DeferirContestacaoRequest(String modo, BigDecimal valor, String parecer) {}
+
+    record IndeferirContestacaoRequest(String parecer) {}
 }

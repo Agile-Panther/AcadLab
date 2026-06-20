@@ -28,7 +28,7 @@ public class Edital {
         notNull(prazoInscricaoFim, "O fim do prazo de inscrição não pode ser nulo");
         notNull(prazoRecursoInicio, "O início do prazo de recurso não pode ser nulo");
         notNull(prazoRecursoFim, "O fim do prazo de recurso não pode ser nulo");
-        notNull(prazoRenovacao, "O prazo de renovação não pode ser nulo");
+        // prazoRenovacao é opcional (nem todo programa prevê renovação) — pode ser nulo.
         this.id = id;
         this.programa = programa;
         this.vagas = vagas;

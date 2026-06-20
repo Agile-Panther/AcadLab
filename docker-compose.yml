@@ -43,7 +43,9 @@ services:
     ports:
       - "5173:5173"
     environment:
-      VITE_API_TARGET: http://backend:8080
+      # Lido pelo browser (import.meta.env) — precisa ser um host alcançável a partir
+      # da máquina do usuário, não o hostname interno do Docker (backend:8080).
+      VITE_API_TARGET: http://localhost:8080
 
 volumes:
   postgres_data:

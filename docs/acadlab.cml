@@ -10,7 +10,11 @@ Domain AcadLabDomain {
     }
     Subdomain PermanenciaSubdomain {
         type SUPPORTING_DOMAIN
-        domainVisionStatement "Programas de permanência estudantil: bolsas, auxílios e acompanhamento psicopedagógico"
+        domainVisionStatement "Programas de permanência estudantil: bolsas, auxílios e gestão de benefícios"
+    }
+    Subdomain ApoioPsicopedagogicoSubdomain {
+        type SUPPORTING_DOMAIN
+        domainVisionStatement "Acompanhamento psicopedagógico individual do estudante: solicitação, triagem, atendimentos e encerramento de caso com sigilo"
     }
     Subdomain FinanceiroSubdomain {
         type GENERIC_SUBDOMAIN
@@ -449,7 +453,7 @@ BoundedContext PermanenciaAcademicaContext implements PermanenciaSubdomain {
 
 /* APOIO PSICOPEDAGÓGICO CONTEXT — F-11 (Matheus) · Observer */
 
-BoundedContext ApoioPsicopedagogicoContext implements PermanenciaSubdomain {
+BoundedContext ApoioPsicopedagogicoContext implements ApoioPsicopedagogicoSubdomain {
     domainVisionStatement "Acompanhamento psicopedagógico individual com sigilo de atendimento: solicitação, triagem, sessões e encerramento de caso"
     type FEATURE
 

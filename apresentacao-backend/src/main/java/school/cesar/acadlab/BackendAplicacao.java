@@ -14,14 +14,25 @@ import school.cesar.acadlab.dominio.historicoacademico.historico.HistoricoAcadem
 import school.cesar.acadlab.aplicacao.apoiopsicopedagogico.ApoioPsicopedagogicoServicoAplicacao;
 import school.cesar.acadlab.aplicacao.atividadescomplementares.AtividadeComplementarRepositorioAplicacao;
 import school.cesar.acadlab.aplicacao.atividadescomplementares.AtividadeComplementarServicoAplicacao;
+import school.cesar.acadlab.aplicacao.atividadescomplementares.CategoriaHorasRepositorioAplicacao;
+import school.cesar.acadlab.aplicacao.atividadescomplementares.CategoriaHorasServicoAplicacao;
 import school.cesar.acadlab.aplicacao.curriculo.MatrizCurricularRepositorioAplicacao;
 import school.cesar.acadlab.aplicacao.curriculo.MatrizCurricularServicoAplicacao;
 import school.cesar.acadlab.aplicacao.estagios.EstagioRepositorioAplicacao;
 import school.cesar.acadlab.aplicacao.estagios.EstagioServicoAplicacao;
 import school.cesar.acadlab.aplicacao.estagios.OportunidadeRepositorioAplicacao;
 import school.cesar.acadlab.aplicacao.estagios.OportunidadeServicoAplicacao;
+import school.cesar.acadlab.aplicacao.gestaofinanceira.BolsaRepositorioAplicacao;
+import school.cesar.acadlab.aplicacao.gestaofinanceira.BolsaServicoAplicacao;
 import school.cesar.acadlab.aplicacao.gestaofinanceira.CobrancaRepositorioAplicacao;
 import school.cesar.acadlab.aplicacao.gestaofinanceira.CobrancaServicoAplicacao;
+import school.cesar.acadlab.dominio.gestaofinanceira.CobrancaServico;
+import school.cesar.acadlab.dominio.gestaofinanceira.VerificadorAutorizacaoDesconto;
+import school.cesar.acadlab.dominio.gestaofinanceira.VerificadorMatriculaConfirmada;
+import school.cesar.acadlab.dominio.gestaofinanceira.cobranca.CobrancaRepositorio;
+import school.cesar.acadlab.dominio.gestaofinanceira.bolsa.AutorizacaoDescontoPorBolsa;
+import school.cesar.acadlab.dominio.gestaofinanceira.bolsa.BolsaRepositorio;
+import school.cesar.acadlab.dominio.gestaofinanceira.bolsa.BolsaServico;
 import school.cesar.acadlab.aplicacao.gestaopedagogica.DiarioTurmaRepositorioAplicacao;
 import school.cesar.acadlab.aplicacao.gestaopedagogica.DiarioTurmaServicoAplicacao;
 import school.cesar.acadlab.aplicacao.integralizacao.ColacaoRepositorioAplicacao;
@@ -43,6 +54,7 @@ import school.cesar.acadlab.aplicacao.secretariavirtual.SolicitacaoAcademicaRepo
 import school.cesar.acadlab.aplicacao.secretariavirtual.SolicitacaoAcademicaServicoAplicacao;
 import school.cesar.acadlab.aplicacao.periodoletivo.PeriodoLetivoRepositorioAplicacao;
 import school.cesar.acadlab.aplicacao.periodoletivo.PeriodoLetivoServicoAplicacao;
+import school.cesar.acadlab.dominio.apoiopsicopedagogico.AgendamentoServico;
 import school.cesar.acadlab.dominio.apoiopsicopedagogico.ApoioServico;
 import school.cesar.acadlab.dominio.apoiopsicopedagogico.AtendimentoServico;
 import school.cesar.acadlab.dominio.apoiopsicopedagogico.TriagemServico;
@@ -107,9 +119,38 @@ public class BackendAplicacao {
     }
 
     @Bean
+    CategoriaHorasServicoAplicacao categoriaHorasServicoAplicacao(
+            CategoriaHorasRepositorioAplicacao repositorio) {
+        return new CategoriaHorasServicoAplicacao(repositorio);
+    }
+
+    @Bean
     CobrancaServicoAplicacao cobrancaServicoAplicacao(
             CobrancaRepositorioAplicacao repositorio) {
         return new CobrancaServicoAplicacao(repositorio);
+    }
+
+    @Bean
+    BolsaServico bolsaServico(BolsaRepositorio repositorio, EventoBarramento barramento) {
+        return new BolsaServico(repositorio, barramento);
+    }
+
+    @Bean
+    BolsaServicoAplicacao bolsaServicoAplicacao(BolsaRepositorioAplicacao repositorio) {
+        return new BolsaServicoAplicacao(repositorio);
+    }
+
+    @Bean
+    VerificadorAutorizacaoDesconto verificadorAutorizacaoDesconto(BolsaRepositorio repositorio) {
+        return new AutorizacaoDescontoPorBolsa(repositorio);
+    }
+
+    @Bean
+    CobrancaServico cobrancaServico(CobrancaRepositorio repositorio,
+            VerificadorMatriculaConfirmada verificadorMatricula,
+            VerificadorAutorizacaoDesconto verificadorAutorizacao,
+            EventoBarramento barramento) {
+        return new CobrancaServico(repositorio, verificadorMatricula, verificadorAutorizacao, barramento);
     }
 
     @Bean
@@ -301,6 +342,11 @@ public class BackendAplicacao {
     @Bean
     AtendimentoServico atendimentoServico(CasoRepositorio casoRepositorio, EventoBarramento barramento) {
         return new AtendimentoServico(casoRepositorio, barramento);
+    }
+
+    @Bean
+    AgendamentoServico agendamentoServico(CasoRepositorio casoRepositorio, EventoBarramento barramento) {
+        return new AgendamentoServico(casoRepositorio, barramento);
     }
 
     @Bean

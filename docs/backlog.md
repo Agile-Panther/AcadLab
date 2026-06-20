@@ -11,7 +11,7 @@
 | Vinicius | F-12 <br>F-04      |
 | Bernado  | F-07 <br>F-08      |
 | Clara    | F-14 <br>F-03      |
-| Claudia     | F-02 <br>F-05      |
+| Claudia  | F-02 <br>F-05      |
 | Jera     | F-09 <br>F-13      |
 
 ---

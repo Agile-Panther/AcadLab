@@ -119,16 +119,16 @@ INSERT INTO acompanhamento_academico (historico_id, acompanhamento_id, observaca
 INSERT INTO solicitacao_academica (id, estudante_id, periodo_letivo_id, tipo, protocolo_id,
                                     descricao, data_abertura, status,
                                     possui_impacto_academico, alteracoes_vinculadas) VALUES
-  (1, 1, 1, 'REVISAO_NOTA',           1001,
+  (1, 1, 1, 'REVISAO_DE_NOTA',           1001,
    'Solicito revisão da nota da Prova 1 de BD302 — discordância no critério da questão 3.',
    '2025-09-10', 'PENDENTE_ANALISE', false, false),
-  (2, 2, 1, 'TRANCAMENTO_DISCIPLINA', 1002,
+  (2, 2, 1, 'TRANCAMENTO_DISCIPLINA',    1002,
    'Solicito trancamento da disciplina ES303 por afastamento médico (laudo em anexo).',
    '2025-09-12', 'PENDENTE_ANALISE', true,  false),
-  (3, 3, 1, 'APROVEITAMENTO_EXTERNO', 1003,
+  (3, 3, 1, 'APROVEITAMENTO_DISCIPLINA', 1003,
    'Solicito aproveitamento da disciplina Algoritmos cursada na UFPE (histórico em anexo).',
    '2025-09-05', 'EM_ANALISE',       false, false),
-  (4, 1, 1, 'REVISAO_NOTA',           1004,
+  (4, 1, 1, 'REVISAO_DE_NOTA',           1004,
    'Revisão da nota de Cálculo Diferencial — Prova 2.',
    '2025-09-08', 'DEFERIDA',         false, false)
 ON CONFLICT (id) DO NOTHING;
@@ -140,14 +140,14 @@ INSERT INTO integralizacao_curricular (id, estudante_id, matriz_curricular_id, s
 ON CONFLICT (id) DO NOTHING;
 
 INSERT INTO item_checklist_integralizacao (integralizacao_id, tipo, descricao, cumprido) VALUES
-  (1, 'CREDITOS',                'Mínimo de 240 créditos cursados e aprovados',         false),
-  (1, 'CARGA_HORARIA',           'Carga horária mínima de 3600 horas',                   false),
-  (1, 'ATIVIDADES_COMPLEMENTARES','Mínimo de 200 h de atividades complementares aprovadas', true),
-  (1, 'ESTAGIO',                 'Estágio obrigatório concluído e relatório aprovado',   false),
-  (2, 'CREDITOS',                'Mínimo de 240 créditos cursados e aprovados',          true),
-  (2, 'CARGA_HORARIA',           'Carga horária mínima de 3600 horas',                   true),
-  (2, 'ATIVIDADES_COMPLEMENTARES','Mínimo de 200 h de atividades complementares aprovadas', true),
-  (2, 'ESTAGIO',                 'Estágio obrigatório concluído e relatório aprovado',   true);
+  (1, 'DISCIPLINAS_OBRIGATORIAS', 'Todas as disciplinas obrigatórias cursadas e aprovadas', false),
+  (1, 'CARGA_OPTATIVA',           'Carga horária optativa mínima cumprida',                false),
+  (1, 'HORAS_COMPLEMENTARES',     'Mínimo de 200 h de atividades complementares aprovadas', true),
+  (1, 'SITUACAO_DISCENTE',        'Situação discente regular (sem pendências)',            false),
+  (2, 'DISCIPLINAS_OBRIGATORIAS', 'Todas as disciplinas obrigatórias cursadas e aprovadas', true),
+  (2, 'CARGA_OPTATIVA',           'Carga horária optativa mínima cumprida',                true),
+  (2, 'HORAS_COMPLEMENTARES',     'Mínimo de 200 h de atividades complementares aprovadas', true),
+  (2, 'SITUACAO_DISCENTE',        'Situação discente regular (sem pendências)',            true);
 
 -- ─── ATIVIDADES COMPLEMENTARES ───────────────────────────────────────────────
 INSERT INTO atividade_complementar (id, estudante_id, categoria_id, descricao,
