@@ -241,6 +241,11 @@ class PermanenciaAcademicaRepositorioImpl
     }
 
     @Override
+    public List<BeneficioResumo> buscarTodosBeneficios() {
+        return beneficioRepo.findAll().stream().map(this::toResumoBeneficio).toList();
+    }
+
+    @Override
     public List<BeneficioResumo> buscarBeneficiosPorEstudante(int estudanteId) {
         return beneficioRepo.findByEstudanteId(estudanteId).stream().map(this::toResumoBeneficio).toList();
     }
@@ -325,6 +330,7 @@ class PermanenciaAcademicaRepositorioImpl
 
     private BeneficioResumo toResumoBeneficio(BeneficioJpa jpa) {
         return new BeneficioResumo(jpa.id, jpa.inscricaoId, jpa.estudanteId,
-                jpa.editalId, jpa.status.name(), jpa.dataAtivacao, jpa.prazoRenovacao);
+                jpa.editalId, jpa.status.name(), jpa.dataAtivacao, jpa.prazoRenovacao,
+                jpa.solicitouRenovacao);
     }
 }

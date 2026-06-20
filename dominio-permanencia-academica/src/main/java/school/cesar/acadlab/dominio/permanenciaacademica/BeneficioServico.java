@@ -26,6 +26,25 @@ public class BeneficioServico {
         this.eventoBarramento = eventoBarramento;
     }
 
+    // Ativa o benefício correspondente a uma inscrição deferida (estudante aceito).
+    // Idempotente: se já existe benefício para a inscrição, retorna o existente.
+    public BeneficioId ativarParaInscricao(InscricaoId inscricaoId) {
+        notNull(inscricaoId, "O id da inscrição não pode ser nulo");
+
+        var existente = beneficioRepositorio.buscarPorInscricao(inscricaoId);
+        if (existente.isPresent()) {
+            return existente.get().getId();
+        }
+
+        var inscricao = inscricaoRepositorio.obter(inscricaoId);
+        var edital = editalRepositorio.obter(inscricao.getEditalId());
+        var beneficioId = beneficioRepositorio.proximoBeneficioId();
+        var beneficio = new Beneficio(beneficioId, inscricaoId, inscricao.getEstudanteId(),
+                inscricao.getEditalId(), edital.getPrazoRenovacao());
+        beneficioRepositorio.salvar(beneficio);
+        return beneficioId;
+    }
+
     // Ativa benefícios para os classificados após publicação do resultado
     public void ativarParaClassificados(EditalId editalId, List<Inscricao> classificados) {
         notNull(editalId, "O id do edital não pode ser nulo");

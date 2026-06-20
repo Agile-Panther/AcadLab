@@ -10,6 +10,7 @@ public interface PermanenciaAcademicaRepositorioAplicacao {
     List<InscricaoResumo> buscarTodasInscricoes();
     List<InscricaoResumo> buscarInscricoesPorEdital(int editalId);
     List<InscricaoResumo> buscarInscricoesPorEstudante(int estudanteId);
+    List<BeneficioResumo> buscarTodosBeneficios();
     List<BeneficioResumo> buscarBeneficiosPorEstudante(int estudanteId);
     Optional<BeneficioResumo> buscarBeneficioPorId(int id);
 }

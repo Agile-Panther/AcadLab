@@ -20,7 +20,8 @@ public class Beneficio {
         notNull(inscricaoId, "O id da inscrição não pode ser nulo");
         notNull(estudanteId, "O estudante não pode ser nulo");
         notNull(editalId, "O edital não pode ser nulo");
-        notNull(prazoRenovacao, "O prazo de renovação não pode ser nulo");
+        // prazoRenovacao é opcional: editais sem previsão de renovação (ex.: auxílios
+        // pontuais) geram benefícios que simplesmente não podem ser renovados.
         this.id = id;
         this.inscricaoId = inscricaoId;
         this.estudanteId = estudanteId;
@@ -73,6 +74,9 @@ public class Beneficio {
     // RN7: renovação dentro do prazo verificada no serviço
     public RenovacaoSolicitadaEvento solicitarRenovacao(LocalDate hoje) {
         notNull(hoje, "A data não pode ser nula");
+        if (prazoRenovacao == null) {
+            throw new IllegalStateException("Este benefício não prevê renovação");
+        }
         if (hoje.isAfter(prazoRenovacao)) {
             throw new IllegalStateException("prazo de renovação já encerrou");
         }

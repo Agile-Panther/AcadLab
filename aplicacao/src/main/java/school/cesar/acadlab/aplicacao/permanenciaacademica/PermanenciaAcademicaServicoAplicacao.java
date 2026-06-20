@@ -36,6 +36,10 @@ public class PermanenciaAcademicaServicoAplicacao {
         return repositorio.buscarInscricoesPorEstudante(estudanteId);
     }
 
+    public List<BeneficioResumo> buscarTodosBeneficios() {
+        return repositorio.buscarTodosBeneficios();
+    }
+
     public List<BeneficioResumo> buscarBeneficiosPorEstudante(int estudanteId) {
         return repositorio.buscarBeneficiosPorEstudante(estudanteId);
     }
