@@ -12,14 +12,14 @@ public class ValidacaoRegular implements EstrategiaMatricula {
                                boolean temPendencias, LocalDate hoje,
                                LocalDate inicioJanela, LocalDate fimJanela) {
         isTrue(!hoje.isBefore(inicioJanela) && !hoje.isAfter(fimJanela),
-                "A montagem do plano só é permitida dentro da janela de matrícula (RN-1)");
+                "fora da janela de matrícula");
         isTrue(cumpriuPreRequisitos,
-                "O estudante não cumpriu os pré-requisitos da disciplina (RN-2)");
+                "pré-requisitos não cumpridos");
         isTrue(correquisitosNoPlano,
-                "Os correquisitos da disciplina devem estar incluídos no plano do mesmo período (RN-3)");
+                "correquisitos ausentes no plano");
         isTrue(creditosExistentes + creditos <= limiteCreditos,
-                "A adição da disciplina excede o limite máximo de créditos por período (RN-4)");
+                "limite máximo de créditos atingido");
         isTrue(!temPendencias,
-                "O estudante possui pendências acadêmicas impeditivas (RN-5)");
+                "estudante possui pendências acadêmicas impeditivas");
     }
 }
