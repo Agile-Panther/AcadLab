@@ -590,6 +590,9 @@ BoundedContext ApoioPsicopedagogicoContext implements ApoioPsicopedagogicoSubdom
             void registrarAtendimento(int casoId, java.time.LocalDate data, String relatorio);
             void encerrarCaso(int casoId, String conclusao);
         }
+        // Observer concreto (NotificacaoCasoObservador): registrado no barramento,
+        // notifica o próprio estudante a cada evolução do caso (triagem, atendimento,
+        // agendamento, encerramento) com mensagens neutras que respeitam o sigilo.
     }
 }
 
