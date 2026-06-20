@@ -13,7 +13,10 @@ async function post<T>(path: string, body?: unknown): Promise<T> {
     headers: body !== undefined ? { "Content-Type": "application/json" } : {},
     body: body !== undefined ? JSON.stringify(body) : undefined,
   });
-  if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({})) as Record<string, unknown>;
+    throw new Error(typeof err.message === "string" ? err.message : `${res.status} ${res.statusText}`);
+  }
   const text = await res.text();
   return (text ? JSON.parse(text) : undefined) as T;
 }
@@ -24,7 +27,10 @@ async function put<T>(path: string, body?: unknown): Promise<T> {
     headers: body !== undefined ? { "Content-Type": "application/json" } : {},
     body: body !== undefined ? JSON.stringify(body) : undefined,
   });
-  if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({})) as Record<string, unknown>;
+    throw new Error(typeof err.message === "string" ? err.message : `${res.status} ${res.statusText}`);
+  }
   const text = await res.text();
   return (text ? JSON.parse(text) : undefined) as T;
 }
