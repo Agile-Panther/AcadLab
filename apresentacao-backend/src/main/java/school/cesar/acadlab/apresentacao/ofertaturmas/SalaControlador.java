@@ -17,14 +17,13 @@ import org.springframework.web.server.ResponseStatusException;
 
 import school.cesar.acadlab.aplicacao.ofertaturmas.SalaResumo;
 import school.cesar.acadlab.aplicacao.ofertaturmas.SalaServicoAplicacao;
-import school.cesar.acadlab.dominio.ofertaturmas.sala.Sala;
 import school.cesar.acadlab.dominio.ofertaturmas.sala.SalaId;
-import school.cesar.acadlab.dominio.ofertaturmas.sala.SalaRepositorio;
+import school.cesar.acadlab.dominio.ofertaturmas.sala.SalaServico;
 
 @RestController
 @RequestMapping("backend/salas")
 class SalaControlador {
-    @Autowired SalaRepositorio salaRepositorio;
+    @Autowired SalaServico servico;
     @Autowired SalaServicoAplicacao salaServico;
 
     @RequestMapping(method = GET, path = "")
@@ -40,39 +39,24 @@ class SalaControlador {
 
     @RequestMapping(method = POST, path = "")
     SalaResumo cadastrar(@RequestBody CadastrarSalaRequest req) {
-        var salaId = salaRepositorio.proximoId();
-        salaRepositorio.salvar(new Sala(salaId, req.nome(), req.capacidade()));
-        return salaServico.buscarPorId(salaId.getId())
+        var sala = servico.cadastrar(req.nome(), req.capacidade());
+        return salaServico.buscarPorId(sala.getId().getId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
     }
 
     @RequestMapping(method = PUT, path = "/{id}/inativar")
     void inativar(@PathVariable int id) {
-        var sala = buscarDomain(id);
-        sala.inativar();
-        salaRepositorio.salvar(sala);
+        servico.inativar(new SalaId(id));
     }
 
     @RequestMapping(method = PUT, path = "/{id}/ativar")
     void ativar(@PathVariable int id) {
-        var sala = buscarDomain(id);
-        sala.ativar();
-        salaRepositorio.salvar(sala);
+        servico.ativar(new SalaId(id));
     }
 
     @RequestMapping(method = PUT, path = "/{id}/capacidade")
     void alterarCapacidade(@PathVariable int id, @RequestBody AlterarCapacidadeRequest req) {
-        var sala = buscarDomain(id);
-        sala.alterarCapacidade(req.capacidade(), req.maiorCapacidadeTurmaVinculada());
-        salaRepositorio.salvar(sala);
-    }
-
-    private Sala buscarDomain(int id) {
-        try {
-            return salaRepositorio.obter(new SalaId(id));
-        } catch (Exception e) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
-        }
+        servico.alterarCapacidade(new SalaId(id), req.capacidade(), req.maiorCapacidadeTurmaVinculada());
     }
 
     record CadastrarSalaRequest(String nome, int capacidade) {}

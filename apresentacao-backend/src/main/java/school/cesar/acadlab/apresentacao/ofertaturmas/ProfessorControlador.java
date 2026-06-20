@@ -16,14 +16,13 @@ import org.springframework.web.server.ResponseStatusException;
 
 import school.cesar.acadlab.aplicacao.ofertaturmas.ProfessorResumo;
 import school.cesar.acadlab.aplicacao.ofertaturmas.ProfessorServicoAplicacao;
-import school.cesar.acadlab.dominio.ofertaturmas.professor.Professor;
 import school.cesar.acadlab.dominio.ofertaturmas.professor.ProfessorId;
-import school.cesar.acadlab.dominio.ofertaturmas.professor.ProfessorRepositorio;
+import school.cesar.acadlab.dominio.ofertaturmas.professor.ProfessorServico;
 
 @RestController
 @RequestMapping("backend/professores")
 class ProfessorControlador {
-    @Autowired ProfessorRepositorio professorRepositorio;
+    @Autowired ProfessorServico servico;
     @Autowired ProfessorServicoAplicacao professorServico;
 
     @RequestMapping(method = GET, path = "")
@@ -39,32 +38,19 @@ class ProfessorControlador {
 
     @RequestMapping(method = POST, path = "")
     ProfessorResumo cadastrar(@RequestBody CadastrarProfessorRequest req) {
-        var professorId = professorRepositorio.proximoId();
-        professorRepositorio.salvar(new Professor(professorId, req.nome()));
-        return professorServico.buscarPorId(professorId.getId())
+        var professor = servico.cadastrar(req.nome());
+        return professorServico.buscarPorId(professor.getId().getId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
     }
 
     @RequestMapping(method = PUT, path = "/{id}/inativar")
     void inativar(@PathVariable int id) {
-        var professor = buscarDomain(id);
-        professor.inativar();
-        professorRepositorio.salvar(professor);
+        servico.inativar(new ProfessorId(id));
     }
 
     @RequestMapping(method = PUT, path = "/{id}/ativar")
     void ativar(@PathVariable int id) {
-        var professor = buscarDomain(id);
-        professor.ativar();
-        professorRepositorio.salvar(professor);
-    }
-
-    private Professor buscarDomain(int id) {
-        try {
-            return professorRepositorio.obter(new ProfessorId(id));
-        } catch (Exception e) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
-        }
+        servico.ativar(new ProfessorId(id));
     }
 
     record CadastrarProfessorRequest(String nome) {}
