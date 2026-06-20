@@ -12,9 +12,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { ArrowLeft, Plus, Power, PowerOff } from "lucide-react";
 import {
-  type MatrizResumo, type MatrizDetalhe, type TipoDisciplina,
+  type MatrizResumo, type MatrizDetalhe, type ItemMatrizDetalhe, type TipoDisciplina,
   listarMatrizesPorCurso, buscarDetalheMatriz, criarMatriz,
-  adicionarDisciplina, removerDisciplina, adicionarPreRequisito,
+  adicionarDisciplina, editarDisciplina, removerDisciplina, adicionarPreRequisito, adicionarCorrequisito,
   ativarMatriz, desativarMatriz,
 } from "@/api/curriculo";
 
@@ -221,6 +221,7 @@ function DetalheMatriz({ matriz, readOnly, onBack, onToggle, onChanged }: {
 }) {
   const editavel = !readOnly && matriz.status !== "ATIVA";
   const [addingDisciplina, setAddingDisciplina] = useState(false);
+  const [editandoDisciplina, setEditandoDisciplina] = useState<ItemMatrizDetalhe | null>(null);
 
   const cargaHorariaTotal = matriz.itens.reduce((acc, i) => acc + i.cargaHoraria, 0);
   const creditosTotal = matriz.itens.reduce((acc, i) => acc + i.creditos, 0);
@@ -229,6 +230,9 @@ function DetalheMatriz({ matriz, readOnly, onBack, onToggle, onChanged }: {
 
   const preRequisitosPorDisciplina = (disciplinaId: number) =>
     matriz.preRequisitos.filter((p) => p.disciplinaId === disciplinaId).map((p) => p.dependenciaId);
+
+  const correquisitosPorDisciplina = (disciplinaId: number) =>
+    matriz.correquisitos.filter((c) => c.disciplinaId === disciplinaId).map((c) => c.dependenciaId);
 
   const remover = async (disciplinaId: number) => {
     try {
@@ -286,8 +290,17 @@ function DetalheMatriz({ matriz, readOnly, onBack, onToggle, onChanged }: {
                   const deps = preRequisitosPorDisciplina(r.disciplinaId);
                   return deps.length ? deps.map((d) => `#${d}`).join(", ") : "—";
                 }},
+                { key: "correq", header: "Correq.", render: (r) => {
+                  const deps = correquisitosPorDisciplina(r.disciplinaId);
+                  return deps.length ? deps.map((d) => `#${d}`).join(", ") : "—";
+                }},
                 { key: "acoes", header: "", align: "right", render: (r) => editavel
-                  ? <RowActionButton tone="danger" onClick={() => remover(r.disciplinaId)}>Remover</RowActionButton>
+                  ? (
+                    <div className="flex justify-end gap-2">
+                      <RowActionButton onClick={() => setEditandoDisciplina(r)}>Editar</RowActionButton>
+                      <RowActionButton tone="danger" onClick={() => remover(r.disciplinaId)}>Remover</RowActionButton>
+                    </div>
+                  )
                   : <RowActionButton tone="neutral" onClick={() => toast.info(`Disciplina #${r.disciplinaId} — ${r.cargaHoraria}h, ${r.creditos} créditos`)}>Ver</RowActionButton> },
               ]}
               rows={matriz.itens}
@@ -308,9 +321,78 @@ function DetalheMatriz({ matriz, readOnly, onBack, onToggle, onChanged }: {
           {editavel && (
             <AdicionarPreRequisitoForm matrizId={matriz.id} onAdicionado={onChanged} />
           )}
+          {editavel && (
+            <AdicionarCorrequisitoForm matrizId={matriz.id} onAdicionado={onChanged} />
+          )}
         </div>
       </div>
+
+      {editandoDisciplina && (
+        <EditarDisciplinaDialog
+          matrizId={matriz.id}
+          item={editandoDisciplina}
+          onClose={() => setEditandoDisciplina(null)}
+          onEditada={() => { setEditandoDisciplina(null); onChanged(); }}
+        />
+      )}
     </div>
+  );
+}
+
+function EditarDisciplinaDialog({ matrizId, item, onClose, onEditada }: {
+  matrizId: number; item: ItemMatrizDetalhe; onClose: () => void; onEditada: () => void;
+}) {
+  const [tipo, setTipo] = useState<TipoDisciplina>(item.tipo);
+  const [cargaHoraria, setCargaHoraria] = useState(String(item.cargaHoraria));
+  const [creditos, setCreditos] = useState(String(item.creditos));
+  const [salvando, setSalvando] = useState(false);
+
+  const salvar = async () => {
+    if (Number(cargaHoraria) <= 0 || Number(creditos) <= 0) {
+      toast.warning("Carga horária e créditos devem ser positivos."); return;
+    }
+    setSalvando(true);
+    try {
+      await editarDisciplina(matrizId, item.disciplinaId, {
+        tipo,
+        cargaHoraria: Number(cargaHoraria),
+        creditos: Number(creditos),
+      });
+      toast.success(`Disciplina #${item.disciplinaId} atualizada.`);
+      onEditada();
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setSalvando(false);
+    }
+  };
+
+  return (
+    <Dialog open onOpenChange={(o) => !o && onClose()}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Editar disciplina #{item.disciplinaId}</DialogTitle>
+          <DialogDescription>Altere tipo, carga horária e créditos. Só é permitido em matriz inativa.</DialogDescription>
+        </DialogHeader>
+        <div className="grid grid-cols-2 gap-3">
+          <FormField label="Tipo" full>
+            <Select value={tipo} onValueChange={(v) => setTipo(v as TipoDisciplina)}>
+              <SelectTrigger className="h-10"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="OBRIGATORIA">Obrigatória</SelectItem>
+                <SelectItem value="OPTATIVA">Optativa</SelectItem>
+              </SelectContent>
+            </Select>
+          </FormField>
+          <FormField label="Carga horária" required><Input className="h-10" type="number" value={cargaHoraria} onChange={(e) => setCargaHoraria(e.target.value)} /></FormField>
+          <FormField label="Créditos" required><Input className="h-10" type="number" value={creditos} onChange={(e) => setCreditos(e.target.value)} /></FormField>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>Cancelar</Button>
+          <Button onClick={salvar} disabled={salvando}>{salvando ? "Salvando..." : "Salvar"}</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -394,6 +476,39 @@ function AdicionarPreRequisitoForm({ matrizId, onAdicionado }: { matrizId: numbe
         <Button className="w-full" onClick={vincular} disabled={salvando}>{salvando ? "Vinculando..." : "Vincular"}</Button>
       </div>
       <ValidationCallout tone="info" className="mt-3">O sistema valida automaticamente ciclos no grafo de pré-requisitos.</ValidationCallout>
+    </div>
+  );
+}
+
+function AdicionarCorrequisitoForm({ matrizId, onAdicionado }: { matrizId: number; onAdicionado: () => void }) {
+  const [disciplinaId, setDisciplinaId] = useState("");
+  const [correquisitoId, setCorrequisitoId] = useState("");
+  const [salvando, setSalvando] = useState(false);
+
+  const vincular = async () => {
+    if (!disciplinaId || !correquisitoId) { toast.warning("Informe as duas disciplinas."); return; }
+    setSalvando(true);
+    try {
+      await adicionarCorrequisito(matrizId, Number(disciplinaId), Number(correquisitoId));
+      toast.success("Correquisito vinculado.");
+      setDisciplinaId(""); setCorrequisitoId("");
+      onAdicionado();
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setSalvando(false);
+    }
+  };
+
+  return (
+    <div className="rounded-xl border bg-card p-5 shadow-card">
+      <SectionTitle title="Adicionar correquisito" />
+      <div className="mt-3 grid grid-cols-1 gap-3">
+        <FormField label="Disciplina (id)"><Input className="h-10" type="number" value={disciplinaId} onChange={(e) => setDisciplinaId(e.target.value)} placeholder="201" /></FormField>
+        <FormField label="Correquisito (id)"><Input className="h-10" type="number" value={correquisitoId} onChange={(e) => setCorrequisitoId(e.target.value)} placeholder="202" /></FormField>
+        <Button className="w-full" onClick={vincular} disabled={salvando}>{salvando ? "Vinculando..." : "Vincular"}</Button>
+      </div>
+      <ValidationCallout tone="info" className="mt-3">O correquisito deve pertencer à mesma matriz curricular (validado pelo sistema).</ValidationCallout>
     </div>
   );
 }
