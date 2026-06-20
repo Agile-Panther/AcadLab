@@ -757,6 +757,13 @@ BoundedContext EstagiosContext implements ServicosAcademicosSubdomain {
    o serviço de domínio, o serviço de aplicação e — quando há padrão Observer —
    registra o observador concreto no EventoBarramento. */
 
+/* FRONTEIRAS TRANSACIONAIS (persistência)
+   Os métodos de escrita dos adapters JPA (salvar/registrar) são anotados com
+   @Transactional para garantir atomicidade de read-modify-write — sobretudo
+   quando element collections são limpas e reinseridas em uma única operação.
+   Os métodos de leitura não recebem transação. F-07 (Secretaria Virtual) e
+   F-08 (Integralização) ficam fora desta passada. */
+
 ContextMap AcadLab {
     contains CompartilhadoContext
     contains CurriculoContext
