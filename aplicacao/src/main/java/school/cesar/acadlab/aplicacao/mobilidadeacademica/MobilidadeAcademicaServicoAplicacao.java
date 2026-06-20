@@ -20,4 +20,8 @@ public class MobilidadeAcademicaServicoAplicacao {
     public Optional<MobilidadeAcademicaResumo> buscarPorId(int id) {
         return repositorio.buscarPorId(id);
     }
+
+    public List<MobilidadeAcademicaResumo> listarTodos() {
+        return repositorio.listarTodos();
+    }
 }

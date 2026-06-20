@@ -147,11 +147,18 @@ export interface MatrizCurricularResumo {
   status: string;
 }
 
+export interface ItemMatriculaResumo {
+  turmaId: number;
+  disciplinaId: number;
+  statusItem: string;
+}
+
 export interface MatriculaResumo {
   id: number;
   estudanteId: number;
   periodoLetivoId: number;
   status: string;
+  itens: ItemMatriculaResumo[];
 }
 
 export interface DiarioTurmaResumo {
@@ -270,11 +277,25 @@ export interface CasoResumo {
   status: string;
 }
 
+export interface ItemPlanoResumo {
+  disciplinaExternaId: number;
+  nomeDisciplinaExterna: string;
+  cargaHorariaExterna: number;
+  disciplinaEquivalenteId: number;
+  cargaHorariaEquivalente: number;
+  status: string;
+  comprovanteAnexado: boolean;
+  resultadoRegistrado: boolean;
+}
+
 export interface MobilidadeAcademicaResumo {
   id: number;
   estudanteId: number;
   instituicaoDestino: string;
   status: string;
+  dataInicioPeriodoExterno: string | null;
+  justificativaCancelamento: string | null;
+  plano: ItemPlanoResumo[];
 }
 
 export interface CobrancaResumo {
@@ -339,10 +360,33 @@ export const api = {
   },
   matricula: {
     getById: (id: number) => get<MatriculaResumo>(`matriculas/${id}`),
+    listByEstudante: (estudanteId: number) =>
+      get<MatriculaResumo[]>(`matriculas?estudanteId=${estudanteId}`).then(r => r ?? []),
     iniciar: (body: { estudanteId: number; periodoLetivoId: number; limiteCreditos: number }) =>
       post<void>(`matriculas`, body),
+    adicionarItem: (id: number, body: {
+      turmaId: number; disciplinaId: number; creditos: number;
+      cumpriuPreRequisitos: boolean; correquisitosNoPlano: boolean;
+      temPendencias: boolean; hoje: string; inicioJanela: string; fimJanela: string;
+    }) => post<void>(`matriculas/${id}/itens`, body),
+    removerItem: (id: number, turmaId: number) =>
+      put<void>(`matriculas/${id}/itens/${turmaId}/remover`),
+    cancelarItem: (id: number, turmaId: number, body: { hoje: string; inicio: string; fim: string }) =>
+      put<void>(`matriculas/${id}/itens/${turmaId}/cancelar`, body),
+    trancarDisciplina: (id: number, turmaId: number, body: { hoje: string; inicio: string; fim: string }) =>
+      put<void>(`matriculas/${id}/itens/${turmaId}/trancar`, body),
+    destrancarDisciplina: (id: number, turmaId: number) =>
+      put<void>(`matriculas/${id}/itens/${turmaId}/destrancar`),
+    destrancarPeriodo: (id: number) =>
+      put<void>(`matriculas/${id}/destrancar-periodo`),
     confirmar: (id: number, vagasPorTurma: Record<number, number>) =>
       put<void>(`matriculas/${id}/confirmar`, vagasPorTurma),
+    aprovarSecretaria: (id: number) =>
+      put<void>(`matriculas/${id}/aprovar-secretaria`),
+    solicitarExcecao: (id: number, body: { disciplinaId: number; motivo: string }) =>
+      post<void>(`matriculas/${id}/excecoes`, body),
+    deferir: (id: number, disciplinaId: number, coordenadorId: number) =>
+      put<void>(`matriculas/${id}/excecoes/${disciplinaId}/deferir?coordenadorId=${coordenadorId}`),
     trancarPeriodo: (id: number, body: object) =>
       put<void>(`matriculas/${id}/trancar-periodo`, body),
   },
@@ -431,6 +475,8 @@ export const api = {
     getCasoById: (id: number) => get<CasoResumo>(`apoio/casos/${id}`),
   },
   mobilidade: {
+    listAll: () =>
+      get<MobilidadeAcademicaResumo[]>(`mobilidades`).then(r => r ?? []),
     getByEstudante: (estudanteId: number) =>
       get<MobilidadeAcademicaResumo>(`mobilidades/estudante/${estudanteId}`),
     getById: (id: number) => get<MobilidadeAcademicaResumo>(`mobilidades/${id}`),

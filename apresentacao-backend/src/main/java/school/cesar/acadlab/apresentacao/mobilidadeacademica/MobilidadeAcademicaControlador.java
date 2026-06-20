@@ -33,6 +33,11 @@ class MobilidadeAcademicaControlador {
     @Autowired
     private MobilidadeAcademicaServicoAplicacao servicoAplicacao;
 
+    @RequestMapping(method = GET)
+    List<MobilidadeAcademicaResumo> listarTodos() {
+        return servicoAplicacao.listarTodos();
+    }
+
     @RequestMapping(method = GET, path = "estudante/{estudanteId}")
     List<MobilidadeAcademicaResumo> buscarPorEstudante(@PathVariable int estudanteId) {
         return servicoAplicacao.buscarPorEstudante(estudanteId);
