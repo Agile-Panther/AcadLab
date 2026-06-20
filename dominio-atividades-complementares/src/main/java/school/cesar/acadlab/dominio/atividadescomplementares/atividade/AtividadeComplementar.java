@@ -67,7 +67,7 @@ public class AtividadeComplementar {
 
     public CanceladaEvento cancelar() {
         if (status != StatusAtividade.PENDENTE)
-            throw new IllegalStateException("RN7: Cancelamento permitido apenas para atividades com status pendente de análise");
+            throw new IllegalStateException("atividade já analisada não pode ser cancelada");
         this.status = StatusAtividade.CANCELADA;
         return new CanceladaEvento(this);
     }
