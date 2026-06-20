@@ -221,7 +221,7 @@ function EstudanteView() {
   );
 }
 
-// ═══════════════════════════════ VISÃO SECRETARIA / COORDENAÇÃO ════════════════
+// ═══════════════════════════════ VISÃO SECRETARIA ACADÊMICA (US02 + US04) ═════
 
 function SecretariaView() {
   const qc = useQueryClient();
@@ -238,15 +238,6 @@ function SecretariaView() {
   const [colacaoDe, setColacaoDe] = useState<IntegralizacaoResumo | null>(null);
 
   const invalidar = () => qc.invalidateQueries({ queryKey: ["integralizacao"] });
-
-  const aprovar = useMutation({
-    mutationFn: (id: number) => api.integralizacao.aprovarAptidao(id, COORDENADOR_ID),
-    onSuccess: () => {
-      invalidar();
-      toast.success("Aptidão aprovada para colação de grau.");
-    },
-    onError: (e) => toast.error(errMsg(e)),
-  });
 
   const count = (...st: string[]) => data.filter((i) => st.includes(i.status)).length;
 
@@ -267,7 +258,7 @@ function SecretariaView() {
 
       <SectionTitle
         title="Análises de integralização"
-        subtitle="Gere o checklist, registre o resultado e libere a colação de grau."
+        subtitle="Gere o checklist, registre o resultado e registre a cerimônia de colação."
       />
 
       <DataTable
@@ -301,18 +292,15 @@ function SecretariaView() {
                     Analisar
                   </RowActionButton>
                 )}
-                {r.status === "APTO" && !aprovada(r) && (
-                  <RowActionButton tone="info" onClick={() => aprovar.mutate(r.id)}>
-                    Aprovar aptidão
-                  </RowActionButton>
-                )}
                 {r.status === "APTO" && aprovada(r) && (
                   <RowActionButton onClick={() => setColacaoDe(r)}>
                     Registrar colação
                   </RowActionButton>
                 )}
-                {r.status === "INAPTO" && (
-                  <RowActionButton onClick={() => setAnalise(r)}>Ver pendências</RowActionButton>
+                {(r.status === "INAPTO" || (r.status === "APTO" && !aprovada(r))) && (
+                  <RowActionButton onClick={() => setAnalise(r)}>
+                    {r.status === "INAPTO" ? "Ver pendências" : "Ver checklist"}
+                  </RowActionButton>
                 )}
               </div>
             ),
@@ -332,6 +320,111 @@ function SecretariaView() {
         onClose={() => setColacaoDe(null)}
         onDone={invalidar}
       />
+    </div>
+  );
+}
+
+// ═══════════════════════════════ VISÃO COORDENAÇÃO ACADÊMICA (US03) ═══════════
+
+function CoordenacaoView() {
+  const qc = useQueryClient();
+  const {
+    data = [],
+    isLoading,
+    isError,
+  } = useQuery({
+    queryKey: ["integralizacao", "todas"],
+    queryFn: () => api.integralizacao.listAll(),
+  });
+
+  const [detalhe, setDetalhe] = useState<IntegralizacaoResumo | null>(null);
+
+  const invalidar = () => qc.invalidateQueries({ queryKey: ["integralizacao"] });
+
+  const aprovar = useMutation({
+    mutationFn: (id: number) => api.integralizacao.aprovarAptidao(id, COORDENADOR_ID),
+    onSuccess: () => {
+      invalidar();
+      toast.success("Aptidão aprovada para colação de grau.");
+    },
+    onError: (e) => toast.error(errMsg(e)),
+  });
+
+  const aptos = data.filter((i) => i.status === "APTO");
+  const pendentesAprovacao = aptos.filter((i) => !aprovada(i));
+  const aprovados = aptos.filter((i) => aprovada(i));
+
+  return (
+    <div className="space-y-5">
+      <StatsRow
+        stats={[
+          { label: "Aptos (total)", value: isLoading ? "…" : aptos.length, tone: "info" },
+          {
+            label: "Aguardando aprovação",
+            value: isLoading ? "…" : pendentesAprovacao.length,
+            tone: "warning",
+          },
+          { label: "Aprovados", value: isLoading ? "…" : aprovados.length, tone: "success" },
+        ]}
+      />
+
+      {isError && (
+        <p className="px-1 text-sm text-destructive">Não foi possível conectar ao servidor.</p>
+      )}
+
+      <SectionTitle
+        title="Aprovação de aptidão para colação de grau"
+        subtitle="Aprove formalmente a aptidão dos estudantes que cumpriram todos os requisitos curriculares."
+      />
+
+      <DataTable
+        columns={[
+          { key: "id", header: "#", render: (r) => `INT-${r.id}` },
+          { key: "estudanteId", header: "Estudante", render: (r) => `Estudante ${r.estudanteId}` },
+          {
+            key: "pend",
+            header: "Pendências",
+            align: "right",
+            render: (r) => pendencias(r).length,
+          },
+          {
+            key: "status",
+            header: "Status",
+            render: (r) => (
+              <StatusBadge tone={aprovada(r) ? "success" : "warning"}>
+                {aprovada(r) ? `Aprovado em ${fmtDate(r.dataAprovacao)}` : "Aguardando aprovação"}
+              </StatusBadge>
+            ),
+          },
+          {
+            key: "acoes",
+            header: "",
+            align: "right",
+            render: (r) => (
+              <div className="flex justify-end gap-1.5">
+                <RowActionButton onClick={() => setDetalhe(r)}>Ver checklist</RowActionButton>
+                {!aprovada(r) && (
+                  <RowActionButton tone="info" onClick={() => aprovar.mutate(r.id)}>
+                    Aprovar aptidão
+                  </RowActionButton>
+                )}
+              </div>
+            ),
+          },
+        ]}
+        rows={aptos}
+        empty={
+          <div className="p-10 text-center text-sm text-muted-foreground">
+            Nenhuma integralização com resultado apto no momento.
+          </div>
+        }
+      />
+
+      {aprovar.isError && (
+        <p className="px-1 text-sm text-destructive">Falha: {errMsg(aprovar.error)}</p>
+      )}
+
+      <AnaliseDialog integralizacao={detalhe} onClose={() => setDetalhe(null)} onDone={invalidar} />
     </div>
   );
 }
@@ -583,22 +676,39 @@ function ColacaoDialog({
 
 function Page() {
   const { active: perfil } = useProfileSwitcher([
-    { value: "estudante", label: "Estudante", description: "Acompanha integralização e colação" },
+    {
+      value: "estudante",
+      label: "Estudante",
+      description: "Solicita análise e acompanha integralização",
+    },
     {
       value: "secretaria",
-      label: "Secretaria / Coordenação",
-      description: "Audita integralização e libera colação",
+      label: "Secretaria Acadêmica",
+      description: "Analisa integralização e registra colação",
+    },
+    {
+      value: "coordenacao",
+      label: "Coordenação Acadêmica",
+      description: "Aprova aptidão para colação de grau",
     },
   ]);
 
-  const isAluno = perfil === "estudante";
-  const subtitle = isAluno
-    ? "Maria Santos · Engenharia de Software"
-    : "Visão Secretaria · Auditoria de integralização";
+  const subtitle =
+    perfil === "secretaria"
+      ? "Visão Secretaria · Análise de integralização e registro de colação"
+      : perfil === "coordenacao"
+        ? "Visão Coordenação · Aprovação de aptidão para colação"
+        : "Maria Santos · Engenharia de Software";
 
   return (
     <AppShell title="Integralização Curricular & Colação" subtitle={subtitle}>
-      {isAluno ? <EstudanteView /> : <SecretariaView />}
+      {perfil === "secretaria" ? (
+        <SecretariaView />
+      ) : perfil === "coordenacao" ? (
+        <CoordenacaoView />
+      ) : (
+        <EstudanteView />
+      )}
     </AppShell>
   );
 }
