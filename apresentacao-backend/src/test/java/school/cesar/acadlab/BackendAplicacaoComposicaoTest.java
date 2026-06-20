@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.Test;
 import org.springframework.context.annotation.Bean;
 
+import school.cesar.acadlab.configuracao.AtividadesComplementaresConfig;
 import school.cesar.acadlab.dominio.atividadescomplementares.AtividadeComplementarServico;
 import school.cesar.acadlab.dominio.atividadescomplementares.VerificadorCertificadoDuplicado;
 import school.cesar.acadlab.dominio.atividadescomplementares.VerificadorContabilizacaoIntegralizacao;
@@ -18,7 +19,7 @@ class BackendAplicacaoComposicaoTest {
 
     @Test
     void registraServicoDeAtividadesComplementaresComoBean() {
-        var metodo = assertDoesNotThrow(() -> BackendAplicacao.class.getDeclaredMethod(
+        var metodo = assertDoesNotThrow(() -> AtividadesComplementaresConfig.class.getDeclaredMethod(
                 "atividadeComplementarServico",
                 AtividadeComplementarRepositorio.class,
                 VerificadorVinculoEstudante.class,
