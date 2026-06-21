@@ -2,5 +2,5 @@ FROM maven:3.9-eclipse-temurin-21
 WORKDIR /app
 EXPOSE 8080
 COPY apresentacao-backend/start.sh /start.sh
-RUN chmod +x /start.sh
+RUN sed -i 's/\r$//' /start.sh && chmod +x /start.sh
 CMD ["/start.sh"]
