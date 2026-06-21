@@ -12,4 +12,8 @@ public class CobrancaServicoAplicacao {
     public List<CobrancaResumo> pesquisarPorContrato(int contratoId) {
         return repositorio.pesquisarPorContrato(contratoId);
     }
+
+    public List<CobrancaResumo> pesquisarContestacoesAbertas() {
+        return repositorio.pesquisarContestacoesAbertas();
+    }
 }

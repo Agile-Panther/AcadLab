@@ -14,4 +14,8 @@ public class AtividadeComplementarServicoAplicacao {
     public List<AtividadeComplementarResumo> pesquisarPorEstudante(int estudanteId) {
         return repositorio.pesquisarPorEstudante(estudanteId);
     }
+
+    public List<AtividadeComplementarResumo> pesquisarPorStatus(String status) {
+        return repositorio.pesquisarPorStatus(status);
+    }
 }

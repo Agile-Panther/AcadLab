@@ -12,12 +12,20 @@ public class PermanenciaAcademicaServicoAplicacao {
         this.repositorio = repositorio;
     }
 
+    public List<EditalResumo> buscarTodosEditais() {
+        return repositorio.buscarTodosEditais();
+    }
+
     public List<EditalResumo> buscarEditaisPorPrograma(String programa) {
         return repositorio.buscarEditaisPorPrograma(programa);
     }
 
     public Optional<EditalResumo> buscarEditalPorId(int id) {
         return repositorio.buscarEditalPorId(id);
+    }
+
+    public List<InscricaoResumo> buscarTodasInscricoes() {
+        return repositorio.buscarTodasInscricoes();
     }
 
     public List<InscricaoResumo> buscarInscricoesPorEdital(int editalId) {

@@ -104,6 +104,8 @@ interface MatriculaJpaRepository extends JpaRepository<MatriculaJpa, Integer> {
 
     @Query("SELECT COALESCE(MAX(m.id), 0) + 1 FROM MatriculaJpa m")
     int proximoId();
+
+    boolean existsByEstudanteIdAndPeriodoLetivoIdAndStatus(int estudanteId, int periodoLetivoId, StatusMatricula status);
 }
 
 @Repository

@@ -1,6 +1,7 @@
 package school.cesar.acadlab.infraestrutura.persistencia.jpa;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -21,9 +22,13 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.Table;
+import school.cesar.acadlab.aplicacao.apoiopsicopedagogico.AgendamentoResumo;
 import school.cesar.acadlab.aplicacao.apoiopsicopedagogico.ApoioPsicopedagogicoRepositorioAplicacao;
+import school.cesar.acadlab.aplicacao.apoiopsicopedagogico.AtendimentoResumo;
 import school.cesar.acadlab.aplicacao.apoiopsicopedagogico.CasoResumo;
 import school.cesar.acadlab.dominio.apoiopsicopedagogico.acaopermanencia.AcaoPermanencia;
+import school.cesar.acadlab.dominio.apoiopsicopedagogico.agendamento.Agendamento;
+import school.cesar.acadlab.dominio.apoiopsicopedagogico.agendamento.StatusAgendamento;
 import school.cesar.acadlab.dominio.apoiopsicopedagogico.acaopermanencia.AcaoPermanenciaId;
 import school.cesar.acadlab.dominio.apoiopsicopedagogico.acaopermanencia.AcaoPermanenciaRepositorio;
 import school.cesar.acadlab.dominio.apoiopsicopedagogico.atendimento.Atendimento;
@@ -57,6 +62,12 @@ class CasoJpa {
     String triagemObservacoes;
     Integer triagemResponsavelId;
     LocalDate triagemData;
+
+    // agendamento embutido
+    LocalDateTime agendamentoDataHora;
+    String agendamentoStatus;
+    String agendamentoJustificativa;
+    LocalDateTime agendamentoHorarioSugerido;
 
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "ATENDIMENTO_CASO", joinColumns = @JoinColumn(name = "casoId"))
@@ -95,13 +106,17 @@ class AcaoPermanenciaJpa {
 interface CasoJpaRepository extends JpaRepository<CasoJpa, Integer> {
     List<CasoJpa> findByEstudanteIdAndStatusIn(int estudanteId, List<StatusCaso> statuses);
     List<CasoJpa> findByEstudanteIdAndStatus(int estudanteId, StatusCaso status);
+    List<CasoJpa> findByEstudanteId(int estudanteId);
     List<CasoJpa> findByResponsavelId(int responsavelId);
+    List<CasoJpa> findByStatus(StatusCaso status);
 
     @Query("SELECT COALESCE(MAX(c.id), 0) + 1 FROM CasoJpa c")
     int proximoId();
 }
 
 interface SolicitacaoApoioJpaRepository extends JpaRepository<SolicitacaoApoioJpa, Integer> {
+    Optional<SolicitacaoApoioJpa> findFirstByEstudanteIdOrderByIdDesc(int estudanteId);
+
     @Query("SELECT COALESCE(MAX(s.id), 0) + 1 FROM SolicitacaoApoioJpa s")
     int proximoId();
 }
@@ -203,6 +218,16 @@ class ApoioPsicopedagogicoRepositorioImpl
     }
 
     @Override
+    public List<CasoResumo> buscarCasosPorEstudante(int estudanteId) {
+        return casoRepo.findByEstudanteId(estudanteId).stream().map(this::toResumo).toList();
+    }
+
+    @Override
+    public List<CasoResumo> buscarCasosAbertos() {
+        return casoRepo.findByStatus(StatusCaso.ABERTO).stream().map(this::toResumo).toList();
+    }
+
+    @Override
     public Optional<CasoResumo> buscarCasoAtivoPorEstudante(int estudanteId) {
         return casoRepo.findByEstudanteIdAndStatusIn(estudanteId,
                 List.of(StatusCaso.ABERTO, StatusCaso.EM_ATENDIMENTO))
@@ -230,6 +255,19 @@ class ApoioPsicopedagogicoRepositorioImpl
             jpa.triagemData = null;
         }
 
+        if (c.getAgendamento() != null) {
+            var ag = c.getAgendamento();
+            jpa.agendamentoDataHora = ag.getDataHora();
+            jpa.agendamentoStatus = ag.getStatus().name();
+            jpa.agendamentoJustificativa = ag.getJustificativaContestacao();
+            jpa.agendamentoHorarioSugerido = ag.getHorarioSugerido();
+        } else {
+            jpa.agendamentoDataHora = null;
+            jpa.agendamentoStatus = null;
+            jpa.agendamentoJustificativa = null;
+            jpa.agendamentoHorarioSugerido = null;
+        }
+
         jpa.atendimentos.clear();
         for (var a : c.getAtendimentos()) {
             var aj = new AtendimentoJpa();
@@ -252,17 +290,41 @@ class ApoioPsicopedagogicoRepositorioImpl
                     jpa.triagemData);
         }
 
+        Agendamento agendamento = null;
+        if (jpa.agendamentoDataHora != null) {
+            agendamento = new Agendamento(
+                    jpa.agendamentoDataHora,
+                    StatusAgendamento.valueOf(jpa.agendamentoStatus),
+                    jpa.agendamentoJustificativa,
+                    jpa.agendamentoHorarioSugerido);
+        }
+
         List<Atendimento> atendimentos = jpa.atendimentos.stream()
                 .map(a -> new Atendimento(a.observacoes, a.encaminhamento, a.conclusaoFinal, a.data))
                 .toList();
 
         return new Caso(new CasoId(jpa.id), new EstudanteId(jpa.estudanteId),
                 jpa.responsavelId != null ? new PsicopedagogoId(jpa.responsavelId) : null,
-                jpa.status, triagem, atendimentos);
+                jpa.status, triagem, agendamento, atendimentos);
     }
 
     private CasoResumo toResumo(CasoJpa jpa) {
-        return new CasoResumo(jpa.id, jpa.estudanteId, jpa.responsavelId, jpa.status.name());
+        var solicitacao = solicitacaoRepo.findFirstByEstudanteIdOrderByIdDesc(jpa.estudanteId);
+        String motivo = solicitacao.map(s -> s.descricao).orElse(null);
+        LocalDate abertura = solicitacao.map(s -> s.dataSolicitacao).orElse(null);
+
+        List<AtendimentoResumo> atendimentos = jpa.atendimentos.stream()
+                .map(a -> new AtendimentoResumo(a.observacoes, a.encaminhamento, a.conclusaoFinal, a.data))
+                .toList();
+
+        AgendamentoResumo agendamento = null;
+        if (jpa.agendamentoDataHora != null) {
+            agendamento = new AgendamentoResumo(jpa.agendamentoDataHora, jpa.agendamentoStatus,
+                    jpa.agendamentoJustificativa, jpa.agendamentoHorarioSugerido);
+        }
+
+        return new CasoResumo(jpa.id, jpa.estudanteId, jpa.responsavelId, jpa.status.name(),
+                motivo, abertura, jpa.triagemPrioridade, jpa.triagemObservacoes, agendamento, atendimentos);
     }
 
     private SolicitacaoApoioJpa toJpa(SolicitacaoApoio s) {

@@ -56,12 +56,42 @@ public class Cobranca {
         return new ContestacaoRegistradaEvento(this);
     }
 
-    public ContestacaoResolvidaEvento resolverContestacao(String parecer) {
+    public ContestacaoResolvidaEvento indeferirContestacao(String parecer) {
+        notNull(parecer, "parecer obrigatório");
         if (contestacao == null)
             throw new IllegalStateException("não há contestação registrada");
-        contestacao.resolver(parecer);
+        contestacao.indeferir(parecer);
         this.status = StatusCobranca.ABERTA;
         return new ContestacaoResolvidaEvento(this);
+    }
+
+    public ContestacaoResolvidaEvento deferirContestacao(ModoAjuste modo, BigDecimal valor, String parecer) {
+        if (contestacao == null)
+            throw new IllegalStateException("não há contestação registrada");
+        notNull(modo, "modo obrigatório");
+        notNull(valor, "valor obrigatório");
+        var novoValor = calcularValorDeferido(modo, valor);
+        this.historico.add(new HistoricoVersao(this.versao, this.valorAtual, "Contestação deferida", LocalDate.now()));
+        this.versao++;
+        this.valorAtual = novoValor;
+        contestacao.deferir(parecer);
+        this.status = StatusCobranca.ABERTA;
+        return new ContestacaoResolvidaEvento(this);
+    }
+
+    private BigDecimal calcularValorDeferido(ModoAjuste modo, BigDecimal valor) {
+        if (modo == ModoAjuste.PERCENTUAL) {
+            var cinco = new BigDecimal("5");
+            isTrue(valor.compareTo(cinco) >= 0 && valor.compareTo(new BigDecimal("50")) <= 0
+                    && valor.remainder(cinco).compareTo(BigDecimal.ZERO) == 0,
+                    "percentual deve ser múltiplo de 5 entre 5 e 50");
+            var fator = BigDecimal.ONE.subtract(valor.divide(new BigDecimal("100"), MathContext.DECIMAL64));
+            return this.valorAtual.multiply(fator).setScale(2, java.math.RoundingMode.HALF_UP);
+        }
+        var minimo = this.valorAtual.multiply(new BigDecimal("0.5"));
+        isTrue(valor.compareTo(minimo) >= 0 && valor.compareTo(this.valorAtual) < 0,
+                "valor deve reduzir no máximo 50% e ser menor que o valor atual");
+        return valor.setScale(2, java.math.RoundingMode.HALF_UP);
     }
 
     public DescontoAplicadoEvento aplicarDesconto(BigDecimal percentual, String autorizacaoId, LocalDate data) {

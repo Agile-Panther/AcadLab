@@ -66,4 +66,25 @@ public class CriarEditalFuncionalidade {
         assertNotNull(ctx.excecao);
         assertInstanceOf(IllegalStateException.class, ctx.excecao);
     }
+
+    @Quando("a secretaria cria um edital sem prazo de renovação para o programa {string} com {int} vagas")
+    public void secretaria_cria_edital_sem_renovacao(String programa, int vagas) {
+        try {
+            ctx.editalServico.criar(programa, vagas,
+                    hoje(), hoje().plusDays(10),
+                    hoje().plusDays(11), hoje().plusDays(20),
+                    null);
+        } catch (RuntimeException e) {
+            ctx.excecao = e;
+        }
+    }
+
+    @Entao("o edital é registrado para o programa {string}")
+    public void o_edital_e_registrado_para_o_programa(String programa) {
+        assertNull(ctx.excecao, "Não deveria ter lançado exceção");
+        var editais = ctx.repositorio.buscarPorPrograma(programa);
+        assertFalse(editais.isEmpty());
+        assertEquals(StatusEdital.INSCRICOES_ABERTAS, editais.get(0).getStatus());
+        assertNull(editais.get(0).getPrazoRenovacao());
+    }
 }

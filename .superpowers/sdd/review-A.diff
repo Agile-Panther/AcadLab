@@ -1,0 +1,206 @@
+===== F-09 UNIT A (BACKEND) REVIEW PACKAGE =====
+
+### Clean-at-HEAD files (git diff HEAD) ###
+diff --git a/aplicacao/src/main/java/school/cesar/acadlab/aplicacao/atividadescomplementares/AtividadeComplementarRepositorioAplicacao.java b/aplicacao/src/main/java/school/cesar/acadlab/aplicacao/atividadescomplementares/AtividadeComplementarRepositorioAplicacao.java
+index d206aed..4ce1086 100644
+--- a/aplicacao/src/main/java/school/cesar/acadlab/aplicacao/atividadescomplementares/AtividadeComplementarRepositorioAplicacao.java
++++ b/aplicacao/src/main/java/school/cesar/acadlab/aplicacao/atividadescomplementares/AtividadeComplementarRepositorioAplicacao.java
+@@ -4,4 +4,5 @@ import java.util.List;
+ 
+ public interface AtividadeComplementarRepositorioAplicacao {
+     List<AtividadeComplementarResumo> pesquisarPorEstudante(int estudanteId);
++    List<AtividadeComplementarResumo> pesquisarPorStatus(String status);
+ }
+diff --git a/aplicacao/src/main/java/school/cesar/acadlab/aplicacao/atividadescomplementares/AtividadeComplementarServicoAplicacao.java b/aplicacao/src/main/java/school/cesar/acadlab/aplicacao/atividadescomplementares/AtividadeComplementarServicoAplicacao.java
+index 381b84e..9696478 100644
+--- a/aplicacao/src/main/java/school/cesar/acadlab/aplicacao/atividadescomplementares/AtividadeComplementarServicoAplicacao.java
++++ b/aplicacao/src/main/java/school/cesar/acadlab/aplicacao/atividadescomplementares/AtividadeComplementarServicoAplicacao.java
+@@ -14,4 +14,8 @@ public class AtividadeComplementarServicoAplicacao {
+     public List<AtividadeComplementarResumo> pesquisarPorEstudante(int estudanteId) {
+         return repositorio.pesquisarPorEstudante(estudanteId);
+     }
++
++    public List<AtividadeComplementarResumo> pesquisarPorStatus(String status) {
++        return repositorio.pesquisarPorStatus(status);
++    }
+ }
+diff --git a/apresentacao-backend/src/main/java/school/cesar/acadlab/apresentacao/atividadescomplementares/AtividadeComplementarControlador.java b/apresentacao-backend/src/main/java/school/cesar/acadlab/apresentacao/atividadescomplementares/AtividadeComplementarControlador.java
+index 734857c..921cd20 100644
+--- a/apresentacao-backend/src/main/java/school/cesar/acadlab/apresentacao/atividadescomplementares/AtividadeComplementarControlador.java
++++ b/apresentacao-backend/src/main/java/school/cesar/acadlab/apresentacao/atividadescomplementares/AtividadeComplementarControlador.java
+@@ -12,10 +12,13 @@ import org.springframework.beans.factory.annotation.Autowired;
+ import org.springframework.web.bind.annotation.PathVariable;
+ import org.springframework.web.bind.annotation.RequestBody;
+ import org.springframework.web.bind.annotation.RequestMapping;
++import org.springframework.web.bind.annotation.RequestParam;
+ import org.springframework.web.bind.annotation.RestController;
+ 
+ import school.cesar.acadlab.aplicacao.atividadescomplementares.AtividadeComplementarResumo;
+ import school.cesar.acadlab.aplicacao.atividadescomplementares.AtividadeComplementarServicoAplicacao;
++import school.cesar.acadlab.aplicacao.atividadescomplementares.CategoriaHorasResumo;
++import school.cesar.acadlab.aplicacao.atividadescomplementares.CategoriaHorasServicoAplicacao;
+ import school.cesar.acadlab.dominio.atividadescomplementares.AtividadeComplementarId;
+ import school.cesar.acadlab.dominio.atividadescomplementares.AtividadeComplementarServico;
+ import school.cesar.acadlab.dominio.atividadescomplementares.CategoriaAtividadeId;
+@@ -30,6 +33,19 @@ class AtividadeComplementarControlador {
+     @Autowired
+     private AtividadeComplementarServicoAplicacao servicoAplicacao;
+ 
++    @Autowired
++    private CategoriaHorasServicoAplicacao categoriaServicoAplicacao;
++
++    @RequestMapping(method = GET)
++    List<AtividadeComplementarResumo> pesquisarPorStatus(@RequestParam String status) {
++        return servicoAplicacao.pesquisarPorStatus(status);
++    }
++
++    @RequestMapping(method = GET, path = "categorias")
++    List<CategoriaHorasResumo> listarCategorias() {
++        return categoriaServicoAplicacao.listar();
++    }
++
+     @RequestMapping(method = GET, path = "estudante/{estudanteId}")
+     List<AtividadeComplementarResumo> pesquisarPorEstudante(@PathVariable int estudanteId) {
+         return servicoAplicacao.pesquisarPorEstudante(estudanteId);
+diff --git a/infraestrutura/src/main/java/school/cesar/acadlab/infraestrutura/persistencia/jpa/AtividadeComplementarJpa.java b/infraestrutura/src/main/java/school/cesar/acadlab/infraestrutura/persistencia/jpa/AtividadeComplementarJpa.java
+index 0fba875..5f9c9f0 100644
+--- a/infraestrutura/src/main/java/school/cesar/acadlab/infraestrutura/persistencia/jpa/AtividadeComplementarJpa.java
++++ b/infraestrutura/src/main/java/school/cesar/acadlab/infraestrutura/persistencia/jpa/AtividadeComplementarJpa.java
+@@ -41,6 +41,7 @@ class AtividadeComplementarJpa {
+ 
+ interface AtividadeComplementarJpaRepository extends JpaRepository<AtividadeComplementarJpa, Integer> {
+     List<AtividadeComplementarJpa> findByEstudanteId(int estudanteId);
++    List<AtividadeComplementarJpa> findByStatus(StatusAtividade status);
+ 
+     @org.springframework.data.jpa.repository.Query("SELECT COALESCE(MAX(a.id), 0) + 1 FROM AtividadeComplementarJpa a")
+     int proximoId();
+@@ -87,6 +88,20 @@ class AtividadeComplementarRepositorioImpl implements AtividadeComplementarRepos
+                 .toList();
+     }
+ 
++    @Override
++    public List<AtividadeComplementarResumo> pesquisarPorStatus(String status) {
++        return repositorio.findByStatus(StatusAtividade.valueOf(status)).stream()
++                .map(jpa -> new AtividadeComplementarResumo(
++                        jpa.id,
++                        jpa.estudanteId,
++                        jpa.categoriaId,
++                        jpa.descricao,
++                        jpa.horasSubmetidas,
++                        jpa.horasAprovadas,
++                        jpa.status.name()))
++                .toList();
++    }
++
+     private AtividadeComplementarJpa toJpa(AtividadeComplementar atividade) {
+         var jpa = new AtividadeComplementarJpa();
+         jpa.id = atividade.getId().valor();
+
+### BackendAplicacao.java — F-09 delta only (vs pre-F-09 baseline) ###
+--- E:/Projetos/AcadLab/.superpowers/sdd/baseline/BackendAplicacao.java.base	2026-06-21 14:34:53.352228100 -0300
++++ E:/Projetos/AcadLab/apresentacao-backend/src/main/java/school/cesar/acadlab/BackendAplicacao.java	2026-06-21 14:37:15.809418500 -0300
+@@ -14,6 +14,8 @@
+ import school.cesar.acadlab.aplicacao.apoiopsicopedagogico.ApoioPsicopedagogicoServicoAplicacao;
+ import school.cesar.acadlab.aplicacao.atividadescomplementares.AtividadeComplementarRepositorioAplicacao;
+ import school.cesar.acadlab.aplicacao.atividadescomplementares.AtividadeComplementarServicoAplicacao;
++import school.cesar.acadlab.aplicacao.atividadescomplementares.CategoriaHorasRepositorioAplicacao;
++import school.cesar.acadlab.aplicacao.atividadescomplementares.CategoriaHorasServicoAplicacao;
+ import school.cesar.acadlab.aplicacao.curriculo.MatrizCurricularRepositorioAplicacao;
+ import school.cesar.acadlab.aplicacao.curriculo.MatrizCurricularServicoAplicacao;
+ import school.cesar.acadlab.aplicacao.estagios.EstagioRepositorioAplicacao;
+@@ -108,6 +110,12 @@
+     }
+ 
+     @Bean
++    CategoriaHorasServicoAplicacao categoriaHorasServicoAplicacao(
++            CategoriaHorasRepositorioAplicacao repositorio) {
++        return new CategoriaHorasServicoAplicacao(repositorio);
++    }
++
++    @Bean
+     CobrancaServicoAplicacao cobrancaServicoAplicacao(
+             CobrancaRepositorioAplicacao repositorio) {
+         return new CobrancaServicoAplicacao(repositorio);
+
+### NEW FILES (full content) ###
+--- aplicacao/src/main/java/school/cesar/acadlab/aplicacao/atividadescomplementares/CategoriaHorasResumo.java ---
+package school.cesar.acadlab.aplicacao.atividadescomplementares;
+
+public record CategoriaHorasResumo(int id, String nome, int limiteHoras) {}
+
+--- aplicacao/src/main/java/school/cesar/acadlab/aplicacao/atividadescomplementares/CategoriaHorasRepositorioAplicacao.java ---
+package school.cesar.acadlab.aplicacao.atividadescomplementares;
+
+import java.util.List;
+
+public interface CategoriaHorasRepositorioAplicacao {
+    List<CategoriaHorasResumo> listar();
+}
+
+--- aplicacao/src/main/java/school/cesar/acadlab/aplicacao/atividadescomplementares/CategoriaHorasServicoAplicacao.java ---
+package school.cesar.acadlab.aplicacao.atividadescomplementares;
+
+import static org.apache.commons.lang3.Validate.notNull;
+import java.util.List;
+
+public class CategoriaHorasServicoAplicacao {
+    private final CategoriaHorasRepositorioAplicacao repositorio;
+
+    public CategoriaHorasServicoAplicacao(CategoriaHorasRepositorioAplicacao repositorio) {
+        notNull(repositorio, "repositório obrigatório");
+        this.repositorio = repositorio;
+    }
+
+    public List<CategoriaHorasResumo> listar() {
+        return repositorio.listar();
+    }
+}
+
+--- infraestrutura/src/main/java/school/cesar/acadlab/infraestrutura/persistencia/jpa/CategoriaAtividadeJpa.java ---
+package school.cesar.acadlab.infraestrutura.persistencia.jpa;
+
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+import school.cesar.acadlab.aplicacao.atividadescomplementares.CategoriaHorasRepositorioAplicacao;
+import school.cesar.acadlab.aplicacao.atividadescomplementares.CategoriaHorasResumo;
+
+@Entity
+@Table(name = "CATEGORIA_ATIVIDADE")
+class CategoriaAtividadeJpa {
+    @Id
+    int id;
+    String nome;
+    int limiteHoras;
+}
+
+interface CategoriaAtividadeJpaRepository extends JpaRepository<CategoriaAtividadeJpa, Integer> {}
+
+@Repository
+class CategoriaAtividadeRepositorioImpl implements CategoriaHorasRepositorioAplicacao {
+    @Autowired
+    CategoriaAtividadeJpaRepository repositorio;
+
+    @Override
+    public List<CategoriaHorasResumo> listar() {
+        return repositorio.findAll().stream()
+                .map(jpa -> new CategoriaHorasResumo(jpa.id, jpa.nome, jpa.limiteHoras))
+                .toList();
+    }
+}
+
+--- apresentacao-backend/src/main/resources/db/migration/V4__categorias_atividade.sql ---
+-- ─── CATEGORIAS DE HORAS COMPLEMENTARES ──────────────────────────────────────
+INSERT INTO categoria_atividade (id, nome, limite_horas) VALUES
+  (1, 'Competições & Hackathons', 60),
+  (2, 'Monitoria',                60),
+  (3, 'Cursos & Certificações',   80),
+  (4, 'Produção científica',      40)
+ON CONFLICT (id) DO NOTHING;
+

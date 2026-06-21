@@ -41,6 +41,7 @@ class AtividadeComplementarJpa {
 
 interface AtividadeComplementarJpaRepository extends JpaRepository<AtividadeComplementarJpa, Integer> {
     List<AtividadeComplementarJpa> findByEstudanteId(int estudanteId);
+    List<AtividadeComplementarJpa> findByStatus(StatusAtividade status);
 
     @org.springframework.data.jpa.repository.Query("SELECT COALESCE(MAX(a.id), 0) + 1 FROM AtividadeComplementarJpa a")
     int proximoId();
@@ -76,6 +77,20 @@ class AtividadeComplementarRepositorioImpl implements AtividadeComplementarRepos
     @Override
     public List<AtividadeComplementarResumo> pesquisarPorEstudante(int estudanteId) {
         return repositorio.findByEstudanteId(estudanteId).stream()
+                .map(jpa -> new AtividadeComplementarResumo(
+                        jpa.id,
+                        jpa.estudanteId,
+                        jpa.categoriaId,
+                        jpa.descricao,
+                        jpa.horasSubmetidas,
+                        jpa.horasAprovadas,
+                        jpa.status.name()))
+                .toList();
+    }
+
+    @Override
+    public List<AtividadeComplementarResumo> pesquisarPorStatus(String status) {
+        return repositorio.findByStatus(StatusAtividade.valueOf(status)).stream()
                 .map(jpa -> new AtividadeComplementarResumo(
                         jpa.id,
                         jpa.estudanteId,

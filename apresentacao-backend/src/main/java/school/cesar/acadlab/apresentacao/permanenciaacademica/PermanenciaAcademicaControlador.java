@@ -42,7 +42,10 @@ class PermanenciaAcademicaControlador {
     /* ===== Editais ===== */
 
     @RequestMapping(method = GET, path = "editais")
-    List<EditalResumo> buscarEditaisPorPrograma(@RequestParam String programa) {
+    List<EditalResumo> buscarEditais(@RequestParam(required = false) String programa) {
+        if (programa == null || programa.isBlank()) {
+            return servicoAplicacao.buscarTodosEditais();
+        }
         return servicoAplicacao.buscarEditaisPorPrograma(programa);
     }
 
@@ -71,6 +74,11 @@ class PermanenciaAcademicaControlador {
     }
 
     /* ===== Inscrições ===== */
+
+    @RequestMapping(method = GET, path = "inscricoes")
+    List<InscricaoResumo> buscarTodasInscricoes() {
+        return servicoAplicacao.buscarTodasInscricoes();
+    }
 
     @RequestMapping(method = GET, path = "editais/{editalId}/inscricoes")
     List<InscricaoResumo> buscarInscricoesPorEdital(@PathVariable int editalId) {

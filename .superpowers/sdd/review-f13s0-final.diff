@@ -1,0 +1,170 @@
+===== F-13 SUB0 FINAL REVIEW PACKAGE (working tree, no commits) =====
+Scope: ONLY F-13 sub-0 files. Repo also has unrelated uncommitted changes (other features) — IGNORE.
+
+######## BACKEND ########
+### git diff HEAD (tracked backend files) ###
+
+### NEW backend sub-DTOs ###
+--- aplicacao/src/main/java/school/cesar/acadlab/aplicacao/gestaofinanceira/PagamentoResumo.java ---
+package school.cesar.acadlab.aplicacao.gestaofinanceira;
+
+import java.math.BigDecimal;
+import java.time.LocalDate;
+
+public record PagamentoResumo(BigDecimal valor, LocalDate data, String referencia, String status) {}
+
+--- aplicacao/src/main/java/school/cesar/acadlab/aplicacao/gestaofinanceira/ContestacaoResumo.java ---
+package school.cesar.acadlab.aplicacao.gestaofinanceira;
+
+import java.time.LocalDate;
+
+public record ContestacaoResumo(Integer requerenteId, String justificativa, LocalDate data,
+        String status, String parecer) {}
+
+--- aplicacao/src/main/java/school/cesar/acadlab/aplicacao/gestaofinanceira/DescontoResumo.java ---
+package school.cesar.acadlab.aplicacao.gestaofinanceira;
+
+import java.math.BigDecimal;
+import java.time.LocalDate;
+
+public record DescontoResumo(BigDecimal percentual, String autorizacaoId, LocalDate dataAplicacao) {}
+
+
+######## FRONTEND ########
+### financeiro.tsx (git diff HEAD, post Minor-fixes) ###
+
+### config.ts delta ###
+--- E:/Projetos/AcadLab/.superpowers/sdd/baseline/config.ts.base	2026-06-21 15:15:37.676559600 -0300
++++ E:/Projetos/AcadLab/apresentacao-frontend/react/src/lib/config.ts	2026-06-21 15:22:35.588726900 -0300
+@@ -10,6 +10,8 @@
+   psicopedagogoId: 10,
+   /** Assistência Estudantil que defere/indefere inscrições. */
+   assistenciaId: 1,
++  /** Contrato acadêmico do estudante atual (contrato_id=1 no seed). */
++  contratoId: 1,
+ } as const;
+ 
+ /** Base da API do backend. Em docker usa VITE_API_TARGET; localmente cai em :8080. */
+### format.ts delta ###
+--- E:/Projetos/AcadLab/.superpowers/sdd/baseline/format.ts.base	2026-06-21 15:15:37.701766100 -0300
++++ E:/Projetos/AcadLab/apresentacao-frontend/react/src/lib/format.ts	2026-06-21 15:22:47.148995400 -0300
+@@ -20,3 +20,11 @@
+   const local = new Date(d.getTime() - d.getTimezoneOffset() * 60000);
+   return local.toISOString().slice(0, 16);
+ }
++
++/** Formata número/decimal do backend como moeda BRL (ex.: 1420 → "R$ 1.420,00"). */
++export function formatMoeda(valor: number | string | null | undefined): string {
++  if (valor === null || valor === undefined) return "—";
++  const n = typeof valor === "string" ? Number(valor) : valor;
++  if (Number.isNaN(n)) return "—";
++  return n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
++}
+### NEW: src/lib/financeiro.ts ###
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { api, hojeIso } from "./api";
+import { USUARIO_ATUAL } from "./config";
+
+/* ===== Tipos (espelham os DTOs do backend) ===== */
+
+export type StatusCobranca = "ABERTA" | "CONTESTADA" | "PAGA" | "CANCELADA";
+
+export type PagamentoResumo = {
+  valor: number;
+  data: string | null;
+  referencia: string | null;
+  status: "CONFIRMADO" | "CANCELADO" | null;
+};
+
+export type ContestacaoResumo = {
+  requerenteId: number | null;
+  justificativa: string | null;
+  data: string | null;
+  status: "PENDENTE" | "RESOLVIDA" | null;
+  parecer: string | null;
+};
+
+export type DescontoResumo = {
+  percentual: number;
+  autorizacaoId: string | null;
+  dataAplicacao: string | null;
+};
+
+export type CobrancaResumo = {
+  id: number;
+  contratoId: number;
+  estudanteId: number;
+  periodoLetivoId: number;
+  valorBase: number;
+  valorAtual: number;
+  vencimento: string | null;
+  versao: number;
+  status: StatusCobranca;
+  pagamento: PagamentoResumo | null;
+  contestacao: ContestacaoResumo | null;
+  descontos: DescontoResumo[];
+};
+
+/* ===== Query keys ===== */
+
+const keys = {
+  extrato: (contratoId: number) => ["financeiro", "extrato", contratoId] as const,
+  contestacoes: ["financeiro", "contestacoes-abertas"] as const,
+};
+
+/* ===== Consultas ===== */
+
+export function useExtrato(contratoId = USUARIO_ATUAL.contratoId) {
+  return useQuery({
+    queryKey: keys.extrato(contratoId),
+    queryFn: () => api.get<CobrancaResumo[]>(`cobrancas/contrato/${contratoId}`),
+  });
+}
+
+export function useContestacoesAbertas() {
+  return useQuery({
+    queryKey: keys.contestacoes,
+    queryFn: () => api.get<CobrancaResumo[]>("cobrancas/contestacoes-abertas"),
+  });
+}
+
+/* ===== Mutações ===== */
+
+function useInvalidate() {
+  const qc = useQueryClient();
+  return () => qc.invalidateQueries({ queryKey: ["financeiro"] });
+}
+
+export function useRegistrarPagamento() {
+  const invalidate = useInvalidate();
+  return useMutation({
+    mutationFn: (vars: { id: number; valor: number }) =>
+      api.post(`cobrancas/${vars.id}/registrar-pagamento`, {
+        valor: vars.valor,
+        data: hojeIso(),
+        referencia: `PIX-${vars.id}-${hojeIso()}`,
+      }),
+    onSuccess: invalidate,
+  });
+}
+
+export function useContestar() {
+  const invalidate = useInvalidate();
+  return useMutation({
+    mutationFn: (vars: { id: number; justificativa: string }) =>
+      api.post(`cobrancas/${vars.id}/contestar`, {
+        estudanteId: USUARIO_ATUAL.estudanteId,
+        justificativa: vars.justificativa,
+      }),
+    onSuccess: invalidate,
+  });
+}
+
+export function useResolverContestacao() {
+  const invalidate = useInvalidate();
+  return useMutation({
+    mutationFn: (vars: { id: number; parecer: string }) =>
+      api.post(`cobrancas/${vars.id}/resolver-contestacao`, vars.parecer),
+    onSuccess: invalidate,
+  });
+}
