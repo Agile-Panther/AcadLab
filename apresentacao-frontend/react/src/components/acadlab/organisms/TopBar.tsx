@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
-import { Bell, HelpCircle, Check } from "lucide-react";
+import { Bell, HelpCircle, Check, UserCog, ChevronDown } from "lucide-react";
+import { useProfileSwitcherContext } from "../context/ProfileSwitcher";
 import { useRouterState } from "@tanstack/react-router";
 import {
   Popover,
@@ -33,6 +34,9 @@ export function TopBar({
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const help = useMemo(() => getPageHelp(pathname), [pathname]);
 
+  const { profiles, active, setActive } = useProfileSwitcherContext();
+  const activeProfile = profiles.find((p) => p.value === active) ?? null;
+
   const [items, setItems] = useState(seedNotifications);
   const unreadCount = items.filter((n) => n.unread).length;
   const markAllRead = () =>
@@ -63,6 +67,74 @@ export function TopBar({
       </div>
       <div className="flex items-center gap-2">
         {right}
+
+        {profiles.length > 1 && activeProfile && (
+          <Popover>
+            <PopoverTrigger asChild>
+              <button
+                type="button"
+                aria-label="Trocar perfil"
+                className="flex h-9 items-center gap-2 rounded-full border border-border bg-card/60 pl-2 pr-2.5 text-[12.5px] font-medium text-foreground transition-colors hover:bg-muted"
+              >
+                <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-primary">
+                  <UserCog className="h-3.5 w-3.5" />
+                </span>
+                <span className="hidden max-w-[140px] truncate sm:inline">
+                  {activeProfile.label}
+                </span>
+                <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
+              </button>
+            </PopoverTrigger>
+            <PopoverContent align="end" className="w-[280px] p-0">
+              <div className="border-b border-border px-4 py-3">
+                <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                  Trocar perfil
+                </p>
+                <p className="mt-0.5 text-[12.5px] text-muted-foreground">
+                  Esta tela tem visões distintas por perfil.
+                </p>
+              </div>
+              <ul className="py-1.5">
+                {profiles.map((p) => {
+                  const isActive = p.value === active;
+                  return (
+                    <li key={p.value}>
+                      <button
+                        type="button"
+                        onClick={() => setActive(p.value)}
+                        className={cn(
+                          "flex w-full items-start gap-2 px-3 py-2 text-left transition-colors hover:bg-muted/60",
+                          isActive && "bg-primary/[0.04]",
+                        )}
+                      >
+                        <span
+                          className={cn(
+                            "mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border",
+                            isActive
+                              ? "border-primary bg-primary text-primary-foreground"
+                              : "border-border bg-card",
+                          )}
+                        >
+                          {isActive && <Check className="h-3 w-3" />}
+                        </span>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-[13px] font-medium text-foreground">
+                            {p.label}
+                          </p>
+                          {p.description && (
+                            <p className="mt-0.5 text-[11.5px] text-muted-foreground">
+                              {p.description}
+                            </p>
+                          )}
+                        </div>
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            </PopoverContent>
+          </Popover>
+        )}
 
         <Popover>
           <PopoverTrigger asChild>
