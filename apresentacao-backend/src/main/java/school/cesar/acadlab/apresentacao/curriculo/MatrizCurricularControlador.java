@@ -9,17 +9,21 @@ import java.util.List;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
 
 import school.cesar.acadlab.aplicacao.curriculo.MatrizCurricularDetalhe;
 import school.cesar.acadlab.aplicacao.curriculo.MatrizCurricularResumo;
 import school.cesar.acadlab.aplicacao.curriculo.MatrizCurricularServicoAplicacao;
 import school.cesar.acadlab.dominio.curriculo.CursoId;
 import school.cesar.acadlab.dominio.curriculo.DisciplinaId;
+import school.cesar.acadlab.dominio.curriculo.MatrizCurricular;
 import school.cesar.acadlab.dominio.curriculo.MatrizCurricularId;
+import school.cesar.acadlab.dominio.curriculo.MatrizCurricularRepositorio;
 import school.cesar.acadlab.dominio.curriculo.MatrizCurricularServico;
 import school.cesar.acadlab.dominio.curriculo.TipoDisciplina;
 
@@ -32,6 +36,9 @@ class MatrizCurricularControlador {
 
     @Autowired
     private MatrizCurricularServicoAplicacao servicoAplicacao;
+
+    @Autowired
+    private MatrizCurricularRepositorio repositorio;
 
     @RequestMapping(method = GET, path = "curso/{cursoId}")
     List<MatrizCurricularResumo> buscarPorCurso(@PathVariable int cursoId) {
