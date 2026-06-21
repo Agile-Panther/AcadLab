@@ -41,7 +41,7 @@ public class SolicitacaoServicoProxy implements SolicitacaoServico {
                     estudanteId, tipo, periodoLetivoId);
             if (existente.isPresent()) {
                 throw new IllegalStateException(
-                        "Não é possível abrir múltiplas solicitações desse tipo no mesmo período letivo caso a primeira ainda não ter sido encerrada.");
+                        "já existe uma solicitação aberta deste tipo no período");
             }
         }
 
