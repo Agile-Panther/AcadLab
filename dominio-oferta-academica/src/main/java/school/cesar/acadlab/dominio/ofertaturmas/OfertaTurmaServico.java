@@ -12,6 +12,9 @@ import school.cesar.acadlab.dominio.ofertaturmas.turma.ModalidadeTurma;
 import school.cesar.acadlab.dominio.ofertaturmas.turma.Turma;
 import school.cesar.acadlab.dominio.ofertaturmas.turma.TurmaId;
 import school.cesar.acadlab.dominio.ofertaturmas.turma.TurmaRepositorio;
+import school.cesar.acadlab.dominio.ofertaturmas.turma.decorator.EstudanteId;
+import school.cesar.acadlab.dominio.ofertaturmas.turma.decorator.TurmaComListaEspera;
+import school.cesar.acadlab.dominio.ofertaturmas.turma.decorator.TurmaOnline;
 
 public class OfertaTurmaServico {
     private final TurmaRepositorio turmaRepositorio;
@@ -95,6 +98,39 @@ public class OfertaTurmaServico {
         notNull(turmaId, "O id da turma não pode ser nulo");
         var turma = turmaRepositorio.obter(turmaId);
         turma.ofertar();
+        turmaRepositorio.salvar(turma);
+    }
+
+    // Decorator TurmaOnline: define o link de acesso de uma turma EAD.
+    // O decorator carrega as invariantes (exige modalidade EAD; link não em branco);
+    // o estado validado é gravado no agregado e persistido.
+    public void definirLinkAcessoOnline(TurmaId turmaId, String link) {
+        notNull(turmaId, "O id da turma não pode ser nulo");
+        var turma = turmaRepositorio.obter(turmaId);
+        var online = new TurmaOnline(turma);
+        online.definirLinkAcesso(link);
+        turma.definirLinkAcesso(online.getLinkAcesso());
+        turmaRepositorio.salvar(turma);
+    }
+
+    // Decorator TurmaComListaEspera: inscreve um estudante na lista de espera.
+    // O decorator é reidratado com a lista persistida e impede duplicidade;
+    // a lista resultante é gravada no agregado.
+    public void entrarListaEspera(TurmaId turmaId, EstudanteId estudanteId) {
+        notNull(turmaId, "O id da turma não pode ser nulo");
+        var turma = turmaRepositorio.obter(turmaId);
+        var comEspera = new TurmaComListaEspera(turma, turma.getListaEspera());
+        comEspera.entrarListaEspera(estudanteId);
+        turma.registrarListaEspera(comEspera.getListaEspera());
+        turmaRepositorio.salvar(turma);
+    }
+
+    public void sairListaEspera(TurmaId turmaId, EstudanteId estudanteId) {
+        notNull(turmaId, "O id da turma não pode ser nulo");
+        var turma = turmaRepositorio.obter(turmaId);
+        var comEspera = new TurmaComListaEspera(turma, turma.getListaEspera());
+        comEspera.sairListaEspera(estudanteId);
+        turma.registrarListaEspera(comEspera.getListaEspera());
         turmaRepositorio.salvar(turma);
     }
 

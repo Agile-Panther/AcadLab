@@ -49,7 +49,10 @@ export function ScheduleGrid({
           </div>
         ))}
       </div>
-      <div className="relative grid" style={{ gridTemplateColumns: "72px repeat(6, 1fr)", height: bodyHeight }}>
+      <div
+        className="relative grid"
+        style={{ gridTemplateColumns: "72px repeat(6, 1fr)", height: bodyHeight }}
+      >
         {hours.map((h, hIdx) => (
           <Fragment key={h}>
             <div
@@ -71,7 +74,10 @@ export function ScheduleGrid({
           </Fragment>
         ))}
         {/* Blocks overlay */}
-        <div className="pointer-events-none absolute inset-0 grid" style={{ gridTemplateColumns: "72px repeat(6, 1fr)" }}>
+        <div
+          className="pointer-events-none absolute inset-0 grid"
+          style={{ gridTemplateColumns: "72px repeat(6, 1fr)" }}
+        >
           <div />
           {days.map((_, di) => (
             <div key={di} className="relative">

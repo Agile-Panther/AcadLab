@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
 import jakarta.persistence.ElementCollection;
@@ -84,6 +85,7 @@ class EstagioRepositorioImpl implements EstagioRepositorio, EstagioRepositorioAp
     }
 
     @Override
+    @Transactional
     public void salvar(Estagio estagio) {
         repository.save(toJpa(estagio));
     }
@@ -193,6 +195,7 @@ class CandidaturaRepositorioImpl implements CandidaturaRepositorio, CandidaturaR
     }
 
     @Override
+    @Transactional
     public void salvar(Candidatura candidatura) {
         var jpa = repository.findById(candidatura.getId().getValor()).orElseGet(CandidaturaJpa::new);
         jpa.id = candidatura.getId().getValor();

@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
@@ -43,6 +44,7 @@ import school.cesar.acadlab.dominio.ofertaturmas.turma.StatusTurma;
 import school.cesar.acadlab.dominio.ofertaturmas.turma.Turma;
 import school.cesar.acadlab.dominio.ofertaturmas.turma.TurmaId;
 import school.cesar.acadlab.dominio.ofertaturmas.turma.TurmaRepositorio;
+import school.cesar.acadlab.dominio.ofertaturmas.turma.decorator.EstudanteId;
 
 // ===================== JPA Entities =====================
 
@@ -83,6 +85,14 @@ class TurmaJpa {
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "HORARIO_AULA", joinColumns = @JoinColumn(name = "turmaId"))
     List<HorarioAulaTurmaJpa> horarios = new ArrayList<>();
+
+    // Estado dos decorators (TurmaOnline / TurmaComListaEspera)
+    String linkAcesso;
+
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "TURMA_LISTA_ESPERA", joinColumns = @JoinColumn(name = "turmaId"))
+    @Column(name = "estudanteId")
+    List<Integer> listaEspera = new ArrayList<>();
 }
 
 @Embeddable
@@ -121,7 +131,9 @@ class SalaRepositorioImpl implements SalaRepositorio, SalaRepositorioAplicacao {
 
     @Override public SalaId proximoId() { return new SalaId(repository.proximoId()); }
 
-    @Override public void salvar(Sala sala) {
+    @Override
+    @Transactional
+    public void salvar(Sala sala) {
         var jpa = repository.findById(sala.getId().getId()).orElseGet(SalaJpa::new);
         jpa.id = sala.getId().getId();
         jpa.nome = sala.getNome();
@@ -165,7 +177,9 @@ class ProfessorRepositorioImpl implements ProfessorRepositorio, ProfessorReposit
 
     @Override public ProfessorId proximoId() { return new ProfessorId(repository.proximoId()); }
 
-    @Override public void salvar(Professor professor) {
+    @Override
+    @Transactional
+    public void salvar(Professor professor) {
         var jpa = repository.findById(professor.getId().getId()).orElseGet(ProfessorJpa::new);
         jpa.id = professor.getId().getId();
         jpa.nome = professor.getNome();
@@ -208,7 +222,9 @@ class TurmaRepositorioImpl implements TurmaRepositorio, TurmaRepositorioAplicaca
 
     @Override public TurmaId proximoId() { return new TurmaId(repository.proximoId()); }
 
-    @Override public void salvar(Turma turma) {
+    @Override
+    @Transactional
+    public void salvar(Turma turma) {
         var jpa = repository.findById(turma.getId().getId()).orElseGet(TurmaJpa::new);
         jpa.id = turma.getId().getId();
         jpa.periodoLetivoId = turma.getPeriodoLetivoId().getId();
@@ -225,6 +241,11 @@ class TurmaRepositorioImpl implements TurmaRepositorio, TurmaRepositorioAplicaca
             hjpa.horaInicio = h.getHoraInicio();
             hjpa.horaFim = h.getHoraFim();
             jpa.horarios.add(hjpa);
+        }
+        jpa.linkAcesso = turma.getLinkAcesso();
+        jpa.listaEspera.clear();
+        for (var e : turma.getListaEspera()) {
+            jpa.listaEspera.add(e.getValor());
         }
         repository.save(jpa);
     }
@@ -266,7 +287,7 @@ class TurmaRepositorioImpl implements TurmaRepositorio, TurmaRepositorioAplicaca
         var horarios = jpa.horarios.stream()
                 .map(h -> new HorarioAula(h.diaSemana, h.horaInicio, h.horaFim))
                 .toList();
-        return Turma.reconstituir(
+        var turma = Turma.reconstituir(
                 new TurmaId(jpa.id),
                 new PeriodoLetivoId(jpa.periodoLetivoId),
                 new DisciplinaId(jpa.disciplinaId),
@@ -276,6 +297,9 @@ class TurmaRepositorioImpl implements TurmaRepositorio, TurmaRepositorioAplicaca
                 jpa.capacidade,
                 jpa.status,
                 horarios);
+        turma.definirLinkAcesso(jpa.linkAcesso);
+        turma.registrarListaEspera(jpa.listaEspera.stream().map(EstudanteId::new).toList());
+        return turma;
     }
 
     private TurmaResumo toResumo(TurmaJpa jpa) {

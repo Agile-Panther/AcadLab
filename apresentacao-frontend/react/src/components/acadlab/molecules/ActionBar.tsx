@@ -9,6 +9,7 @@ export function ActionBar({
   primaryLabel,
   onPrimary,
   showFilters = true,
+  filters,
   className,
 }: {
   searchPlaceholder?: string;
@@ -16,6 +17,7 @@ export function ActionBar({
   primaryLabel?: string;
   onPrimary?: () => void;
   showFilters?: boolean;
+  filters?: React.ReactNode;
   className?: string;
 }) {
   return (
@@ -28,13 +30,17 @@ export function ActionBar({
           className="h-10 rounded-lg border-border bg-card pl-9"
         />
       </div>
-      {showFilters && (
+      {filters}
+      {showFilters && !filters && (
         <Button variant="outline" className="h-10 gap-2 rounded-lg">
           <SlidersHorizontal className="h-4 w-4" /> Filtros
         </Button>
       )}
       {primaryLabel && (
-        <Button onClick={onPrimary} className="h-10 gap-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90">
+        <Button
+          onClick={onPrimary}
+          className="h-10 gap-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90"
+        >
           <Plus className="h-4 w-4" /> {primaryLabel}
         </Button>
       )}

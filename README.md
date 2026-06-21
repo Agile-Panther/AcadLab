@@ -33,7 +33,7 @@ O sistema se organiza em três eixos:
 | **Maria Clara** | F-03 · Oferta de Turmas · F-14 · Estágios | Decorator | `dominio-oferta-academica` · `dominio-estagios` |
 | **Vinicius** | F-04 · Matrícula · F-12 · Mobilidade Acadêmica | Strategy | `dominio-matricula` · `dominio-mobilidade-academica` |
 | **Bernardo** | F-07 · Secretaria Virtual · F-08 · Integralização | Proxy | `dominio-secretaria-virtual` · `dominio-integralizacao-curricular` |
-| **Matheus** | F-10 · Permanência Acadêmica · F-11 · Apoio Psicopedagógico | Observer | `dominio-permanencia-academica` |
+| **Matheus** | F-10 · Permanência Acadêmica · F-11 · Apoio Psicopedagógico | Observer | `dominio-permanencia-academica` · `dominio-apoio-psicopedagogico` |
 | **Jera** | F-09 · Atividades Complementares · F-13 · Gestão Financeira | Observer | `dominio-atividades-complementares` · `dominio-gestao-financeira` |
 
 ---
@@ -155,9 +155,9 @@ O prefixo `src/main/java/school/cesar/acadlab/` é omitido nos caminhos abaixo p
 | Interface do observador (Observer) | `dominio-compartilhado/dominio/evento/EventoObservador.java` |
 | Publisher: ciclo de vida de benefícios | `dominio-permanencia-academica/dominio/permanenciaacademica/BeneficioServico.java` |
 | Entidade que emite eventos de benefício | `dominio-permanencia-academica/dominio/permanenciaacademica/Beneficio.java` |
-| Publisher: triagem psicopedagógica | `dominio-permanencia-academica/dominio/apoiopsicopedagogico/ApoioServico.java` |
-| Publisher: atendimento psicopedagógico | `dominio-permanencia-academica/dominio/apoiopsicopedagogico/AtendimentoServico.java` |
-| Publisher: triagem | `dominio-permanencia-academica/dominio/apoiopsicopedagogico/TriagemServico.java` |
+| Publisher: triagem psicopedagógica | `dominio-apoio-psicopedagogico/dominio/apoiopsicopedagogico/ApoioServico.java` |
+| Publisher: atendimento psicopedagógico | `dominio-apoio-psicopedagogico/dominio/apoiopsicopedagogico/AtendimentoServico.java` |
+| Publisher: triagem | `dominio-apoio-psicopedagogico/dominio/apoiopsicopedagogico/TriagemServico.java` |
 
 **Como aparece no código:** `Beneficio.suspender()` retorna um `EventoDominio`; `BeneficioServico` o repassa ao `EventoBarramento.postar(evento)`. Qualquer componente que implemente `EventoObservador<BeneficioSuspenso>` e se registre no barramento recebe a notificação sem que `BeneficioServico` precise conhecer os assinantes.
 
@@ -246,7 +246,8 @@ acadlab-pai/
 ├── dominio-secretaria-virtual/       ← F-07 (Bernardo)
 ├── dominio-integralizacao-curricular/← F-08 (Bernardo)
 ├── dominio-atividades-complementares/← F-09 (Jera)
-├── dominio-permanencia-academica/    ← F-10 + F-11 (Matheus) — dois bounded contexts
+├── dominio-permanencia-academica/    ← F-10 (Matheus)
+├── dominio-apoio-psicopedagogico/    ← F-11 (Matheus)
 ├── dominio-mobilidade-academica/     ← F-12 (Vinicius)
 ├── dominio-gestao-financeira/        ← F-13 (Jera)
 ├── dominio-estagios/                 ← F-14 (Maria Clara)
@@ -327,7 +328,8 @@ O projeto segue **Arquitetura Limpa** com módulos Maven separados por camada:
 │  dominio-curriculo  dominio-matricula  dominio-historico  │
 │  dominio-oferta-academica  dominio-gestao-pedagogica      │  ← Java puro, sem framework
 │  dominio-secretaria-virtual  dominio-integralizacao       │
-│  dominio-permanencia-academica  dominio-estagios  ...     │
+│  dominio-permanencia-academica  dominio-apoio-psicopedagogico │
+│  dominio-estagios  ...                                    │
 └──────────────────────────────────────────────────────────┘
                          ↑
 ┌────────────────────────┴─────────────────────────────────┐

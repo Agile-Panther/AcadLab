@@ -11,6 +11,7 @@ import school.cesar.acadlab.dominio.gestaopedagogica.diario.PeriodoLetivoId;
 import school.cesar.acadlab.dominio.gestaopedagogica.diario.ProfessorId;
 import school.cesar.acadlab.dominio.gestaopedagogica.diario.RegistroAulaId;
 import school.cesar.acadlab.dominio.gestaopedagogica.diario.TurmaId;
+import school.cesar.acadlab.dominio.gestaopedagogica.diario.apuracao.RegimeApuracao;
 
 public class DiarioTurmaServico {
     private final DiarioTurmaRepositorio repositorio;
@@ -88,9 +89,15 @@ public class DiarioTurmaServico {
     }
 
     public void fecharResultado(DiarioTurmaId diarioId, EstudanteId estudanteId) {
+        fecharResultado(diarioId, estudanteId, RegimeApuracao.PONDERADA);
+    }
+
+    public void fecharResultado(DiarioTurmaId diarioId, EstudanteId estudanteId,
+                                 RegimeApuracao regime) {
         notNull(diarioId, "O id do diário não pode ser nulo");
+        notNull(regime, "O regime de apuração não pode ser nulo");
         var diario = repositorio.obter(diarioId);
-        diario.fecharResultado(estudanteId);
+        diario.fecharResultado(estudanteId, regime.apuracao());
         repositorio.salvar(diario);
     }
 

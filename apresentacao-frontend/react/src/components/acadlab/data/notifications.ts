@@ -1,11 +1,5 @@
 import type { LucideIcon } from "lucide-react";
-import {
-  CalendarClock,
-  CheckCircle2,
-  GraduationCap,
-  Megaphone,
-  Wallet,
-} from "lucide-react";
+import { CalendarClock, CheckCircle2, GraduationCap, Megaphone, Wallet } from "lucide-react";
 
 export type NotificationTone = "info" | "success" | "warning" | "danger";
 

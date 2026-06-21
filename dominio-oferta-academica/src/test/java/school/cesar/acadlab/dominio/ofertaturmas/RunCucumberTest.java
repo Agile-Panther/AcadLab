@@ -10,7 +10,7 @@ import org.junit.platform.suite.api.Suite;
 @Suite
 @IncludeEngines("cucumber")
 @SelectPackages("school.cesar.acadlab.dominio.ofertaturmas")
-@ConfigurationParameter(key = PLUGIN_PROPERTY_NAME, value = "pretty")
+@ConfigurationParameter(key = PLUGIN_PROPERTY_NAME, value = "pretty, html:target/cucumber-reports/ofertaturmas.html")
 @ConfigurationParameter(key = GLUE_PROPERTY_NAME, value = "school.cesar.acadlab.dominio.ofertaturmas")
 public class RunCucumberTest {
 }

@@ -1,4 +1,4 @@
-import { useRef, type ReactNode } from "react";
+import { useRef, type CSSProperties, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
 /**
@@ -28,7 +28,7 @@ export function SpotlightCard({
     <div
       ref={ref}
       onMouseMove={onMove}
-      style={{ ["--spot-r" as any]: `${radius}px` }}
+      style={{ "--spot-r": `${radius}px` } as CSSProperties}
       className={cn("group/spot relative isolate", className)}
     >
       <div

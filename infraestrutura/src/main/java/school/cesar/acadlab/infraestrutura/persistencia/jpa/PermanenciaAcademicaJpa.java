@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -39,6 +40,7 @@ import school.cesar.acadlab.dominio.permanenciaacademica.StatusInscricao;
 class EditalJpa {
     @Id int id;
     String programa;
+    String descricao;
     int vagas;
     LocalDate prazoInscricaoInicio;
     LocalDate prazoInscricaoFim;
@@ -126,6 +128,7 @@ class PermanenciaAcademicaRepositorioImpl
     public EditalId proximoEditalId() { return new EditalId(editalRepo.proximoId()); }
 
     @Override
+    @Transactional
     public void salvar(Edital edital) { editalRepo.save(toJpa(edital)); }
 
     @Override
@@ -156,6 +159,7 @@ class PermanenciaAcademicaRepositorioImpl
     public InscricaoId proximoInscricaoId() { return new InscricaoId(inscricaoRepo.proximoId()); }
 
     @Override
+    @Transactional
     public void salvar(Inscricao inscricao) { inscricaoRepo.save(toJpa(inscricao)); }
 
     @Override
@@ -188,6 +192,7 @@ class PermanenciaAcademicaRepositorioImpl
     public BeneficioId proximoBeneficioId() { return new BeneficioId(beneficioRepo.proximoId()); }
 
     @Override
+    @Transactional
     public void salvar(Beneficio beneficio) { beneficioRepo.save(toJpa(beneficio)); }
 
     @Override
@@ -210,6 +215,11 @@ class PermanenciaAcademicaRepositorioImpl
     /* --- PermanenciaAcademicaRepositorioAplicacao --- */
 
     @Override
+    public List<EditalResumo> buscarTodosEditais() {
+        return editalRepo.findAll().stream().map(this::toResumoEdital).toList();
+    }
+
+    @Override
     public List<EditalResumo> buscarEditaisPorPrograma(String programa) {
         return editalRepo.findByPrograma(programa).stream().map(this::toResumoEdital).toList();
     }
@@ -220,6 +230,11 @@ class PermanenciaAcademicaRepositorioImpl
     }
 
     @Override
+    public List<InscricaoResumo> buscarTodasInscricoes() {
+        return inscricaoRepo.findAll().stream().map(this::toResumoInscricao).toList();
+    }
+
+    @Override
     public List<InscricaoResumo> buscarInscricoesPorEdital(int editalId) {
         return inscricaoRepo.findByEditalId(editalId).stream().map(this::toResumoInscricao).toList();
     }
@@ -227,6 +242,11 @@ class PermanenciaAcademicaRepositorioImpl
     @Override
     public List<InscricaoResumo> buscarInscricoesPorEstudante(int estudanteId) {
         return inscricaoRepo.findByEstudanteId(estudanteId).stream().map(this::toResumoInscricao).toList();
+    }
+
+    @Override
+    public List<BeneficioResumo> buscarTodosBeneficios() {
+        return beneficioRepo.findAll().stream().map(this::toResumoBeneficio).toList();
     }
 
     @Override
@@ -245,6 +265,7 @@ class PermanenciaAcademicaRepositorioImpl
         var jpa = editalRepo.findById(e.getId().getValor()).orElseGet(EditalJpa::new);
         jpa.id = e.getId().getValor();
         jpa.programa = e.getPrograma();
+        jpa.descricao = e.getDescricao();
         jpa.vagas = e.getVagas();
         jpa.prazoInscricaoInicio = e.getPrazoInscricaoInicio();
         jpa.prazoInscricaoFim = e.getPrazoInscricaoFim();
@@ -256,14 +277,14 @@ class PermanenciaAcademicaRepositorioImpl
     }
 
     private Edital toDomain(EditalJpa jpa) {
-        return Edital.reconstituir(new EditalId(jpa.id), jpa.programa, jpa.vagas,
+        return Edital.reconstituir(new EditalId(jpa.id), jpa.programa, jpa.descricao, jpa.vagas,
                 jpa.prazoInscricaoInicio, jpa.prazoInscricaoFim,
                 jpa.prazoRecursoInicio, jpa.prazoRecursoFim,
                 jpa.prazoRenovacao, jpa.status);
     }
 
     private EditalResumo toResumoEdital(EditalJpa jpa) {
-        return new EditalResumo(jpa.id, jpa.programa, jpa.vagas,
+        return new EditalResumo(jpa.id, jpa.programa, jpa.descricao, jpa.vagas,
                 jpa.prazoInscricaoInicio, jpa.prazoInscricaoFim,
                 jpa.prazoRecursoInicio, jpa.prazoRecursoFim,
                 jpa.prazoRenovacao, jpa.status.name());
@@ -313,6 +334,7 @@ class PermanenciaAcademicaRepositorioImpl
 
     private BeneficioResumo toResumoBeneficio(BeneficioJpa jpa) {
         return new BeneficioResumo(jpa.id, jpa.inscricaoId, jpa.estudanteId,
-                jpa.editalId, jpa.status.name(), jpa.dataAtivacao, jpa.prazoRenovacao);
+                jpa.editalId, jpa.status.name(), jpa.dataAtivacao, jpa.prazoRenovacao,
+                jpa.solicitouRenovacao);
     }
 }

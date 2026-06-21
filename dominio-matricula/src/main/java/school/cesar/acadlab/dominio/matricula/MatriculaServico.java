@@ -94,6 +94,13 @@ public class MatriculaServico {
         repositorio.salvar(matricula);
     }
 
+    public void bloquear(MatriculaId matriculaId) {
+        notNull(matriculaId, "O id da matrícula não pode ser nulo");
+        var matricula = repositorio.buscarPorId(matriculaId).orElseThrow();
+        matricula.bloquear();
+        repositorio.salvar(matricula);
+    }
+
     public void trancarPeriodo(MatriculaId matriculaId, LocalDate hoje,
                                 LocalDate inicioTrancamento, LocalDate fimTrancamento,
                                 int totalTrancamentos, int limiteTrancamentos) {

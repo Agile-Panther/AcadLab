@@ -8,7 +8,7 @@ export type Column<T> = {
   align?: "left" | "right" | "center";
 };
 
-export function DataTable<T extends Record<string, any>>({
+export function DataTable<T extends Record<string, unknown>>({
   columns,
   rows,
   empty,
@@ -43,7 +43,13 @@ export function DataTable<T extends Record<string, any>>({
           <tbody>
             {rows.length === 0 ? (
               <tr>
-                <td colSpan={columns.length}>{empty ?? <div className="p-10 text-center text-sm text-muted-foreground">Sem registros.</div>}</td>
+                <td colSpan={columns.length}>
+                  {empty ?? (
+                    <div className="p-10 text-center text-sm text-muted-foreground">
+                      Sem registros.
+                    </div>
+                  )}
+                </td>
               </tr>
             ) : (
               rows.map((row, i) => (
@@ -67,7 +73,7 @@ export function DataTable<T extends Record<string, any>>({
                         c.align === "center" && "text-center",
                       )}
                     >
-                      {c.render ? c.render(row) : (row as any)[c.key]}
+                      {c.render ? c.render(row) : (row as Record<string, React.ReactNode>)[c.key]}
                     </td>
                   ))}
                 </tr>

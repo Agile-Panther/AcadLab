@@ -54,12 +54,85 @@ class CobrancaTest {
     }
 
     @Test
-    void resolverContestacao_deveMudarStatusContestacaoParaResolvida() {
+    void indeferirContestacao_mantemValorEMarcaIndeferida() {
+        var cobranca = criarCobranca();
+        var valorAntes = cobranca.getValorAtual();
+        cobranca.contestar(new EstudanteId(1), "motivo", LocalDate.now());
+        cobranca.indeferirContestacao("Cobrança correta");
+        assertEquals(StatusContestacao.INDEFERIDA, cobranca.getContestacao().getStatus());
+        assertEquals(StatusCobranca.ABERTA, cobranca.getStatus());
+        assertEquals(0, valorAntes.compareTo(cobranca.getValorAtual()));
+    }
+
+    @Test
+    void deferirContestacao_percentual_reduzValorEIncrementaVersao() {
+        var cobranca = criarCobranca(); // valorBase 1500.00
+        int versaoAntes = cobranca.getVersao();
+        cobranca.contestar(new EstudanteId(1), "motivo", LocalDate.now());
+        cobranca.deferirContestacao(ModoAjuste.PERCENTUAL, new BigDecimal("20"), "Deferido parcial");
+        assertEquals(StatusContestacao.DEFERIDA, cobranca.getContestacao().getStatus());
+        assertEquals(StatusCobranca.ABERTA, cobranca.getStatus());
+        assertEquals(0, new BigDecimal("1200.00").compareTo(cobranca.getValorAtual()));
+        assertEquals(versaoAntes + 1, cobranca.getVersao());
+    }
+
+    @Test
+    void deferirContestacao_percentualMaximo50() {
+        var cobranca = criarCobranca(); // 1500.00
+        cobranca.contestar(new EstudanteId(1), "motivo", LocalDate.now());
+        cobranca.deferirContestacao(ModoAjuste.PERCENTUAL, new BigDecimal("50"), "Metade");
+        assertEquals(0, new BigDecimal("750.00").compareTo(cobranca.getValorAtual()));
+    }
+
+    @Test
+    void deferirContestacao_percentualInvalido_rejeitado() {
         var cobranca = criarCobranca();
         cobranca.contestar(new EstudanteId(1), "motivo", LocalDate.now());
-        cobranca.resolverContestacao("Cobrado corretamente");
-        assertEquals(StatusContestacao.RESOLVIDA, cobranca.getContestacao().getStatus());
-        assertEquals(StatusCobranca.ABERTA, cobranca.getStatus());
+        assertThrows(IllegalArgumentException.class, () ->
+                cobranca.deferirContestacao(ModoAjuste.PERCENTUAL, new BigDecimal("55"), "x"));
+        var outra = criarCobranca();
+        outra.contestar(new EstudanteId(1), "motivo", LocalDate.now());
+        assertThrows(IllegalArgumentException.class, () ->
+                outra.deferirContestacao(ModoAjuste.PERCENTUAL, new BigDecimal("7"), "x"));
+    }
+
+    @Test
+    void deferirContestacao_valorAbsoluto_defineValor() {
+        var cobranca = criarCobranca(); // 1500.00
+        cobranca.contestar(new EstudanteId(1), "motivo", LocalDate.now());
+        cobranca.deferirContestacao(ModoAjuste.VALOR, new BigDecimal("1000.00"), "Novo valor");
+        assertEquals(0, new BigDecimal("1000.00").compareTo(cobranca.getValorAtual()));
+    }
+
+    @Test
+    void deferirContestacao_valorAbsoluto_exatamente50pct_aceito() {
+        var cobranca = criarCobranca(); // 1500.00 → mínimo 750.00 (inclusive)
+        cobranca.contestar(new EstudanteId(1), "motivo", LocalDate.now());
+        cobranca.deferirContestacao(ModoAjuste.VALOR, new BigDecimal("750.00"), "Metade exata");
+        assertEquals(0, new BigDecimal("750.00").compareTo(cobranca.getValorAtual()));
+    }
+
+    @Test
+    void deferirContestacao_valorAbaixoDe50pct_rejeitado() {
+        var cobranca = criarCobranca(); // 1500.00 → mínimo 750.00
+        cobranca.contestar(new EstudanteId(1), "motivo", LocalDate.now());
+        assertThrows(IllegalArgumentException.class, () ->
+                cobranca.deferirContestacao(ModoAjuste.VALOR, new BigDecimal("700.00"), "x"));
+    }
+
+    @Test
+    void indeferirContestacaoInexistente_rejeitado() {
+        var cobranca = criarCobranca();
+        assertThrows(IllegalStateException.class, () -> cobranca.indeferirContestacao("x"));
+    }
+
+    @Test
+    void resolverDuasVezes_rejeitado() {
+        var cobranca = criarCobranca();
+        cobranca.contestar(new EstudanteId(1), "motivo", LocalDate.now());
+        cobranca.indeferirContestacao("primeira");
+        assertThrows(IllegalStateException.class, () -> cobranca.deferirContestacao(
+                ModoAjuste.PERCENTUAL, new BigDecimal("10"), "segunda"));
     }
 
     @Test

@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
@@ -23,6 +24,9 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.Table;
 import school.cesar.acadlab.aplicacao.gestaofinanceira.CobrancaResumo;
 import school.cesar.acadlab.aplicacao.gestaofinanceira.CobrancaRepositorioAplicacao;
+import school.cesar.acadlab.aplicacao.gestaofinanceira.PagamentoResumo;
+import school.cesar.acadlab.aplicacao.gestaofinanceira.ContestacaoResumo;
+import school.cesar.acadlab.aplicacao.gestaofinanceira.DescontoResumo;
 import school.cesar.acadlab.dominio.gestaofinanceira.CobrancaId;
 import school.cesar.acadlab.dominio.gestaofinanceira.ContratoId;
 import school.cesar.acadlab.dominio.gestaofinanceira.EstudanteId;
@@ -94,6 +98,10 @@ class AplicacaoDescontoJpa {
 interface CobrancaJpaRepository extends JpaRepository<CobrancaJpa, Integer> {
     List<CobrancaJpa> findByContratoId(int contratoId);
 
+    List<CobrancaJpa> findByContestacaoStatus(StatusContestacao status);
+
+    List<CobrancaJpa> findByStatusAndVencimentoBefore(StatusCobranca status, java.time.LocalDate vencimento);
+
     @Query("SELECT COALESCE(MAX(c.id), 0) + 1 FROM CobrancaJpa c")
     int proximoId();
 }
@@ -109,6 +117,7 @@ class CobrancaRepositorioImpl implements CobrancaRepositorio, CobrancaRepositori
     }
 
     @Override
+    @Transactional
     public void salvar(Cobranca cobranca) {
         repositorio.save(toJpa(cobranca));
     }
@@ -128,11 +137,32 @@ class CobrancaRepositorioImpl implements CobrancaRepositorio, CobrancaRepositori
     @Override
     public List<CobrancaResumo> pesquisarPorContrato(int contratoId) {
         return repositorio.findByContratoId(contratoId).stream()
-                .map(jpa -> new CobrancaResumo(
-                        jpa.id, jpa.contratoId, jpa.estudanteId, jpa.periodoLetivoId,
-                        jpa.valorBase, jpa.valorAtual, jpa.vencimento, jpa.versao,
-                        jpa.status.name()))
+                .map(this::toResumo)
                 .toList();
+    }
+
+    @Override
+    public List<CobrancaResumo> pesquisarContestacoesAbertas() {
+        return repositorio.findByContestacaoStatus(StatusContestacao.PENDENTE).stream()
+                .map(this::toResumo)
+                .toList();
+    }
+
+    private CobrancaResumo toResumo(CobrancaJpa jpa) {
+        PagamentoResumo pagamento = jpa.pagamentoValor == null ? null
+                : new PagamentoResumo(jpa.pagamentoValor, jpa.pagamentoData, jpa.pagamentoReferencia,
+                        jpa.pagamentoStatus == null ? null : jpa.pagamentoStatus.name());
+        ContestacaoResumo contestacao = jpa.contestacaoRequerente == null ? null
+                : new ContestacaoResumo(jpa.contestacaoRequerente, jpa.contestacaoJustificativa,
+                        jpa.contestacaoData,
+                        jpa.contestacaoStatus == null ? null : jpa.contestacaoStatus.name(),
+                        jpa.contestacaoParecer);
+        List<DescontoResumo> descontos = jpa.descontos.stream()
+                .map(d -> new DescontoResumo(d.percentual, d.autorizacaoId, d.dataAplicacao))
+                .toList();
+        return new CobrancaResumo(jpa.id, jpa.contratoId, jpa.estudanteId, jpa.periodoLetivoId,
+                jpa.valorBase, jpa.valorAtual, jpa.vencimento, jpa.versao, jpa.status.name(),
+                pagamento, contestacao, descontos);
     }
 
     private CobrancaJpa toJpa(Cobranca c) {
@@ -194,8 +224,11 @@ class CobrancaRepositorioImpl implements CobrancaRepositorio, CobrancaRepositori
         if (jpa.contestacaoRequerente != null) {
             contestacao = new Contestacao(new EstudanteId(jpa.contestacaoRequerente),
                     jpa.contestacaoJustificativa, jpa.contestacaoData);
-            if (jpa.contestacaoStatus == StatusContestacao.RESOLVIDA)
-                contestacao.resolver(jpa.contestacaoParecer != null ? jpa.contestacaoParecer : "");
+            var parecer = jpa.contestacaoParecer != null ? jpa.contestacaoParecer : "";
+            if (jpa.contestacaoStatus == StatusContestacao.DEFERIDA)
+                contestacao.deferir(parecer);
+            else if (jpa.contestacaoStatus == StatusContestacao.INDEFERIDA)
+                contestacao.indeferir(parecer);
         }
 
         var historico = jpa.historico.stream()

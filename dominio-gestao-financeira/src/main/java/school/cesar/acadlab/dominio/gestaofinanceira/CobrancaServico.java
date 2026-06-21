@@ -65,10 +65,18 @@ public class CobrancaServico {
         barramento.postar(evento);
     }
 
-    public void resolverContestacao(CobrancaId id, String parecer) {
+    public void deferirContestacao(CobrancaId id, ModoAjuste modo, BigDecimal valor, String parecer) {
         notNull(id, "id obrigatório");
         var cobranca = repositorio.obter(id);
-        var evento = cobranca.resolverContestacao(parecer);
+        var evento = cobranca.deferirContestacao(modo, valor, parecer);
+        repositorio.salvar(cobranca);
+        barramento.postar(evento);
+    }
+
+    public void indeferirContestacao(CobrancaId id, String parecer) {
+        notNull(id, "id obrigatório");
+        var cobranca = repositorio.obter(id);
+        var evento = cobranca.indeferirContestacao(parecer);
         repositorio.salvar(cobranca);
         barramento.postar(evento);
     }

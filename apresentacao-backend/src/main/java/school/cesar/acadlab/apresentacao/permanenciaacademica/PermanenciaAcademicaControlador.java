@@ -42,7 +42,10 @@ class PermanenciaAcademicaControlador {
     /* ===== Editais ===== */
 
     @RequestMapping(method = GET, path = "editais")
-    List<EditalResumo> buscarEditaisPorPrograma(@RequestParam String programa) {
+    List<EditalResumo> buscarEditais(@RequestParam(required = false) String programa) {
+        if (programa == null || programa.isBlank()) {
+            return servicoAplicacao.buscarTodosEditais();
+        }
         return servicoAplicacao.buscarEditaisPorPrograma(programa);
     }
 
@@ -54,7 +57,7 @@ class PermanenciaAcademicaControlador {
     @RequestMapping(method = POST, path = "editais")
     int criarEdital(@RequestBody CriarEditalRequest request) {
         return editalServico.criar(
-                request.programa(), request.vagas(),
+                request.programa(), request.descricao(), request.vagas(),
                 request.prazoInscricaoInicio(), request.prazoInscricaoFim(),
                 request.prazoRecursoInicio(), request.prazoRecursoFim(),
                 request.prazoRenovacao()).getValor();
@@ -71,6 +74,11 @@ class PermanenciaAcademicaControlador {
     }
 
     /* ===== Inscrições ===== */
+
+    @RequestMapping(method = GET, path = "inscricoes")
+    List<InscricaoResumo> buscarTodasInscricoes() {
+        return servicoAplicacao.buscarTodasInscricoes();
+    }
 
     @RequestMapping(method = GET, path = "editais/{editalId}/inscricoes")
     List<InscricaoResumo> buscarInscricoesPorEdital(@PathVariable int editalId) {
@@ -96,6 +104,8 @@ class PermanenciaAcademicaControlador {
         inscricaoServico.deferir(new InscricaoId(id),
                 new AssistenciaEstudantilId(request.assistenciaId()),
                 request.pontuacao());
+        // Estudante aceito → ativa o benefício (bolsa) correspondente à inscrição.
+        beneficioServico.ativarParaInscricao(new InscricaoId(id));
     }
 
     @RequestMapping(method = PUT, path = "inscricoes/{id}/indeferir")
@@ -111,6 +121,11 @@ class PermanenciaAcademicaControlador {
     }
 
     /* ===== Benefícios ===== */
+
+    @RequestMapping(method = GET, path = "beneficios")
+    List<BeneficioResumo> buscarTodosBeneficios() {
+        return servicoAplicacao.buscarTodosBeneficios();
+    }
 
     @RequestMapping(method = GET, path = "estudantes/{estudanteId}/beneficios")
     List<BeneficioResumo> buscarBeneficiosPorEstudante(@PathVariable int estudanteId) {
@@ -139,7 +154,7 @@ class PermanenciaAcademicaControlador {
 
     /* ===== Records ===== */
 
-    record CriarEditalRequest(String programa, int vagas,
+    record CriarEditalRequest(String programa, String descricao, int vagas,
                                LocalDate prazoInscricaoInicio, LocalDate prazoInscricaoFim,
                                LocalDate prazoRecursoInicio, LocalDate prazoRecursoFim,
                                LocalDate prazoRenovacao) {}

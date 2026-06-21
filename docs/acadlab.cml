@@ -10,7 +10,11 @@ Domain AcadLabDomain {
     }
     Subdomain PermanenciaSubdomain {
         type SUPPORTING_DOMAIN
-        domainVisionStatement "Programas de permanência estudantil: bolsas, auxílios e acompanhamento psicopedagógico"
+        domainVisionStatement "Programas de permanência estudantil: bolsas, auxílios e gestão de benefícios"
+    }
+    Subdomain ApoioPsicopedagogicoSubdomain {
+        type SUPPORTING_DOMAIN
+        domainVisionStatement "Acompanhamento psicopedagógico individual do estudante: solicitação, triagem, atendimentos e encerramento de caso com sigilo"
     }
     Subdomain FinanceiroSubdomain {
         type GENERIC_SUBDOMAIN
@@ -18,7 +22,7 @@ Domain AcadLabDomain {
     }
     Subdomain CompartilhadoSubdomain {
         type GENERIC_SUBDOMAIN
-        domainVisionStatement "Primitivos de identidade e eventos de domínio compartilhados entre todos os contextos"
+        domainVisionStatement "Infraestrutura compartilhada de eventos de domínio e notificações (barramento, observadores, registro de notificações). Os identificadores são locais a cada bounded context, não tipos compartilhados."
     }
 }
 
@@ -28,6 +32,11 @@ BoundedContext CompartilhadoContext implements CompartilhadoSubdomain {
     domainVisionStatement "Value objects de identidade e contratos de evento usados por todos os bounded contexts"
 
     Aggregate Compartilhado {
+        // ATENÇÃO: os identificadores abaixo NÃO são tipos compartilhados em código —
+        // cada bounded context define o seu próprio VO local (EstudanteId, DisciplinaId,
+        // PeriodoLetivoId, etc.) com semântica própria, traduzido nas fronteiras (ACL).
+        // Estão listados apenas como convenção de modelagem. O Shared Kernel efetivo é a
+        // infraestrutura de eventos/notificações declarada a seguir.
         ValueObject EstudanteId { int valor }
         ValueObject CursoId { int valor }
         ValueObject MatrizCurricularId { int valor }
@@ -35,6 +44,21 @@ BoundedContext CompartilhadoContext implements CompartilhadoSubdomain {
         ValueObject TurmaId { int valor }
         ValueObject PeriodoLetivoId { int valor }
         ValueObject SecretariaId { int valor }
+
+        // Infraestrutura de eventos de domínio (padrão Observer):
+        // EventoBarramento (Subject) publica eventos; EventoObservador<E> e a base
+        // ObservadorDeEvento<E> — que filtra por tipo e isola falhas do efeito —
+        // reagem a eles. RegistroNotificacoes acumula a Notificacao como efeito
+        // observável dos observadores concretos dos contextos de negócio.
+        ValueObject Notificacao { int destinatarioId; String tipo; String mensagem }
+        Service EventoBarramento {
+            void adicionar(@EventoObservador observador);
+            void postar(Object evento);
+        }
+        Service RegistroNotificacoes {
+            void registrar(@Notificacao notificacao);
+            List<@Notificacao> doDestinatario(int destinatarioId);
+        }
     }
 }
 
@@ -45,33 +69,49 @@ BoundedContext CurriculoContext implements AcademicoSubdomain {
     type FEATURE
 
     Aggregate MatrizCurricular {
-        enum StatusMatriz { ATIVA, INATIVA }
+        enum StatusMatriz { RASCUNHO, ATIVA, INATIVA }
+        enum TipoDisciplina { OBRIGATORIA, OPTATIVA }
+
+        ValueObject MatrizCurricularId { int valor }
+        ValueObject CursoId { int valor }
+        ValueObject DisciplinaId { int valor }
 
         Entity MatrizCurricular {
             aggregateRoot
-            int id
-            int cursoId
+            - MatrizCurricularId id
+            - CursoId cursoId
             String nome
             int cargaHorariaMinima
             int creditosExigidos
+            int maximoTrancamentos
             - StatusMatriz status
             - List<ItemMatriz> itens
+            - Map<DisciplinaId, List<DisciplinaId>> preRequisitos
+            - Map<DisciplinaId, List<DisciplinaId>> correquisitos
         }
         Entity ItemMatriz {
-            int disciplinaId
-            String nomeDisciplina
+            - DisciplinaId disciplinaId
+            - TipoDisciplina tipo
             int cargaHoraria
             int creditos
-            boolean obrigatoria
-            - List<Integer> preRequisitos
-            - List<Integer> correquisitos
         }
+        Repository MatrizCurricularRepositorio {
+            void salvar(@MatrizCurricular matriz);
+            @MatrizCurricular buscarPorId(@MatrizCurricularId id);
+            List<@MatrizCurricular> buscarPorCurso(@CursoId cursoId);
+            @MatrizCurricularId proximaMatrizId;
+        }
+        // Portas de saída (ACL) implementadas pela infraestrutura:
+        // ConsultaMatrizAtivaPorta.existeMatrizAtivaParaCurso(CursoId)
+        // ConsultaTurmasPorta.existeTurmaParaDisciplina(DisciplinaId)
         Service MatrizCurricularServico {
-            @MatrizCurricular criarMatriz(@MatrizCurricular matriz);
-            void adicionarDisciplina(int matrizId, @ItemMatriz item);
-            void configurarPreRequisito(int matrizId, int disciplinaId, int preRequisitoId);
-            void ativar(int matrizId);
-            void desativar(int matrizId);
+            @MatrizCurricular criar(@CursoId cursoId, String nome, int cargaHorariaMinima, int creditosExigidos, int maximoTrancamentos);
+            void adicionarDisciplina(@MatrizCurricularId matrizId, @DisciplinaId disciplinaId, @TipoDisciplina tipo, int cargaHoraria, int creditos);
+            void removerDisciplina(@MatrizCurricularId matrizId, @DisciplinaId disciplinaId);
+            void adicionarPreRequisito(@MatrizCurricularId matrizId, @DisciplinaId disciplina, @DisciplinaId preRequisito);
+            void adicionarCorrequisito(@MatrizCurricularId matrizId, @DisciplinaId disciplina, @DisciplinaId correquisito);
+            void ativar(@MatrizCurricularId matrizId);
+            void desativar(@MatrizCurricularId matrizId);
         }
     }
 }
@@ -108,8 +148,15 @@ BoundedContext OfertaAcademicaContext implements AcademicoSubdomain {
     }
 
     Aggregate OfertaTurmas {
-        enum EstadoTurma { ABERTA, ENCERRADA, CANCELADA }
+        enum StatusTurma { PLANEJADA, OFERTADA, CANCELADA, ENCERRADA }
+        enum ModalidadeTurma { PRESENCIAL, REMOTO, HIBRIDO, EAD }
 
+        // Padrão Decorator: Turma implementa TurmaOferecida; TurmaComListaEspera e
+        // TurmaOnline (sobre TurmaDecorador) acrescentam comportamento. A composição de
+        // múltiplos decorators é testada e o padrão está integrado em produção:
+        // OfertaTurmaServico instancia o decorator (que carrega as invariantes — EAD para
+        // o link, não-duplicidade na lista de espera) e o estado resultante (linkAcesso,
+        // listaEspera) é gravado no agregado e persistido, sobrevivendo ao recarregamento.
         Entity Turma {
             aggregateRoot
             int id
@@ -117,25 +164,59 @@ BoundedContext OfertaAcademicaContext implements AcademicoSubdomain {
             int periodoLetivoId
             int professorId
             int salaId
-            int vagas
-            int vagasOcupadas
-            - EstadoTurma estado
+            - ModalidadeTurma modalidade
+            int capacidade
+            - List<HorarioAula> horarios
+            - StatusTurma status
+            String linkAcesso
+            - List<EstudanteId> listaEspera
         }
+        Entity HorarioAula {
+            String diaSemana
+            String horaInicio
+            String horaFim
+        }
+        Service OfertaTurmaServico {
+            @Turma ofertar(int periodoLetivoId, int disciplinaId, @ModalidadeTurma modalidade, int capacidade);
+            void vincularProfessor(int turmaId, int professorId);
+            void vincularSala(int turmaId, int salaId);
+            void adicionarHorario(int turmaId, String diaSemana, String horaInicio, String horaFim);
+            void confirmarOferta(int turmaId);
+            void cancelar(int turmaId);
+            // Decorator TurmaOnline / TurmaComListaEspera aplicados aqui em produção:
+            void definirLinkAcessoOnline(int turmaId, String link);
+            void entrarListaEspera(int turmaId, int estudanteId);
+            void sairListaEspera(int turmaId, int estudanteId);
+        }
+    }
+
+    Aggregate Sala {
         Entity Sala {
             aggregateRoot
             int id
-            String codigo
+            String nome
             int capacidade
+            boolean ativa
         }
+        Service SalaServico {
+            @Sala cadastrar(String nome, int capacidade);
+            void ativar(int salaId);
+            void inativar(int salaId);
+            void alterarCapacidade(int salaId, int novaCapacidade, int maiorCapacidadeTurmaVinculada);
+        }
+    }
+
+    Aggregate Professor {
         Entity Professor {
             aggregateRoot
             int id
             String nome
-            String matriculaDocente
+            boolean ativo
         }
-        Service OfertaTurmaServico {
-            @Turma ofertarTurma(@Turma turma);
-            void definirProfessorHorarioSala(int turmaId, int professorId, int salaId);
+        Service ProfessorServico {
+            @Professor cadastrar(String nome);
+            void ativar(int professorId);
+            void inativar(int professorId);
         }
     }
 }
@@ -149,6 +230,13 @@ BoundedContext MatriculaContext implements AcademicoSubdomain {
     Aggregate Matricula {
         enum StatusMatricula { EM_MONTAGEM, CONFIRMADA, TRANCADA, CANCELADA }
         enum StatusItem { ATIVO, TRANCADO, CANCELADO }
+
+        // Padrão Strategy de elegibilidade (EstrategiaMatricula): a Matrícula seleciona
+        // ValidacaoRegular (aplica todas as RNs) ou ValidacaoExcecao (ignora pré-requisitos,
+        // correquisitos e pendências quando a coordenação defere a exceção).
+        Service EstrategiaMatricula {
+            void validarAdicao(int creditosExistentes, int creditos, int limiteCreditos, boolean cumpriuPreRequisitos, boolean correquisitosNoPlano, boolean temPendencias, java.time.LocalDate hoje, java.time.LocalDate inicioJanela, java.time.LocalDate fimJanela);
+        }
 
         Entity Matricula {
             aggregateRoot
@@ -181,6 +269,17 @@ BoundedContext GestaoPedagogicaContext implements AcademicoSubdomain {
 
     Aggregate DiarioTurma {
         enum SituacaoFinal { APROVADO, REPROVADO, REPROVADO_POR_FREQUENCIA, EM_ANDAMENTO }
+
+        // Padrão Template Method de apuração do resultado (ApuracaoResultado):
+        // o método-template apurar() fixa a ordem das etapas — contar aulas,
+        // contar presenças, calcular média e registrar situação. As subclasses
+        // especializam apenas o passo variável calcularMedia():
+        //   - ApuracaoMediaPonderada (regime padrão, pondera pelo peso da avaliação);
+        //   - ApuracaoMediaAritmetica (média simples das notas).
+        // O enum RegimeApuracao seleciona a implementação na borda (serviço/controlador).
+        Service ApuracaoResultado {
+            void apurar(@DiarioTurma diario, @ResultadoEstudante resultado);
+        }
 
         Entity DiarioTurma {
             aggregateRoot
@@ -273,6 +372,14 @@ BoundedContext HistoricoAcademicoContext implements AcademicoSubdomain {
             void registrarAproveitamento(int historicoId, int disciplinaEquivalenteId, int cargaHorariaExterna, int cargaHorariaRequerida, String instituicaoOrigem, String disciplinaOrigem);
             void retificarRegistro(int historicoId, int registroId, @SituacaoAcademica novaSituacao, int responsavelId, String justificativa, java.time.LocalDate data);
             void atualizarSituacaoDiscente(int historicoId, @SituacaoDiscente novaSituacao, int responsavelId, String justificativa, java.time.LocalDate data);
+        }
+        // Padrão Iterator (IteradorHistorico<T>): HistoricoAcademico.iteradorRegistros()
+        // devolve um IteradorRegistrosDisciplina sobre uma view imutável dos registros,
+        // percorrendo-os em ordem sem expor a coleção interna. ConsultaHistoricoServico
+        // consome o iterador para montar o histórico oficial.
+        Service IteradorHistorico {
+            boolean temProximo;
+            @RegistroDisciplina proximo;
         }
         Service ConsultaHistoricoServico {
             List<@RegistroDisciplina> obterHistoricoOficial(@EstudanteId estudanteId);
@@ -383,6 +490,9 @@ BoundedContext AtividadesComplementaresContext implements ServicosAcademicosSubd
             void cancelar(int atividadeId);
             int consultarSaldo(@EstudanteId estudanteId);
         }
+        // Observer concreto (NotificacaoAtividadeObservador): registrado no barramento,
+        // reage aos eventos de análise (deferir/indeferir/revisar/cancelar) notificando
+        // o estudante via RegistroNotificacoes do contexto Compartilhado.
     }
 }
 
@@ -427,6 +537,9 @@ BoundedContext PermanenciaAcademicaContext implements PermanenciaSubdomain {
             void deferir(int inscricaoId);
             void indeferir(int inscricaoId, String motivo);
         }
+        // Observer concreto (NotificacaoInscricaoObservador): registrado no barramento,
+        // reage aos eventos de inscrição (deferir/indeferir/recurso) notificando o
+        // estudante via RegistroNotificacoes do contexto Compartilhado.
     }
 
     Aggregate Beneficio {
@@ -449,7 +562,7 @@ BoundedContext PermanenciaAcademicaContext implements PermanenciaSubdomain {
 
 /* APOIO PSICOPEDAGÓGICO CONTEXT — F-11 (Matheus) · Observer */
 
-BoundedContext ApoioPsicopedagogicoContext implements PermanenciaSubdomain {
+BoundedContext ApoioPsicopedagogicoContext implements ApoioPsicopedagogicoSubdomain {
     domainVisionStatement "Acompanhamento psicopedagógico individual com sigilo de atendimento: solicitação, triagem, sessões e encerramento de caso"
     type FEATURE
 
@@ -492,10 +605,16 @@ BoundedContext ApoioPsicopedagogicoContext implements PermanenciaSubdomain {
             void registrarAtendimento(int casoId, java.time.LocalDate data, String relatorio);
             void encerrarCaso(int casoId, String conclusao);
         }
+        // Observer concreto (NotificacaoCasoObservador): registrado no barramento,
+        // notifica o próprio estudante a cada evolução do caso (triagem, atendimento,
+        // agendamento, encerramento) com mensagens neutras que respeitam o sigilo.
     }
 }
 
-/* MOBILIDADE ACADÊMICA CONTEXT — F-12 (Vinicius) · Strategy */
+/* MOBILIDADE ACADÊMICA CONTEXT — F-12 (Vinicius)
+   O padrão Strategy de Vinicius é realizado no contexto de Matrícula
+   (EstrategiaMatricula: ValidacaoRegular/ValidacaoExcecao); a mobilidade não
+   duplica esse padrão — orquestra o ciclo de vida via MobilidadeAcademicaServico. */
 
 BoundedContext MobilidadeAcademicaContext implements ServicosAcademicosSubdomain {
     domainVisionStatement "Programa de mobilidade internacional ou nacional do estudante: solicitação, plano de estudos com equivalências e registro de resultados externos"
@@ -574,6 +693,9 @@ BoundedContext GestaoFinanceiraContext implements FinanceiroSubdomain {
             void contestar(int cobrancaId, String motivo);
             void cancelarPagamento(int cobrancaId, int pagamentoId);
         }
+        // Observer concreto (NotificacaoCobrancaObservador): registrado no barramento,
+        // reage aos eventos de cobrança (pagamento, desconto, contestação, cancelamento,
+        // nova versão) notificando o estudante titular via RegistroNotificacoes.
     }
 }
 
@@ -599,6 +721,9 @@ BoundedContext EstagiosContext implements ServicosAcademicosSubdomain {
             void candidatar(int oportunidadeId, @EstudanteId estudanteId);
             void confirmarCandidatura(int oportunidadeId, @EstudanteId estudanteId);
         }
+        // Padrão Decorator (OportunidadeDecorador sobre OportunidadeBase): EstagioServico
+        // empilha em produção OportunidadeComPrazoInscricao e OportunidadeComCriterioElegibilidade
+        // para validar a candidatura. A composição de múltiplos decorators é testada.
     }
 
     Aggregate Estagio {
@@ -628,6 +753,25 @@ BoundedContext EstagiosContext implements ServicosAcademicosSubdomain {
 
 /* CONTEXT MAP */
 
+/* RAIZ DE COMPOSIÇÃO (wiring de beans)
+   O backend não concentra o wiring em uma única classe: cada bounded context
+   tem sua própria @Configuration em school.cesar.acadlab.configuracao
+   (CurriculoConfig, OfertaTurmasConfig, MatriculaConfig, GestaoPedagogicaConfig,
+   HistoricoAcademicoConfig, SecretariaVirtualConfig, IntegralizacaoConfig,
+   AtividadesComplementaresConfig, PermanenciaAcademicaConfig,
+   ApoioPsicopedagogicoConfig, MobilidadeAcademicaConfig, GestaoFinanceiraConfig,
+   EstagiosConfig, PeriodoLetivoConfig), descobertas pelo component scan.
+   BackendAplicacao fica apenas como ponto de inicialização. Cada Config monta
+   o serviço de domínio, o serviço de aplicação e — quando há padrão Observer —
+   registra o observador concreto no EventoBarramento. */
+
+/* FRONTEIRAS TRANSACIONAIS (persistência)
+   Os métodos de escrita dos adapters JPA (salvar/registrar) são anotados com
+   @Transactional para garantir atomicidade de read-modify-write — sobretudo
+   quando element collections são limpas e reinseridas em uma única operação.
+   Os métodos de leitura não recebem transação. F-07 (Secretaria Virtual) e
+   F-08 (Integralização) ficam fora desta passada. */
+
 ContextMap AcadLab {
     contains CompartilhadoContext
     contains CurriculoContext
@@ -644,7 +788,11 @@ ContextMap AcadLab {
     contains GestaoFinanceiraContext
     contains EstagiosContext
 
-    /* Shared Kernel — CompartilhadoContext com todos */
+    /* Shared Kernel — CompartilhadoContext com todos.
+       O conteúdo efetivamente compartilhado é pequeno e deliberado: a infraestrutura
+       de eventos de domínio (EventoBarramento, EventoObservador, ObservadorDeEvento) e
+       de notificações (Notificacao, RegistroNotificacoes). NÃO há entidades nem
+       identificadores compartilhados — cada contexto mantém seus VOs locais. */
     CompartilhadoContext [SK] <-> [SK] CurriculoContext
     CompartilhadoContext [SK] <-> [SK] OfertaAcademicaContext
     CompartilhadoContext [SK] <-> [SK] MatriculaContext

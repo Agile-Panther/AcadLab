@@ -8,6 +8,9 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import school.cesar.acadlab.dominio.gestaopedagogica.diario.apuracao.ApuracaoMediaPonderada;
+import school.cesar.acadlab.dominio.gestaopedagogica.diario.apuracao.ApuracaoResultado;
+
 public class DiarioTurma {
     private final DiarioTurmaId id;
     private final TurmaId turmaId;
@@ -174,28 +177,18 @@ public class DiarioTurma {
         obterOuCriarResultado(estudanteId).adicionarNota(avaliacaoId, nota);
     }
 
-    // RN-7: fecha o resultado do estudante calculando média ponderada e frequência.
+    // RN-7: fecha o resultado do estudante. Usa, por padrão, o regime de média
+    // ponderada; o cálculo segue o Template Method ApuracaoResultado.
     public void fecharResultado(EstudanteId estudanteId) {
+        fecharResultado(estudanteId, new ApuracaoMediaPonderada());
+    }
+
+    // RN-7: fecha o resultado aplicando o regime de apuração informado (Template Method).
+    public void fecharResultado(EstudanteId estudanteId, ApuracaoResultado apuracao) {
         notNull(estudanteId, "O estudante não pode ser nulo");
+        notNull(apuracao, "O regime de apuração não pode ser nulo");
         var resultado = obterResultado(estudanteId);
-
-        int totalAulas = aulas.size();
-        long presencas = frequencias.stream()
-                .filter(f -> f.getEstudanteId().equals(estudanteId) && f.isPresente())
-                .count();
-
-        double somaPonderada = 0.0;
-        double somaPesos = 0.0;
-        for (var avaliacao : avaliacoes) {
-            Double nota = resultado.getNotas().get(avaliacao.getId());
-            if (nota != null) {
-                somaPonderada += nota * avaliacao.getPeso();
-                somaPesos += avaliacao.getPeso();
-            }
-        }
-        double mediaPonderada = somaPesos > 0 ? somaPonderada / somaPesos : 0.0;
-
-        resultado.fechar(mediaMinima, frequenciaMinima, totalAulas, presencas, mediaPonderada);
+        apuracao.apurar(this, resultado);
     }
 
     // RN-9: revisão de nota deve estar dentro da janela de revisão.

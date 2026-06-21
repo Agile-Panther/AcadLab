@@ -1,0 +1,102 @@
+package school.cesar.acadlab.apresentacao.gestaofinanceira;
+
+import static org.springframework.web.bind.annotation.RequestMethod.DELETE;
+import static org.springframework.web.bind.annotation.RequestMethod.GET;
+import static org.springframework.web.bind.annotation.RequestMethod.POST;
+
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import school.cesar.acadlab.aplicacao.gestaofinanceira.CobrancaResumo;
+import school.cesar.acadlab.aplicacao.gestaofinanceira.CobrancaServicoAplicacao;
+import school.cesar.acadlab.dominio.gestaofinanceira.CobrancaId;
+import school.cesar.acadlab.dominio.gestaofinanceira.CobrancaServico;
+import school.cesar.acadlab.dominio.gestaofinanceira.ContratoId;
+import school.cesar.acadlab.dominio.gestaofinanceira.EstudanteId;
+import school.cesar.acadlab.dominio.gestaofinanceira.PeriodoLetivoId;
+import school.cesar.acadlab.dominio.gestaofinanceira.cobranca.Pagamento;
+
+@RestController
+@RequestMapping("backend/cobrancas")
+class CobrancaControlador {
+    @Autowired
+    private CobrancaServico servico;
+
+    @Autowired
+    private CobrancaServicoAplicacao servicoAplicacao;
+
+    @RequestMapping(method = GET, path = "contrato/{contratoId}")
+    List<CobrancaResumo> pesquisarPorContrato(@PathVariable int contratoId) {
+        return servicoAplicacao.pesquisarPorContrato(contratoId);
+    }
+
+    @RequestMapping(method = GET, path = "contestacoes-abertas")
+    List<CobrancaResumo> pesquisarContestacoesAbertas() {
+        return servicoAplicacao.pesquisarContestacoesAbertas();
+    }
+
+    @RequestMapping(method = POST, path = "gerar")
+    void gerarCobranca(@RequestBody GerarCobrancaRequest request) {
+        servico.gerarCobranca(
+                new ContratoId(request.contratoId()),
+                new EstudanteId(request.estudanteId()),
+                new PeriodoLetivoId(request.periodoLetivoId()),
+                request.valor(),
+                request.vencimento());
+    }
+
+    @RequestMapping(method = POST, path = "{id}/nova-versao")
+    void gerarNovaVersao(@PathVariable int id, @RequestBody NovaVersaoRequest request) {
+        servico.gerarNovaVersao(new CobrancaId(id), request.motivo(), request.novoValor());
+    }
+
+    @RequestMapping(method = POST, path = "{id}/aplicar-desconto")
+    void aplicarDesconto(@PathVariable int id, @RequestBody AplicarDescontoRequest request) {
+        servico.aplicarDesconto(new CobrancaId(id), request.percentual(), request.autorizacaoId());
+    }
+
+    @RequestMapping(method = POST, path = "{id}/contestar")
+    void contestar(@PathVariable int id, @RequestBody ContestarRequest request) {
+        servico.contestar(new CobrancaId(id), new EstudanteId(request.estudanteId()), request.justificativa());
+    }
+
+    @RequestMapping(method = POST, path = "{id}/resolver-contestacao")
+    void resolverContestacao(@PathVariable int id, @RequestBody String parecer) {
+        servico.resolverContestacao(new CobrancaId(id), parecer);
+    }
+
+    @RequestMapping(method = POST, path = "{id}/registrar-pagamento")
+    void registrarPagamento(@PathVariable int id, @RequestBody RegistrarPagamentoRequest request) {
+        servico.registrarPagamento(new CobrancaId(id), request.valor(), request.data(), request.referencia());
+    }
+
+    @RequestMapping(method = DELETE, path = "{id}/cancelar-pagamento")
+    void cancelarPagamento(@PathVariable int id, @RequestBody CancelarPagamentoRequest request) {
+        servico.cancelarPagamento(new CobrancaId(id), request.justificativa(), request.responsavel());
+    }
+
+    @RequestMapping(method = GET, path = "{id}/comprovante")
+    Pagamento emitirComprovante(@PathVariable int id) {
+        return servico.emitirComprovante(new CobrancaId(id));
+    }
+
+    record GerarCobrancaRequest(int contratoId, int estudanteId, int periodoLetivoId,
+            BigDecimal valor, LocalDate vencimento) {}
+
+    record NovaVersaoRequest(String motivo, BigDecimal novoValor) {}
+
+    record AplicarDescontoRequest(BigDecimal percentual, String autorizacaoId) {}
+
+    record ContestarRequest(int estudanteId, String justificativa) {}
+
+    record RegistrarPagamentoRequest(BigDecimal valor, LocalDate data, String referencia) {}
+
+    record CancelarPagamentoRequest(String justificativa, String responsavel) {}
+}

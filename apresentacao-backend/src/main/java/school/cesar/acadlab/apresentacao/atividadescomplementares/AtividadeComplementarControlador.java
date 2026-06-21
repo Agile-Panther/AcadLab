@@ -12,10 +12,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import school.cesar.acadlab.aplicacao.atividadescomplementares.AtividadeComplementarResumo;
 import school.cesar.acadlab.aplicacao.atividadescomplementares.AtividadeComplementarServicoAplicacao;
+import school.cesar.acadlab.aplicacao.atividadescomplementares.CategoriaHorasResumo;
+import school.cesar.acadlab.aplicacao.atividadescomplementares.CategoriaHorasServicoAplicacao;
 import school.cesar.acadlab.dominio.atividadescomplementares.AtividadeComplementarId;
 import school.cesar.acadlab.dominio.atividadescomplementares.AtividadeComplementarServico;
 import school.cesar.acadlab.dominio.atividadescomplementares.CategoriaAtividadeId;
@@ -30,14 +33,28 @@ class AtividadeComplementarControlador {
     @Autowired
     private AtividadeComplementarServicoAplicacao servicoAplicacao;
 
+    @Autowired
+    private CategoriaHorasServicoAplicacao categoriaServicoAplicacao;
+
+    @RequestMapping(method = GET)
+    List<AtividadeComplementarResumo> pesquisarPorStatus(@RequestParam String status) {
+        return servicoAplicacao.pesquisarPorStatus(status);
+    }
+
+    @RequestMapping(method = GET, path = "categorias")
+    List<CategoriaHorasResumo> listarCategorias() {
+        return categoriaServicoAplicacao.listar();
+    }
+
     @RequestMapping(method = GET, path = "estudante/{estudanteId}")
     List<AtividadeComplementarResumo> pesquisarPorEstudante(@PathVariable int estudanteId) {
         return servicoAplicacao.pesquisarPorEstudante(estudanteId);
     }
 
     @RequestMapping(method = GET, path = "estudante/{estudanteId}/saldo")
-    Map<CategoriaAtividadeId, Integer> consultarSaldo(@PathVariable int estudanteId) {
-        return servico.calcularSaldoHoras(new EstudanteId(estudanteId));
+    Map<Integer, Integer> consultarSaldo(@PathVariable int estudanteId) {
+        return servico.calcularSaldoHoras(new EstudanteId(estudanteId)).entrySet().stream()
+                .collect(java.util.stream.Collectors.toMap(e -> e.getKey().valor(), Map.Entry::getValue));
     }
 
     @RequestMapping(method = POST, path = "submeter")

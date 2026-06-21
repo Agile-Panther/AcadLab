@@ -1,0 +1,10 @@
+# Acelera o build Docker e evita copiar artefatos locais para o contexto.
+**/target/
+**/node_modules/
+**/dist/
+**/.output/
+**/.vinxi/
+.git/
+.idea/
+*.iml
+**/*.log

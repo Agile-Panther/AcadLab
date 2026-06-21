@@ -8,6 +8,7 @@ import school.cesar.acadlab.dominio.ofertaturmas.DisciplinaId;
 import school.cesar.acadlab.dominio.ofertaturmas.PeriodoLetivoId;
 import school.cesar.acadlab.dominio.ofertaturmas.professor.ProfessorId;
 import school.cesar.acadlab.dominio.ofertaturmas.sala.SalaId;
+import school.cesar.acadlab.dominio.ofertaturmas.turma.decorator.EstudanteId;
 import school.cesar.acadlab.dominio.ofertaturmas.turma.decorator.TurmaOferecida;
 
 public class Turma implements TurmaOferecida {
@@ -20,6 +21,10 @@ public class Turma implements TurmaOferecida {
     private final int capacidade;
     private final List<HorarioAula> horarios = new ArrayList<>();
     private StatusTurma status;
+    // Estado adicionado pelos decorators (TurmaOnline/TurmaComListaEspera) e aqui persistido:
+    // a camada de oferta aplica o decorator (que carrega as invariantes) e grava o resultado.
+    private String linkAcesso;
+    private final List<EstudanteId> listaEspera = new ArrayList<>();
 
     // RN4: disciplina pertence à matriz ativa — verificado externamente
     // RN5: turma dentro das datas do período — verificado externamente
@@ -90,6 +95,22 @@ public class Turma implements TurmaOferecida {
         turma.horarios.addAll(horarios);
         return turma;
     }
+
+    /** Grava o link de acesso já validado pelo decorator TurmaOnline. */
+    public void definirLinkAcesso(String linkAcesso) {
+        this.linkAcesso = linkAcesso;
+    }
+
+    /** Substitui a lista de espera pela resultante do decorator TurmaComListaEspera. */
+    public void registrarListaEspera(List<EstudanteId> espera) {
+        this.listaEspera.clear();
+        if (espera != null) {
+            this.listaEspera.addAll(espera);
+        }
+    }
+
+    public String getLinkAcesso() { return linkAcesso; }
+    public List<EstudanteId> getListaEspera() { return Collections.unmodifiableList(listaEspera); }
 
     public TurmaId getId() { return id; }
     public PeriodoLetivoId getPeriodoLetivoId() { return periodoLetivoId; }

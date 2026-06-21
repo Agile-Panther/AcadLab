@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.CollectionTable;
@@ -104,6 +105,8 @@ interface MatriculaJpaRepository extends JpaRepository<MatriculaJpa, Integer> {
 
     @Query("SELECT COALESCE(MAX(m.id), 0) + 1 FROM MatriculaJpa m")
     int proximoId();
+
+    boolean existsByEstudanteIdAndPeriodoLetivoIdAndStatus(int estudanteId, int periodoLetivoId, StatusMatricula status);
 }
 
 @Repository
@@ -118,6 +121,7 @@ class MatriculaRepositorioImpl implements MatriculaRepositorio, MatriculaReposit
     }
 
     @Override
+    @Transactional
     public void salvar(Matricula matricula) {
         jpaRepository.save(toJpa(matricula));
     }

@@ -1,22 +1,81 @@
-// Typed API client — all requests are proxied by Vite to http://localhost:8080
+import { API_BASE_URL } from "./config";
+
+/**
+ * Cliente de API unificado.
+ *
+ * Expõe duas interfaces que coexistem após a integração das duas frentes de frontend:
+ *  - cliente genérico ({@link api.get}/{@link api.post}/... + {@link hojeIso} + {@link ApiError}),
+ *    usado pelas libs de tela da branch (permanência, financeiro, atividades, apoio);
+ *  - namespaces tipados ({@link api.solicitacoes}, {@link api.integralizacao}, ...),
+ *    usados pelas telas integradas do main (secretaria virtual, integralização, etc.).
+ *
+ * Todas as requisições usam {@link API_BASE_URL} (VITE_API_TARGET + "/backend").
+ */
+
+class ApiError extends Error {
+  constructor(
+    message: string,
+    public status: number,
+  ) {
+    super(message);
+    this.name = "ApiError";
+  }
+}
+
+// ─── Cliente genérico (lança em erro; sem tratamento de 404) ────────────────────
+
+async function request<T>(method: string, path: string, body?: unknown): Promise<T> {
+  const res = await fetch(`${API_BASE_URL}/${path}`, {
+    method,
+    headers: body !== undefined ? { "Content-Type": "application/json" } : undefined,
+    body: body !== undefined ? JSON.stringify(body) : undefined,
+  });
+
+  if (!res.ok) {
+    throw new ApiError(await extractErrorMessage(res), res.status);
+  }
+
+  // 204 / corpo vazio
+  const text = await res.text();
+  return (text ? JSON.parse(text) : undefined) as T;
+}
+
+async function extractErrorMessage(res: Response): Promise<string> {
+  try {
+    const data = await res.clone().json();
+    if (data && typeof data.message === "string" && data.message.trim()) {
+      return data.message;
+    }
+    if (data && typeof data.mensagem === "string" && data.mensagem.trim()) {
+      return data.mensagem;
+    }
+  } catch {
+    /* corpo não-JSON */
+  }
+  return `Erro ${res.status} ao comunicar com o servidor.`;
+}
+
+// ─── Helpers tipados (get devolve null em 404) ──────────────────────────────────
 
 async function parseErrorMessage(res: Response): Promise<string> {
   try {
     const json = await res.json();
     if (json.mensagem) return json.mensagem;
-  } catch { /* fallback */ }
+  } catch {
+    /* fallback */
+  }
   return `${res.status} ${res.statusText}`;
 }
 
 async function get<T>(path: string): Promise<T | null> {
-  const res = await fetch(`/backend/${path}`);
+  const res = await fetch(`${API_BASE_URL}/${path}`);
   if (res.status === 404) return null;
   if (!res.ok) throw new Error(await parseErrorMessage(res));
   return res.json() as Promise<T>;
 }
 
 async function post<T>(path: string, body?: unknown): Promise<T> {
-  const res = await fetch(`/backend/${path}`, {
+  const res = await fetch(`${API_BASE_URL}/${path}`, {
     method: "POST",
     headers: body !== undefined ? { "Content-Type": "application/json" } : {},
     body: body !== undefined ? JSON.stringify(body) : undefined,
@@ -27,7 +86,7 @@ async function post<T>(path: string, body?: unknown): Promise<T> {
 }
 
 async function put<T>(path: string, body?: unknown): Promise<T> {
-  const res = await fetch(`/backend/${path}`, {
+  const res = await fetch(`${API_BASE_URL}/${path}`, {
     method: "PUT",
     headers: body !== undefined ? { "Content-Type": "application/json" } : {},
     body: body !== undefined ? JSON.stringify(body) : undefined,
@@ -38,13 +97,13 @@ async function put<T>(path: string, body?: unknown): Promise<T> {
 }
 
 async function del<T>(path: string): Promise<T> {
-  const res = await fetch(`/backend/${path}`, { method: "DELETE" });
+  const res = await fetch(`${API_BASE_URL}/${path}`, { method: "DELETE" });
   if (!res.ok) throw new Error(await parseErrorMessage(res));
   const text = await res.text();
   return (text ? JSON.parse(text) : undefined) as T;
 }
 
-// ─── Types ────────────────────────────────────────────────────────────────────
+// ─── Types ──────────────────────────────────────────────────────────────────────
 
 export interface PeriodoLetivoResumo {
   id: number;
@@ -248,22 +307,34 @@ export interface CandidaturaResumo {
 // ─── API ──────────────────────────────────────────────────────────────────────
 
 export const api = {
+  // Cliente genérico (libs de tela da branch)
+  get: <T>(path: string) => request<T>("GET", path),
+  post: <T>(path: string, body?: unknown) => request<T>("POST", path, body ?? {}),
+  put: <T>(path: string, body?: unknown) => request<T>("PUT", path, body ?? {}),
+  delete: <T>(path: string) => request<T>("DELETE", path),
+
+  // Namespaces tipados (telas integradas do main)
   periodos: {
     listByCurso: (cursoId: number) =>
-      get<PeriodoLetivoResumo[]>(`periodos-letivos/curso/${cursoId}`).then(r => r ?? []),
-    criar: (body: { cursoId: number; ano: number; semestre: number; dataInicio: string; dataFim: string }) =>
-      post<void>(`periodos-letivos`, body),
+      get<PeriodoLetivoResumo[]>(`periodos-letivos/curso/${cursoId}`).then((r) => r ?? []),
+    criar: (body: {
+      cursoId: number;
+      ano: number;
+      semestre: number;
+      dataInicio: string;
+      dataFim: string;
+    }) => post<void>(`periodos-letivos`, body),
   },
   turmas: {
     listByPeriodo: (periodoId: number) =>
-      get<TurmaResumo[]>(`turmas/periodo/${periodoId}`).then(r => r ?? []),
+      get<TurmaResumo[]>(`turmas/periodo/${periodoId}`).then((r) => r ?? []),
     getById: (id: number) => get<TurmaResumo>(`turmas/${id}`),
-    listSalas: () => get<SalaResumo[]>(`salas`).then(r => r ?? []),
-    listProfessores: () => get<ProfessorResumo[]>(`professores`).then(r => r ?? []),
+    listSalas: () => get<SalaResumo[]>(`salas`).then((r) => r ?? []),
+    listProfessores: () => get<ProfessorResumo[]>(`professores`).then((r) => r ?? []),
   },
   curriculo: {
     listByCurso: (cursoId: number) =>
-      get<MatrizCurricularResumo[]>(`curriculo/curso/${cursoId}`).then(r => r ?? []),
+      get<MatrizCurricularResumo[]>(`curriculo/curso/${cursoId}`).then((r) => r ?? []),
     getById: (id: number) => get<MatrizCurricularResumo>(`curriculo/${id}`),
   },
   matricula: {
@@ -276,8 +347,7 @@ export const api = {
       put<void>(`matriculas/${id}/trancar-periodo`, body),
   },
   diarios: {
-    getByTurma: (turmaId: number) =>
-      get<DiarioTurmaResumo>(`diarios/turma/${turmaId}`),
+    getByTurma: (turmaId: number) => get<DiarioTurmaResumo>(`diarios/turma/${turmaId}`),
   },
   historico: {
     getByEstudante: (estudanteId: number) =>
@@ -286,25 +356,22 @@ export const api = {
   },
   solicitacoes: {
     listByEstudante: (estudanteId: number) =>
-      get<SolicitacaoAcademicaResumo[]>(`solicitacoes/estudante/${estudanteId}`).then(r => r ?? []),
+      get<SolicitacaoAcademicaResumo[]>(`solicitacoes/estudante/${estudanteId}`).then((r) => r ?? []),
     listPendentes: () =>
-      get<SolicitacaoAcademicaResumo[]>(`solicitacoes/pendentes`).then(r => r ?? []),
-    listTodas: () =>
-      get<SolicitacaoAcademicaResumo[]>(`solicitacoes/todas`).then(r => r ?? []),
-    getById: (id: number) =>
-      get<SolicitacaoAcademicaResumo>(`solicitacoes/${id}`),
-    estatisticas: () =>
-      get<Record<string, number>>(`solicitacoes/estatisticas`).then(r => r ?? {}),
-    // ─── Estudante ───
+      get<SolicitacaoAcademicaResumo[]>(`solicitacoes/pendentes`).then((r) => r ?? []),
+    listTodas: () => get<SolicitacaoAcademicaResumo[]>(`solicitacoes/todas`).then((r) => r ?? []),
+    getById: (id: number) => get<SolicitacaoAcademicaResumo>(`solicitacoes/${id}`),
+    estatisticas: () => get<Record<string, number>>(`solicitacoes/estatisticas`).then((r) => r ?? {}),
     abrir: (body: {
-      estudanteId: number; periodoLetivoId: number; tipo: string;
-      descricao: string; documentos: { tipo: string; nomeArquivo: string }[];
+      estudanteId: number;
+      periodoLetivoId: number;
+      tipo: string;
+      descricao: string;
+      documentos: { tipo: string; nomeArquivo: string }[];
     }) => post<number>(`solicitacoes`, body),
     complementar: (id: number, body: { tipo: string; nomeArquivo: string }) =>
       put<void>(`solicitacoes/${id}/complementar`, body),
-    cancelar: (id: number) =>
-      put<void>(`solicitacoes/${id}/cancelar`),
-    // ─── Secretaria ───
+    cancelar: (id: number) => put<void>(`solicitacoes/${id}/cancelar`),
     iniciarAnalise: (id: number, analistaId: number) =>
       put<void>(`solicitacoes/${id}/iniciar-analise`, { analistaId }),
     deferir: (id: number, body: { analistaId: number; justificativa: string; impactoAcademico: boolean }) =>
@@ -313,19 +380,16 @@ export const api = {
       put<void>(`solicitacoes/${id}/indeferir`, body),
     solicitarComplementacao: (id: number, analistaId: number) =>
       put<void>(`solicitacoes/${id}/solicitar-complementacao`, { analistaId }),
-    concluir: (id: number) =>
-      put<void>(`solicitacoes/${id}/concluir`),
-    vincularEConcluir: (id: number) =>
-      put<void>(`solicitacoes/${id}/vincular-e-concluir`),
+    concluir: (id: number) => put<void>(`solicitacoes/${id}/concluir`),
+    vincularEConcluir: (id: number) => put<void>(`solicitacoes/${id}/vincular-e-concluir`),
   },
   integralizacao: {
-    listAll: () => get<IntegralizacaoResumo[]>(`integralizacoes`).then(r => r ?? []),
+    listAll: () => get<IntegralizacaoResumo[]>(`integralizacoes`).then((r) => r ?? []),
     listByEstudante: (estudanteId: number) =>
-      get<IntegralizacaoResumo[]>(`integralizacoes/estudante/${estudanteId}`).then(r => r ?? []),
+      get<IntegralizacaoResumo[]>(`integralizacoes/estudante/${estudanteId}`).then((r) => r ?? []),
     getById: (id: number) => get<IntegralizacaoResumo>(`integralizacoes/${id}`),
     iniciarAnalise: (body: { estudanteId: number; matrizCurricularId: number }) =>
       post<number>(`integralizacoes`, body),
-    // RN3: o checklist é gerado no servidor a partir dos registros consolidados.
     gerarChecklist: (id: number) => put<void>(`integralizacoes/${id}/checklist`),
     registrarResultado: (id: number, resultado: string) =>
       put<void>(`integralizacoes/${id}/resultado`, { resultado }),
@@ -346,35 +410,39 @@ export const api = {
   },
   atividades: {
     listByEstudante: (estudanteId: number) =>
-      get<AtividadeComplementarResumo[]>(`atividades-complementares/estudante/${estudanteId}`).then(r => r ?? []),
-    submeter: (body: { estudanteId: number; categoriaId: number; descricao: string; horasSubmetidas: number }) =>
-      post<void>(`atividades-complementares`, body),
+      get<AtividadeComplementarResumo[]>(`atividades-complementares/estudante/${estudanteId}`).then(
+        (r) => r ?? [],
+      ),
+    submeter: (body: {
+      estudanteId: number;
+      categoriaId: number;
+      descricao: string;
+      horasSubmetidas: number;
+    }) => post<void>(`atividades-complementares`, body),
   },
   permanencia: {
-    listEditais: () => get<EditalResumo[]>(`permanencia/editais`).then(r => r ?? []),
-    getEditalById: (id: number) =>
-      get<EditalResumo>(`permanencia/editais/${id}`),
+    listEditais: () => get<EditalResumo[]>(`permanencia/editais`).then((r) => r ?? []),
+    getEditalById: (id: number) => get<EditalResumo>(`permanencia/editais/${id}`),
     listBeneficios: (estudanteId: number) =>
-      get<unknown[]>(`permanencia/estudantes/${estudanteId}/beneficios`).then(r => r ?? []),
+      get<unknown[]>(`permanencia/estudantes/${estudanteId}/beneficios`).then((r) => r ?? []),
   },
   apoio: {
-    listCasos: () => get<CasoResumo[]>(`apoio/casos`).then(r => r ?? []),
+    listCasos: () => get<CasoResumo[]>(`apoio/casos`).then((r) => r ?? []),
     getCasoById: (id: number) => get<CasoResumo>(`apoio/casos/${id}`),
   },
   mobilidade: {
     getByEstudante: (estudanteId: number) =>
       get<MobilidadeAcademicaResumo>(`mobilidades/estudante/${estudanteId}`),
-    getById: (id: number) =>
-      get<MobilidadeAcademicaResumo>(`mobilidades/${id}`),
+    getById: (id: number) => get<MobilidadeAcademicaResumo>(`mobilidades/${id}`),
     solicitar: (body: { estudanteId: number; instituicaoDestino: string; status: string }) =>
       post<void>(`mobilidades`, body),
   },
   cobrancas: {
     getByContrato: (contratoId: number) =>
-      get<CobrancaResumo[]>(`cobrancas/contrato/${contratoId}`).then(r => r ?? []),
+      get<CobrancaResumo[]>(`cobrancas/contrato/${contratoId}`).then((r) => r ?? []),
   },
   oportunidades: {
-    listAll: () => get<OportunidadeResumo[]>(`oportunidades`).then(r => r ?? []),
+    listAll: () => get<OportunidadeResumo[]>(`oportunidades`).then((r) => r ?? []),
     getById: (id: number) => get<OportunidadeResumo>(`oportunidades/${id}`),
     criar: (body: { empresaId: number; descricao: string; cargaHorariaTotal: number }) =>
       post<number>(`oportunidades`, body),
@@ -385,15 +453,29 @@ export const api = {
     excluir: (id: number) => del<void>(`oportunidades/${id}`),
   },
   candidaturas: {
-    listAll: () => get<CandidaturaResumo[]>(`candidaturas`).then(r => r ?? []),
+    listAll: () => get<CandidaturaResumo[]>(`candidaturas`).then((r) => r ?? []),
     listByEstudante: (estudanteId: number) =>
-      get<CandidaturaResumo[]>(`candidaturas/estudante/${estudanteId}`).then(r => r ?? []),
+      get<CandidaturaResumo[]>(`candidaturas/estudante/${estudanteId}`).then((r) => r ?? []),
     deferir: (id: number) => put<void>(`candidaturas/${id}/deferir`),
     indeferir: (id: number) => put<void>(`candidaturas/${id}/indeferir`),
     cancelar: (id: number) => put<void>(`candidaturas/${id}/cancelar`),
   },
   estagios: {
     listByEstudante: (estudanteId: number) =>
-      get<unknown[]>(`estagios/estudante/${estudanteId}`).then(r => r ?? []),
+      get<unknown[]>(`estagios/estudante/${estudanteId}`).then((r) => r ?? []),
   },
 };
+
+/**
+ * Data de hoje no formato ISO (YYYY-MM-DD) esperado pelos LocalDate do backend.
+ * Usa o calendário LOCAL (não UTC) para não adiantar o dia em fusos negativos.
+ */
+export function hojeIso(): string {
+  const d = new Date();
+  const ano = d.getFullYear();
+  const mes = String(d.getMonth() + 1).padStart(2, "0");
+  const dia = String(d.getDate()).padStart(2, "0");
+  return `${ano}-${mes}-${dia}`;
+}
+
+export { ApiError };

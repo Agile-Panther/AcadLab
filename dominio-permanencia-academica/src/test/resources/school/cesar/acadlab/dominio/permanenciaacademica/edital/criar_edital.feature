@@ -11,3 +11,8 @@ Funcionalidade: Criar edital de permanência acadêmica
     Dado existe um edital com inscrições abertas para o programa "Auxílio Transporte"
     Quando a secretaria tenta criar um novo edital para o programa "Auxílio Transporte" com 3 vagas
     Então o sistema deve rejeitar informando "já existe edital com inscrições abertas para este programa"
+
+  Cenário: Criar edital sem prazo de renovação (campo opcional)
+    Dado não existe edital com inscrições abertas para o programa "Auxílio Alimentação"
+    Quando a secretaria cria um edital sem prazo de renovação para o programa "Auxílio Alimentação" com 10 vagas
+    Então o edital é registrado para o programa "Auxílio Alimentação"

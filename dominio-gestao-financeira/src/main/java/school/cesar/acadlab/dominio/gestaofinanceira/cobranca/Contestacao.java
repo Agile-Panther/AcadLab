@@ -22,11 +22,19 @@ public class Contestacao {
         this.status = StatusContestacao.PENDENTE;
     }
 
-    public void resolver(String parecer) {
+    public void deferir(String parecer) {
+        resolverComo(StatusContestacao.DEFERIDA, parecer);
+    }
+
+    public void indeferir(String parecer) {
+        resolverComo(StatusContestacao.INDEFERIDA, parecer);
+    }
+
+    private void resolverComo(StatusContestacao novoStatus, String parecer) {
         notNull(parecer, "parecer obrigatório");
         if (status != StatusContestacao.PENDENTE)
             throw new IllegalStateException("contestação já foi resolvida");
-        this.status = StatusContestacao.RESOLVIDA;
+        this.status = novoStatus;
         this.parecer = parecer;
     }
 

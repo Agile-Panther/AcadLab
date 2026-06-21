@@ -1,75 +1,217 @@
 import { toast } from "sonner";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import {
-  AppShell, SectionTitle, StatsRow, DataTable, StatusBadge, RowActionButton,
-  FormField, ValidationCallout, Stepper, SuccessBanner, ProgressRow,
+  AppShell,
+  SectionTitle,
+  StatsRow,
+  DataTable,
+  StatusBadge,
+  RowActionButton,
+  FormField,
+  ValidationCallout,
+  Stepper,
+  SuccessBanner,
   useProfileSwitcher,
 } from "@/components/acadlab";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, Calendar, Plus, FileText, Clock, User, CheckCircle, XCircle } from "lucide-react";
+import { ArrowLeft, Calendar, Plus, FileText, Clock, User } from "lucide-react";
+import { formatData } from "@/lib/format";
+import { ApiError, hojeIso } from "@/lib/api";
+import {
+  useEditais,
+  useTodasInscricoes,
+  useInscricoesEstudante,
+  useBeneficiosEstudante,
+  useTodosBeneficios,
+  useInscrever,
+  useInterporRecurso,
+  useRenovarBeneficio,
+  useCriarEdital,
+  usePublicarResultado,
+  useEncerrarEdital,
+  useDeferirInscricao,
+  useIndeferirInscricao,
+  type EditalResumo,
+  type InscricaoResumo,
+  type BeneficioResumo,
+} from "@/lib/permanencia";
 
 export const Route = createFileRoute("/permanencia")({
   head: () => ({ meta: [{ title: "Permanência Acadêmica — AcadLab" }] }),
   component: Page,
 });
 
-type Edital = { id: string; nome: string; vagas: number; prazo: string; status: "Aberto" | "Encerrado"; descricao?: string; criterios?: string[] };
-type Beneficio = { id: string; nome: string; status: "Ativo" | "Suspenso" | "Em renovação"; vencimento: string; valor?: string; historico?: { data: string; evento: string }[] };
-type Inscricao = { id: string; aluno: string; edital: string; renda: string; cr: string; status: "Em análise" | "Deferida" | "Indeferida" | "Pendente doc."; dataEnvio?: string; documentos?: string[]; parecer?: string };
+/* ===== Mapeamentos de status ===== */
 
-const editaisIniciais: Edital[] = [
-  { id: "EDT-2025-04", nome: "Bolsa Institucional 50%", vagas: 30, prazo: "30/03/2025", status: "Aberto", descricao: "Bolsa de permanência estudantil com redução de 50% nas mensalidades.", criterios: ["Renda familiar per capita até 1,5 salário mínimo", "CR mínimo: 7,0", "Matrícula ativa em curso de graduação", "Sem benefício concorrente em vigência"] },
-  { id: "EDT-2025-05", nome: "Auxílio Transporte", vagas: 100, prazo: "15/04/2025", status: "Aberto", descricao: "Auxílio mensal para custeio de transporte público.", criterios: ["Residir a mais de 10km do campus", "Frequência mínima de 75%", "Matrícula ativa"] },
-  { id: "EDT-2025-03", nome: "Monitoria Remunerada", vagas: 20, prazo: "10/03/2025", status: "Encerrado", descricao: "Programa de monitoria acadêmica remunerada.", criterios: ["CR mínimo: 8,0 na disciplina", "Disponibilidade de 8h/semana", "Recomendação do professor"] },
-];
+// Data atual (calendário local). Datas dos editais chegam como ISO yyyy-mm-dd,
+// que pode ser comparado lexicograficamente para ordenar no tempo.
+const HOJE = hojeIso();
 
-const beneficiosIniciais: Beneficio[] = [
-  { id: "BEN-2024-112", nome: "Bolsa Institucional 50%", status: "Ativo", vencimento: "30/06/2025", valor: "R$ 850,00/mês", historico: [
-    { data: "01/07/2024", evento: "Benefício concedido — EDT-2024-02" },
-    { data: "15/12/2024", evento: "Renovação automática aprovada" },
-    { data: "10/01/2025", evento: "Comprovante de renda atualizado" },
-  ]},
-];
+/**
+ * Inscrições realmente abertas: precisa do status aberto E do dia atual dentro
+ * da janela de inscrição. O backend valida ambos (Edital.isInscricaoAberta);
+ * espelhar isso aqui evita exibir "Aberto" / habilitar inscrição quando o envio
+ * fatalmente cairia em "fora do prazo".
+ */
+function inscricaoAberta(e: EditalResumo): boolean {
+  if (e.status !== "INSCRICOES_ABERTAS") return false;
+  if (!e.prazoInscricaoInicio || !e.prazoInscricaoFim) return false;
+  return HOJE >= e.prazoInscricaoInicio && HOJE <= e.prazoInscricaoFim;
+}
 
-const inscricoesIniciais: Inscricao[] = [
-  { id: "INS-2025-201", aluno: "Você", edital: "Monitoria Remunerada", renda: "—", cr: "7,8", status: "Indeferida", dataEnvio: "05/03/2025", documentos: ["Comprovante de matrícula", "Histórico escolar"], parecer: "CR inferior ao exigido (8,0) na disciplina pretendida." },
-  { id: "INS-2024-145", aluno: "Você", edital: "Bolsa Institucional 50%", renda: "0,9 sal.", cr: "8,4", status: "Deferida", dataEnvio: "10/02/2024", documentos: ["Comprovante de renda", "Comprovante de residência", "Declaração socioeconômica"], parecer: "Atende todos os critérios de elegibilidade." },
-];
+/** Prazo de recursos já encerrado → resultado pode ser publicado (RN11). */
+function recursoEncerrado(e: EditalResumo): boolean {
+  return !!e.prazoRecursoFim && HOJE > e.prazoRecursoFim;
+}
+
+function editalLabel(e: EditalResumo): string {
+  if (inscricaoAberta(e)) return "Aberto";
+  if (e.status === "INSCRICOES_ABERTAS") {
+    if (e.prazoInscricaoInicio && HOJE < e.prazoInscricaoInicio) return "Em breve";
+    return "Inscrições encerradas";
+  }
+  if (e.status === "RESULTADO_PUBLICADO") return "Resultado publicado";
+  return "Encerrado";
+}
+
+function editalTone(e: EditalResumo) {
+  if (inscricaoAberta(e)) return "success" as const;
+  if (e.status === "RESULTADO_PUBLICADO") return "info" as const;
+  if (e.status === "INSCRICOES_ABERTAS" && e.prazoInscricaoInicio && HOJE < e.prazoInscricaoInicio)
+    return "info" as const;
+  return "neutral" as const;
+}
+
+function inscricaoLabel(s: InscricaoResumo["status"]): string {
+  switch (s) {
+    case "PENDENTE":
+      return "Em análise";
+    case "DEFERIDA":
+      return "Deferida";
+    case "INDEFERIDA":
+      return "Indeferida";
+    case "RECURSO_INTERPOSTO":
+      return "Recurso interposto";
+    case "RECURSO_ANALISADO":
+      return "Recurso analisado";
+  }
+}
+function inscricaoTone(s: InscricaoResumo["status"]) {
+  if (s === "DEFERIDA") return "success" as const;
+  if (s === "INDEFERIDA") return "danger" as const;
+  if (s === "RECURSO_INTERPOSTO" || s === "RECURSO_ANALISADO") return "info" as const;
+  return "warning" as const;
+}
+function beneficioLabel(s: BeneficioResumo["status"]): string {
+  return s === "ATIVO" ? "Ativo" : s === "SUSPENSO" ? "Suspenso" : "Cancelado";
+}
+function beneficioTone(s: BeneficioResumo["status"]) {
+  return s === "ATIVO"
+    ? ("success" as const)
+    : s === "SUSPENSO"
+      ? ("danger" as const)
+      : ("neutral" as const);
+}
+
+/** Inscrições ainda em tramitação (separadas das já concluídas/anteriores). */
+function inscricaoEmAnalise(s: InscricaoResumo["status"]): boolean {
+  return s === "PENDENTE" || s === "RECURSO_INTERPOSTO";
+}
+
+/** Dias entre hoje (calendário local) e uma data ISO yyyy-mm-dd (negativo se já passou). */
+function diasAte(iso: string): number {
+  const [y, m, d] = iso.split("-").map(Number);
+  const alvo = new Date(y, m - 1, d);
+  const hoje = new Date();
+  hoje.setHours(0, 0, 0, 0);
+  return Math.round((alvo.getTime() - hoje.getTime()) / 86_400_000);
+}
+
+/**
+ * Benefício em tempo de renovação: ativo, ainda sem solicitação pendente e dentro
+ * da janela de renovação (até 90 dias antes do prazo e não vencido). Apenas nesse
+ * intervalo a renovação faz sentido — benefícios meramente ativos não são renováveis.
+ */
+function emTempoDeRenovacao(b: BeneficioResumo): boolean {
+  if (b.status !== "ATIVO" || b.solicitouRenovacao || !b.prazoRenovacao) return false;
+  const dias = diasAte(b.prazoRenovacao);
+  return dias >= 0 && dias <= 90;
+}
+
+function notifyError(e: unknown) {
+  toast.error(e instanceof ApiError ? e.message : "Não foi possível concluir a operação.");
+}
 
 type View =
   | { kind: "overview" }
-  | { kind: "edital"; id: string }
-  | { kind: "inscricao"; step: 0 | 1 | 2; editalId: string }
-  | { kind: "recurso"; inscricaoId: string }
-  | { kind: "detail-beneficio"; id: string }
-  | { kind: "detail-inscricao"; id: string };
+  | { kind: "edital"; id: number }
+  | { kind: "inscricao"; step: 0 | 1 | 2; editalId: number }
+  | { kind: "recurso"; inscricaoId: number; editalId: number }
+  | { kind: "detail-beneficio"; id: number }
+  | { kind: "detail-inscricao"; id: number };
 
 function Page() {
   const [view, setView] = useState<View>({ kind: "overview" });
-  const [beneficios, setBeneficios] = useState<Beneficio[]>(beneficiosIniciais);
-  const [editais, setEditais] = useState<Edital[]>(editaisIniciais);
-  const [inscricoes, setInscricoes] = useState<Inscricao[]>(inscricoesIniciais);
+
+  const editaisQuery = useEditais();
+  const beneficiosQuery = useBeneficiosEstudante();
+  const inscricoesQuery = useInscricoesEstudante();
+
+  const editais = editaisQuery.data ?? [];
+  const beneficios = beneficiosQuery.data ?? [];
+  const inscricoes = inscricoesQuery.data ?? [];
+
+  const editalNome = useMemo(() => {
+    const map = new Map<number, string>();
+    editais.forEach((e) => map.set(e.id, e.programa));
+    return (id: number) => map.get(id) ?? `Edital #${id}`;
+  }, [editais]);
+
+  // Editais em que o estudante já tem inscrição → não pode se inscrever de novo.
+  const inscritoEm = useMemo(() => new Set(inscricoes.map((i) => i.editalId)), [inscricoes]);
+  const inscricoesEmAnalise = inscricoes.filter((i) => inscricaoEmAnalise(i.status));
+  const inscricoesAnteriores = inscricoes.filter((i) => !inscricaoEmAnalise(i.status));
+
+  const renovar = useRenovarBeneficio();
+  const inscrever = useInscrever();
+  const recurso = useInterporRecurso();
 
   const { active: perfil } = useProfileSwitcher([
     { value: "estudante", label: "Estudante", description: "Inscreve-se e acompanha benefícios" },
-    { value: "assistencia", label: "Assistência Estudantil", description: "Analisa pedidos e gere editais" },
+    {
+      value: "assistencia",
+      label: "Assistência Estudantil",
+      description: "Analisa pedidos e gere editais",
+    },
   ]);
-  const subtitle = perfil === "assistencia"
-    ? "Setor de Assistência Estudantil · Análise de pedidos"
-    : "Bolsas e auxílios institucionais";
+  const subtitle =
+    perfil === "assistencia"
+      ? "Setor de Assistência Estudantil · Análise de pedidos"
+      : "Bolsas e auxílios institucionais";
 
-  const handleRenovar = (id: string) => {
-    setBeneficios(beneficios.map(b => b.id === id ? { ...b, status: "Em renovação" } : b));
-    toast.success("Solicitação de renovação enviada! Nova vigência será processada.");
+  const handleRenovar = (id: number) => {
+    renovar.mutate(id, {
+      onSuccess: () =>
+        toast.success("Solicitação de renovação enviada! Nova vigência será processada."),
+      onError: notifyError,
+    });
   };
 
-  const handleSendRecurso = (e: React.FormEvent) => {
+  const handleSendRecurso = (e: React.FormEvent, inscricaoId: number, editalId: number) => {
     e.preventDefault();
-    toast.success("Recurso enviado com sucesso! Aguarde a reanálise.");
-    setView({ kind: "overview" });
+    recurso.mutate(
+      { inscricaoId, editalId },
+      {
+        onSuccess: () => {
+          toast.success("Recurso enviado com sucesso! Aguarde a reanálise.");
+          setView({ kind: "overview" });
+        },
+        onError: notifyError,
+      },
+    );
   };
 
   if (perfil === "assistencia") {
@@ -77,9 +219,8 @@ function Page() {
       <AppShell title="Permanência Acadêmica" subtitle={subtitle}>
         <AssistenciaView
           editais={editais}
-          setEditais={setEditais}
-          inscricoes={inscricoes}
-          setInscricoes={setInscricoes}
+          editalNome={editalNome}
+          loading={editaisQuery.isLoading}
         />
       </AppShell>
     );
@@ -89,219 +230,518 @@ function Page() {
     <AppShell title="Permanência Acadêmica" subtitle={subtitle}>
       {view.kind === "overview" && (
         <div className="space-y-5">
-          <StatsRow stats={[
-            { label: "Benefícios ativos", value: beneficios.filter((b) => b.status === "Ativo").length, tone: "success" },
-            { label: "Editais abertos", value: editais.filter((e) => e.status === "Aberto").length, tone: "info" },
-            { label: "Próx. renovação", value: "30/06", tone: "warning" },
-            { label: "Inscrições no ano", value: inscricoes.length, tone: "info" },
-          ]} />
+          <StatsRow
+            stats={[
+              {
+                label: "Benefícios ativos",
+                value: beneficios.filter((b) => b.status === "ATIVO").length,
+                tone: "success",
+              },
+              {
+                label: "Editais abertos",
+                value: editais.filter(inscricaoAberta).length,
+                tone: "info",
+              },
+              { label: "Inscrições", value: inscricoes.length, tone: "info" },
+              { label: "Em análise", value: inscricoesEmAnalise.length, tone: "warning" },
+            ]}
+          />
 
           <SectionTitle title="Meus benefícios" />
-          {beneficios.length === 0 ? (
-            <ValidationCallout tone="info">Você não possui benefícios ativos no momento.</ValidationCallout>
+          {beneficiosQuery.isLoading ? (
+            <p className="text-sm text-muted-foreground">Carregando benefícios…</p>
+          ) : beneficios.length === 0 ? (
+            <ValidationCallout tone="info">
+              Você não possui benefícios ativos no momento.
+            </ValidationCallout>
           ) : (
             <DataTable
               columns={[
-                { key: "id", header: "Protocolo" }, { key: "nome", header: "Benefício" },
-                { key: "status", header: "Status", render: (r) => <StatusBadge tone={r.status === "Ativo" ? "success" : r.status === "Suspenso" ? "danger" : "warning"}>{r.status}</StatusBadge> },
-                { key: "vencimento", header: "Vence em" },
-                { key: "acoes", header: "", align: "right", render: (r) => (
-                  <div className="flex justify-end gap-1.5">
-                    <RowActionButton onClick={() => handleRenovar(r.id)}>Renovar</RowActionButton>
-                    <RowActionButton tone="neutral" onClick={() => setView({ kind: "detail-beneficio", id: r.id })}>Detalhes</RowActionButton>
-                  </div>
-                ) },
+                { key: "protocolo", header: "Protocolo", render: (r) => `BEN-${r.id}` },
+                { key: "nome", header: "Benefício", render: (r) => editalNome(r.editalId) },
+                {
+                  key: "status",
+                  header: "Status",
+                  render: (r) => (
+                    <StatusBadge tone={beneficioTone(r.status)}>
+                      {beneficioLabel(r.status)}
+                    </StatusBadge>
+                  ),
+                },
+                {
+                  key: "vencimento",
+                  header: "Renova em",
+                  render: (r) => formatData(r.prazoRenovacao),
+                },
+                {
+                  key: "acoes",
+                  header: "",
+                  align: "right",
+                  render: (r) => (
+                    <div className="flex items-center justify-end gap-1.5">
+                      {emTempoDeRenovacao(r) && (
+                        <RowActionButton onClick={() => handleRenovar(r.id)}>
+                          Renovar
+                        </RowActionButton>
+                      )}
+                      {r.status === "ATIVO" && r.solicitouRenovacao && (
+                        <span className="text-[12px] text-muted-foreground">
+                          Renovação solicitada
+                        </span>
+                      )}
+                      <RowActionButton
+                        tone="neutral"
+                        onClick={() => setView({ kind: "detail-beneficio", id: r.id })}
+                      >
+                        Detalhes
+                      </RowActionButton>
+                    </div>
+                  ),
+                },
               ]}
               rows={beneficios}
             />
           )}
 
           <SectionTitle title="Editais disponíveis" />
-          <div className="grid gap-3 md:grid-cols-2">
-            {editais.map((e) => (
-              <div key={e.id} className="rounded-xl border bg-card p-5 shadow-card">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <p className="text-[12px] text-muted-foreground">{e.id}</p>
-                    <h3 className="mt-1 font-semibold text-foreground">{e.nome}</h3>
+          {editaisQuery.isLoading ? (
+            <p className="text-sm text-muted-foreground">Carregando editais…</p>
+          ) : (
+            <div className="grid gap-3 md:grid-cols-2">
+              {editais.map((e) => (
+                <div key={e.id} className="rounded-xl border bg-card p-5 shadow-card">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <p className="text-[12px] text-muted-foreground">EDT-{e.id}</p>
+                      <h3 className="mt-1 font-semibold text-foreground">{e.programa}</h3>
+                    </div>
+                    <StatusBadge tone={inscritoEm.has(e.id) ? "info" : editalTone(e)}>
+                      {inscritoEm.has(e.id) ? "Inscrito" : editalLabel(e)}
+                    </StatusBadge>
                   </div>
-                  <StatusBadge tone={e.status === "Aberto" ? "success" : "neutral"}>{e.status}</StatusBadge>
+                  {e.descricao && (
+                    <p className="mt-2 text-[13px] text-muted-foreground line-clamp-2">
+                      {e.descricao}
+                    </p>
+                  )}
+                  <div className="mt-3 flex items-center gap-4 text-[12px] text-muted-foreground">
+                    <span>{e.vagas} vagas</span>
+                    <span className="flex items-center gap-1">
+                      <Calendar className="h-3.5 w-3.5" /> até {formatData(e.prazoInscricaoFim)}
+                    </span>
+                  </div>
+                  {inscritoEm.has(e.id) && (
+                    <p className="mt-2 text-[12px] text-muted-foreground">
+                      Você já possui inscrição neste edital.
+                    </p>
+                  )}
+                  <Button
+                    className="mt-3 w-full"
+                    disabled={!inscricaoAberta(e) || inscritoEm.has(e.id)}
+                    onClick={() => setView({ kind: "edital", id: e.id })}
+                  >
+                    {inscritoEm.has(e.id) ? "Já inscrito" : "Ver edital"}
+                  </Button>
                 </div>
-                <div className="mt-3 flex items-center gap-4 text-[12px] text-muted-foreground">
-                  <span>{e.vagas} vagas</span>
-                  <span className="flex items-center gap-1"><Calendar className="h-3.5 w-3.5" /> até {e.prazo}</span>
-                </div>
-                <Button className="mt-3 w-full" disabled={e.status !== "Aberto"} onClick={() => setView({ kind: "edital", id: e.id })}>Ver edital</Button>
-              </div>
-            ))}
+              ))}
+            </div>
+          )}
+
+          <div className="rounded-xl border bg-card p-5 shadow-card">
+            <SectionTitle
+              title="Inscrições em análise"
+              subtitle="Pedidos aguardando decisão da Assistência Estudantil"
+            />
+            {inscricoesEmAnalise.length === 0 ? (
+              <p className="mt-3 text-sm text-muted-foreground">
+                Nenhuma inscrição em análise no momento.
+              </p>
+            ) : (
+              <DataTable
+                className="mt-3"
+                columns={[
+                  { key: "protocolo", header: "Protocolo", render: (r) => `INS-${r.id}` },
+                  { key: "edital", header: "Edital", render: (r) => editalNome(r.editalId) },
+                  {
+                    key: "status",
+                    header: "Status",
+                    render: (r) => (
+                      <StatusBadge tone={inscricaoTone(r.status)}>
+                        {inscricaoLabel(r.status)}
+                      </StatusBadge>
+                    ),
+                  },
+                  {
+                    key: "acoes",
+                    header: "",
+                    align: "right",
+                    render: (r) => (
+                      <RowActionButton
+                        tone="neutral"
+                        onClick={() => setView({ kind: "detail-inscricao", id: r.id })}
+                      >
+                        Detalhes
+                      </RowActionButton>
+                    ),
+                  },
+                ]}
+                rows={inscricoesEmAnalise}
+              />
+            )}
           </div>
 
           <div className="rounded-xl border bg-card p-5 shadow-card">
-            <SectionTitle title="Inscrições anteriores" />
-            <DataTable className="mt-3"
-              columns={[
-                { key: "id", header: "Protocolo" }, { key: "edital", header: "Edital" },
-                { key: "status", header: "Status", render: (r) => <StatusBadge tone={r.status === "Deferida" ? "success" : r.status === "Indeferida" ? "danger" : "warning"}>{r.status}</StatusBadge> },
-                { key: "acoes", header: "", align: "right", render: (r) => (
-                  <div className="flex justify-end gap-1.5">
-                    <RowActionButton tone="neutral" onClick={() => setView({ kind: "detail-inscricao", id: r.id })}>Detalhes</RowActionButton>
-                    {r.status === "Indeferida" && <RowActionButton onClick={() => setView({ kind: "recurso", inscricaoId: r.id })}>Interpor recurso</RowActionButton>}
-                  </div>
-                ) },
-              ]}
-              rows={inscricoes}
-            />
+            <SectionTitle title="Inscrições anteriores" subtitle="Inscrições já analisadas" />
+            {inscricoesAnteriores.length === 0 ? (
+              <p className="mt-3 text-sm text-muted-foreground">
+                Você ainda não possui inscrições concluídas.
+              </p>
+            ) : (
+              <DataTable
+                className="mt-3"
+                columns={[
+                  { key: "protocolo", header: "Protocolo", render: (r) => `INS-${r.id}` },
+                  { key: "edital", header: "Edital", render: (r) => editalNome(r.editalId) },
+                  {
+                    key: "status",
+                    header: "Status",
+                    render: (r) => (
+                      <StatusBadge tone={inscricaoTone(r.status)}>
+                        {inscricaoLabel(r.status)}
+                      </StatusBadge>
+                    ),
+                  },
+                  {
+                    key: "acoes",
+                    header: "",
+                    align: "right",
+                    render: (r) => (
+                      <div className="flex justify-end gap-1.5">
+                        <RowActionButton
+                          tone="neutral"
+                          onClick={() => setView({ kind: "detail-inscricao", id: r.id })}
+                        >
+                          Detalhes
+                        </RowActionButton>
+                        {r.status === "INDEFERIDA" && (
+                          <RowActionButton
+                            onClick={() =>
+                              setView({ kind: "recurso", inscricaoId: r.id, editalId: r.editalId })
+                            }
+                          >
+                            Interpor recurso
+                          </RowActionButton>
+                        )}
+                      </div>
+                    ),
+                  },
+                ]}
+                rows={inscricoesAnteriores}
+              />
+            )}
           </div>
         </div>
       )}
 
-      {view.kind === "edital" && (() => {
-        const e = editais.find((x) => x.id === view.id)!;
-        return (
-          <div className="space-y-4">
-            <Button variant="ghost" size="sm" onClick={() => setView({ kind: "overview" })}><ArrowLeft className="mr-1 h-4 w-4" /> Voltar</Button>
-            <SectionTitle title={`${e.id} — ${e.nome}`} subtitle={`${e.vagas} vagas · inscrições até ${e.prazo}`} />
-            <div className="rounded-xl border bg-card p-5 shadow-card">
-              <h3 className="font-semibold">Descrição</h3>
-              <p className="mt-2 text-[13px] text-muted-foreground">{e.descricao}</p>
+      {view.kind === "edital" &&
+        (() => {
+          const e = editais.find((x) => x.id === view.id);
+          if (!e) return null;
+          return (
+            <div className="space-y-4">
+              <Button variant="ghost" size="sm" onClick={() => setView({ kind: "overview" })}>
+                <ArrowLeft className="mr-1 h-4 w-4" /> Voltar
+              </Button>
+              <SectionTitle
+                title={`EDT-${e.id} — ${e.programa}`}
+                subtitle={`${e.vagas} vagas · inscrições até ${formatData(e.prazoInscricaoFim)}`}
+              />
+              {e.descricao && (
+                <div className="rounded-xl border bg-card p-5 shadow-card">
+                  <h3 className="font-semibold">Sobre o programa</h3>
+                  <p className="mt-2 text-[13px] text-muted-foreground">{e.descricao}</p>
+                </div>
+              )}
+              <div className="rounded-xl border bg-card p-5 shadow-card">
+                <h3 className="font-semibold">Prazos do edital</h3>
+                <div className="mt-3 grid gap-2 text-[13px] text-muted-foreground sm:grid-cols-2">
+                  <div>
+                    <span className="text-foreground">Inscrições:</span>{" "}
+                    {formatData(e.prazoInscricaoInicio)} a {formatData(e.prazoInscricaoFim)}
+                  </div>
+                  <div>
+                    <span className="text-foreground">Recursos:</span>{" "}
+                    {formatData(e.prazoRecursoInicio)} a {formatData(e.prazoRecursoFim)}
+                  </div>
+                  <div>
+                    <span className="text-foreground">Renovação:</span>{" "}
+                    {formatData(e.prazoRenovacao)}
+                  </div>
+                  <div>
+                    <span className="text-foreground">Vagas:</span> {e.vagas}
+                  </div>
+                </div>
+              </div>
+              <ValidationCallout tone="info">
+                Ao se inscrever, confirme que atende aos critérios de elegibilidade do edital.
+              </ValidationCallout>
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" onClick={() => setView({ kind: "overview" })}>
+                  Voltar
+                </Button>
+                {inscricaoAberta(e) && !inscritoEm.has(e.id) && (
+                  <Button onClick={() => setView({ kind: "inscricao", step: 0, editalId: e.id })}>
+                    Inscrever-se
+                  </Button>
+                )}
+              </div>
             </div>
-            <div className="rounded-xl border bg-card p-5 shadow-card">
-              <h3 className="font-semibold">Critérios de elegibilidade</h3>
-              <ul className="mt-2 list-disc pl-5 text-[13px] text-muted-foreground">
-                {e.criterios?.map((c, i) => <li key={i}>{c}</li>)}
-              </ul>
-            </div>
-            <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setView({ kind: "overview" })}>Voltar</Button>
-              {e.status === "Aberto" && <Button onClick={() => setView({ kind: "inscricao", step: 0, editalId: e.id })}>Inscrever-se</Button>}
-            </div>
-          </div>
-        );
-      })()}
+          );
+        })()}
 
       {view.kind === "inscricao" && (
-        <InscricaoWizard step={view.step} onStep={(s) => setView({ kind: "inscricao", step: s, editalId: view.editalId })} onDone={() => setView({ kind: "overview" })} />
+        <InscricaoWizard
+          step={view.step}
+          submitting={inscrever.isPending}
+          onStep={(s) => setView({ kind: "inscricao", step: s, editalId: view.editalId })}
+          onSubmit={() =>
+            inscrever.mutate(
+              { editalId: view.editalId, atendeElegibilidade: true },
+              {
+                onSuccess: (id) => {
+                  toast.success(`Inscrição registrada! Protocolo: INS-${id}`);
+                  setView({ kind: "inscricao", step: 2, editalId: view.editalId });
+                },
+                onError: notifyError,
+              },
+            )
+          }
+          onDone={() => setView({ kind: "overview" })}
+        />
       )}
 
       {view.kind === "recurso" && (
         <div className="space-y-4">
-          <Button variant="ghost" size="sm" onClick={() => setView({ kind: "overview" })}><ArrowLeft className="mr-1 h-4 w-4" /> Voltar</Button>
-          <form onSubmit={handleSendRecurso} className="rounded-xl border bg-card p-6 shadow-card">
-            <SectionTitle title="Interpor recurso" subtitle={`Inscrição ${view.inscricaoId} · Apenas um recurso por inscrição é permitido.`} />
-            <FormField className="mt-4" label="Justificativa" required full><Textarea rows={5} required /></FormField>
-            <FormField label="Documentação complementar" full><Input type="file" className="h-10" /></FormField>
-            <div className="mt-4 flex justify-end gap-2"><Button type="button" variant="outline" onClick={() => setView({ kind: "overview" })}>Cancelar</Button><Button type="submit">Enviar recurso</Button></div>
+          <Button variant="ghost" size="sm" onClick={() => setView({ kind: "overview" })}>
+            <ArrowLeft className="mr-1 h-4 w-4" /> Voltar
+          </Button>
+          <form
+            onSubmit={(e) => handleSendRecurso(e, view.inscricaoId, view.editalId)}
+            className="rounded-xl border bg-card p-6 shadow-card"
+          >
+            <SectionTitle
+              title="Interpor recurso"
+              subtitle={`Inscrição INS-${view.inscricaoId} · Apenas um recurso por inscrição é permitido.`}
+            />
+            <FormField className="mt-4" label="Justificativa" required full>
+              <Textarea rows={5} required />
+            </FormField>
+            <FormField label="Documentação complementar" full>
+              <Input type="file" className="h-10" />
+            </FormField>
+            <div className="mt-4 flex justify-end gap-2">
+              <Button type="button" variant="outline" onClick={() => setView({ kind: "overview" })}>
+                Cancelar
+              </Button>
+              <Button type="submit" disabled={recurso.isPending}>
+                Enviar recurso
+              </Button>
+            </div>
           </form>
         </div>
       )}
 
-      {view.kind === "detail-beneficio" && (() => {
-        const b = beneficios.find((x) => x.id === view.id)!;
-        return (
-          <div className="space-y-4">
-            <Button variant="ghost" size="sm" onClick={() => setView({ kind: "overview" })}><ArrowLeft className="mr-1 h-4 w-4" /> Voltar</Button>
-            <SectionTitle title={b.nome} subtitle={`Protocolo ${b.id}`} />
-            <div className="grid gap-4 md:grid-cols-2">
-              <div className="rounded-xl border bg-card p-5 shadow-card space-y-3">
-                <h3 className="font-semibold flex items-center gap-2"><FileText className="h-4 w-4" /> Informações</h3>
-                <div className="text-[13px]"><span className="text-muted-foreground">Status:</span> <StatusBadge tone={b.status === "Ativo" ? "success" : b.status === "Suspenso" ? "danger" : "warning"}>{b.status}</StatusBadge></div>
-                <div className="text-[13px]"><span className="text-muted-foreground">Vencimento:</span> {b.vencimento}</div>
-                {b.valor && <div className="text-[13px]"><span className="text-muted-foreground">Valor:</span> {b.valor}</div>}
-              </div>
-              <div className="rounded-xl border bg-card p-5 shadow-card space-y-3">
-                <h3 className="font-semibold flex items-center gap-2"><Clock className="h-4 w-4" /> Histórico</h3>
-                <div className="space-y-2">
-                  {b.historico?.map((h, i) => (
-                    <div key={i} className="flex gap-3 text-[13px]">
-                      <span className="text-muted-foreground whitespace-nowrap">{h.data}</span>
-                      <span>{h.evento}</span>
+      {view.kind === "detail-beneficio" &&
+        (() => {
+          const b = beneficios.find((x) => x.id === view.id);
+          if (!b) return null;
+          return (
+            <div className="space-y-4">
+              <Button variant="ghost" size="sm" onClick={() => setView({ kind: "overview" })}>
+                <ArrowLeft className="mr-1 h-4 w-4" /> Voltar
+              </Button>
+              <SectionTitle title={editalNome(b.editalId)} subtitle={`Protocolo BEN-${b.id}`} />
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="rounded-xl border bg-card p-5 shadow-card space-y-3">
+                  <h3 className="font-semibold flex items-center gap-2">
+                    <FileText className="h-4 w-4" /> Informações
+                  </h3>
+                  <div className="text-[13px]">
+                    <span className="text-muted-foreground">Status:</span>{" "}
+                    <StatusBadge tone={beneficioTone(b.status)}>
+                      {beneficioLabel(b.status)}
+                    </StatusBadge>
+                  </div>
+                  <div className="text-[13px]">
+                    <span className="text-muted-foreground">Ativado em:</span>{" "}
+                    {formatData(b.dataAtivacao)}
+                  </div>
+                  <div className="text-[13px]">
+                    <span className="text-muted-foreground">Renova em:</span>{" "}
+                    {b.prazoRenovacao ? formatData(b.prazoRenovacao) : "Não prevê renovação"}
+                  </div>
+                  {b.solicitouRenovacao && (
+                    <div className="text-[13px]">
+                      <span className="text-muted-foreground">Renovação:</span>{" "}
+                      <StatusBadge tone="info">Solicitada</StatusBadge>
                     </div>
-                  ))}
+                  )}
+                </div>
+                <div className="rounded-xl border bg-card p-5 shadow-card space-y-3">
+                  <h3 className="font-semibold flex items-center gap-2">
+                    <Clock className="h-4 w-4" /> Origem
+                  </h3>
+                  <div className="text-[13px]">
+                    <span className="text-muted-foreground">Edital:</span> {editalNome(b.editalId)}
+                  </div>
+                  <div className="text-[13px]">
+                    <span className="text-muted-foreground">Inscrição:</span> INS-{b.inscricaoId}
+                  </div>
                 </div>
               </div>
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" onClick={() => setView({ kind: "overview" })}>
+                  Voltar
+                </Button>
+                {emTempoDeRenovacao(b) && (
+                  <Button disabled={renovar.isPending} onClick={() => handleRenovar(b.id)}>
+                    Solicitar renovação
+                  </Button>
+                )}
+              </div>
             </div>
-            <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setView({ kind: "overview" })}>Voltar</Button>
-              {b.status === "Ativo" && <Button onClick={() => handleRenovar(b.id)}>Solicitar renovação</Button>}
-            </div>
-          </div>
-        );
-      })()}
+          );
+        })()}
 
-      {view.kind === "detail-inscricao" && (() => {
-        const ins = inscricoes.find((x) => x.id === view.id)!;
-        return (
-          <div className="space-y-4">
-            <Button variant="ghost" size="sm" onClick={() => setView({ kind: "overview" })}><ArrowLeft className="mr-1 h-4 w-4" /> Voltar</Button>
-            <SectionTitle title={`Inscrição ${ins.id}`} subtitle={ins.edital} />
-            <div className="grid gap-4 md:grid-cols-2">
-              <div className="rounded-xl border bg-card p-5 shadow-card space-y-3">
-                <h3 className="font-semibold flex items-center gap-2"><User className="h-4 w-4" /> Dados da inscrição</h3>
-                <div className="text-[13px]"><span className="text-muted-foreground">Status:</span> <StatusBadge tone={ins.status === "Deferida" ? "success" : ins.status === "Indeferida" ? "danger" : "warning"}>{ins.status}</StatusBadge></div>
-                <div className="text-[13px]"><span className="text-muted-foreground">Data de envio:</span> {ins.dataEnvio}</div>
-                <div className="text-[13px]"><span className="text-muted-foreground">Renda per capita:</span> {ins.renda}</div>
-                <div className="text-[13px]"><span className="text-muted-foreground">CR:</span> {ins.cr}</div>
+      {view.kind === "detail-inscricao" &&
+        (() => {
+          const ins = inscricoes.find((x) => x.id === view.id);
+          if (!ins) return null;
+          return (
+            <div className="space-y-4">
+              <Button variant="ghost" size="sm" onClick={() => setView({ kind: "overview" })}>
+                <ArrowLeft className="mr-1 h-4 w-4" /> Voltar
+              </Button>
+              <SectionTitle title={`Inscrição INS-${ins.id}`} subtitle={editalNome(ins.editalId)} />
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="rounded-xl border bg-card p-5 shadow-card space-y-3">
+                  <h3 className="font-semibold flex items-center gap-2">
+                    <User className="h-4 w-4" /> Dados da inscrição
+                  </h3>
+                  <div className="text-[13px]">
+                    <span className="text-muted-foreground">Status:</span>{" "}
+                    <StatusBadge tone={inscricaoTone(ins.status)}>
+                      {inscricaoLabel(ins.status)}
+                    </StatusBadge>
+                  </div>
+                  <div className="text-[13px]">
+                    <span className="text-muted-foreground">Data de envio:</span>{" "}
+                    {formatData(ins.dataInscricao)}
+                  </div>
+                  <div className="text-[13px]">
+                    <span className="text-muted-foreground">Pontuação:</span> {ins.pontuacao}
+                  </div>
+                </div>
+                <div className="rounded-xl border bg-card p-5 shadow-card space-y-3">
+                  <h3 className="font-semibold flex items-center gap-2">
+                    <FileText className="h-4 w-4" /> Edital
+                  </h3>
+                  <div className="text-[13px]">
+                    <span className="text-muted-foreground">Programa:</span>{" "}
+                    {editalNome(ins.editalId)}
+                  </div>
+                  <div className="text-[13px]">
+                    <span className="text-muted-foreground">Código:</span> EDT-{ins.editalId}
+                  </div>
+                </div>
               </div>
-              <div className="rounded-xl border bg-card p-5 shadow-card space-y-3">
-                <h3 className="font-semibold flex items-center gap-2"><FileText className="h-4 w-4" /> Documentos enviados</h3>
-                <ul className="list-disc pl-5 text-[13px] text-muted-foreground">
-                  {ins.documentos?.map((d, i) => <li key={i}>{d}</li>)}
-                </ul>
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" onClick={() => setView({ kind: "overview" })}>
+                  Voltar
+                </Button>
+                {ins.status === "INDEFERIDA" && (
+                  <Button
+                    onClick={() =>
+                      setView({ kind: "recurso", inscricaoId: ins.id, editalId: ins.editalId })
+                    }
+                  >
+                    Interpor recurso
+                  </Button>
+                )}
               </div>
             </div>
-            {ins.parecer && (
-              <div className="rounded-xl border bg-card p-5 shadow-card">
-                <h3 className="font-semibold flex items-center gap-2">
-                  {ins.status === "Deferida" ? <CheckCircle className="h-4 w-4 text-green-500" /> : <XCircle className="h-4 w-4 text-red-500" />}
-                  Parecer
-                </h3>
-                <p className="mt-2 text-[13px] text-muted-foreground">{ins.parecer}</p>
-              </div>
-            )}
-            <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setView({ kind: "overview" })}>Voltar</Button>
-              {ins.status === "Indeferida" && <Button onClick={() => setView({ kind: "recurso", inscricaoId: ins.id })}>Interpor recurso</Button>}
-            </div>
-          </div>
-        );
-      })()}
+          );
+        })()}
     </AppShell>
   );
 }
 
-const steps = [{ key: "elig", label: "Elegibilidade" }, { key: "doc", label: "Documentos" }, { key: "ok", label: "Confirmação" }];
+const steps = [
+  { key: "elig", label: "Elegibilidade" },
+  { key: "doc", label: "Documentos" },
+  { key: "ok", label: "Confirmação" },
+];
 
-function InscricaoWizard({ step, onStep, onDone }: { step: 0 | 1 | 2; onStep: (s: 0 | 1 | 2) => void; onDone: () => void }) {
+function InscricaoWizard({
+  step,
+  submitting,
+  onStep,
+  onSubmit,
+  onDone,
+}: {
+  step: 0 | 1 | 2;
+  submitting: boolean;
+  onStep: (s: 0 | 1 | 2) => void;
+  onSubmit: () => void;
+  onDone: () => void;
+}) {
   return (
     <div className="space-y-5">
-      <Button variant="ghost" size="sm" onClick={onDone}><ArrowLeft className="mr-1 h-4 w-4" /> Cancelar</Button>
+      <Button variant="ghost" size="sm" onClick={onDone}>
+        <ArrowLeft className="mr-1 h-4 w-4" /> Cancelar
+      </Button>
       <Stepper steps={steps} current={step} />
       {step === 0 && (
         <div className="rounded-xl border bg-card p-6 shadow-card">
           <SectionTitle title="Verificação de elegibilidade" />
-          <div className="mt-4 space-y-3">
-            <ProgressRow label="CR mínimo (7,0)" current={8} total={10} unit="" tone="success" />
-            <ProgressRow label="Renda per capita" current={1} total={2} unit="sal." tone="success" />
-            <ProgressRow label="Matrícula ativa" current={1} total={1} unit="" tone="success" />
+          <ValidationCallout className="mt-4" tone="info">
+            Confirmo que atendo aos critérios de elegibilidade descritos no edital.
+          </ValidationCallout>
+          <div className="mt-4 flex justify-end">
+            <Button onClick={() => onStep(1)}>Avançar</Button>
           </div>
-          <ValidationCallout className="mt-4" tone="info">Você atende a todos os critérios.</ValidationCallout>
-          <div className="mt-4 flex justify-end"><Button onClick={() => onStep(1)}>Avançar</Button></div>
         </div>
       )}
       {step === 1 && (
         <div className="rounded-xl border bg-card p-6 shadow-card">
           <SectionTitle title="Documentação" />
           <div className="mt-4 grid grid-cols-2 gap-4">
-            <FormField label="Comprovante de renda" required full><Input type="file" className="h-10" /></FormField>
-            <FormField label="Comprovante de residência" required full><Input type="file" className="h-10" /></FormField>
-            <FormField label="Declaração socioeconômica" full><Input type="file" className="h-10" /></FormField>
+            <FormField label="Comprovante de renda" required full>
+              <Input type="file" className="h-10" />
+            </FormField>
+            <FormField label="Comprovante de residência" required full>
+              <Input type="file" className="h-10" />
+            </FormField>
+            <FormField label="Declaração socioeconômica" full>
+              <Input type="file" className="h-10" />
+            </FormField>
           </div>
-          <div className="mt-4 flex justify-end gap-2"><Button variant="outline" onClick={() => onStep(0)}>Voltar</Button><Button onClick={() => onStep(2)}>Enviar inscrição</Button></div>
+          <div className="mt-4 flex justify-end gap-2">
+            <Button variant="outline" onClick={() => onStep(0)}>
+              Voltar
+            </Button>
+            <Button disabled={submitting} onClick={onSubmit}>
+              Enviar inscrição
+            </Button>
+          </div>
         </div>
       )}
       {step === 2 && (
         <div className="space-y-4">
-          <SuccessBanner title="Inscrição registrada!" description="Protocolo INS-2025-220 · Aguardando análise da Assistência Estudantil." />
+          <SuccessBanner
+            title="Inscrição registrada!"
+            description="Aguardando análise da Assistência Estudantil."
+          />
           <Button onClick={onDone}>Voltar</Button>
         </div>
       )}
@@ -309,116 +749,153 @@ function InscricaoWizard({ step, onStep, onDone }: { step: 0 | 1 | 2; onStep: (s
   );
 }
 
-type InscricaoAssistencia = { id: string; aluno: string; edital: string; renda: string; cr: string; status: "Em análise" | "Deferida" | "Indeferida" | "Pendente doc."; dataEnvio?: string; documentos?: string[]; parecer?: string; matricula?: string; curso?: string; periodo?: string };
+/* ===== Visão da Assistência Estudantil ===== */
 
-const inscricoesAssistenciaIniciais: InscricaoAssistencia[] = [
-  { id: "INS-2025-219", aluno: "Maria Santos", edital: "Bolsa Institucional 50%", renda: "0,9 sal.", cr: "8,4", status: "Em análise", dataEnvio: "12/03/2025", documentos: ["Comprovante de renda", "Comprovante de residência"], matricula: "202310245", curso: "Engenharia Civil", periodo: "4º" },
-  { id: "INS-2025-220", aluno: "Pedro Almeida", edital: "Auxílio Transporte", renda: "1,2 sal.", cr: "7,1", status: "Em análise", dataEnvio: "14/03/2025", documentos: ["Comprovante de matrícula", "Comprovante de residência", "Declaração de transporte"], matricula: "202210112", curso: "Direito", periodo: "6º" },
-  { id: "INS-2025-221", aluno: "Júlia Rocha", edital: "Bolsa Institucional 50%", renda: "1,6 sal.", cr: "9,0", status: "Pendente doc.", dataEnvio: "10/03/2025", documentos: ["Comprovante de renda"], matricula: "202410778", curso: "Medicina", periodo: "2º" },
-  { id: "INS-2025-205", aluno: "Lucas Pires", edital: "Monitoria Remunerada", renda: "—", cr: "8,8", status: "Deferida", dataEnvio: "01/03/2025", documentos: ["Histórico escolar", "Carta de recomendação"], matricula: "202115903", curso: "Física", periodo: "8º" },
-];
+function AssistenciaView({
+  editais,
+  editalNome,
+  loading,
+}: {
+  editais: EditalResumo[];
+  editalNome: (id: number) => string;
+  loading: boolean;
+}) {
+  const inscricoesQuery = useTodasInscricoes();
+  const inscricoes = inscricoesQuery.data ?? [];
 
-function AssistenciaView({ editais, setEditais, inscricoes, setInscricoes }: { editais: Edital[], setEditais: (e: Edital[]) => void, inscricoes: Inscricao[], setInscricoes: (i: Inscricao[]) => void }) {
-  const [inscricoesAssistencia, setInscricoesAssistencia] = useState<InscricaoAssistencia[]>(inscricoesAssistenciaIniciais);
+  const beneficiosQuery = useTodosBeneficios();
+  const beneficios = beneficiosQuery.data ?? [];
+  const renovacoesPendentes = beneficios.filter((b) => b.solicitouRenovacao);
+
+  const criar = useCriarEdital();
+  const publicarResultado = usePublicarResultado();
+  const encerrar = useEncerrarEdital();
+  const deferir = useDeferirInscricao();
+  const indeferir = useIndeferirInscricao();
+
   const [showAdd, setShowAdd] = useState(false);
-  const [newEdital, setNewEdital] = useState({ nome: "", vagas: 0, prazo: "" });
-  const [detailInscricao, setDetailInscricao] = useState<InscricaoAssistencia | null>(null);
-  const [detailEdital, setDetailEdital] = useState<Edital | null>(null);
+  const [form, setForm] = useState({
+    programa: "",
+    descricao: "",
+    vagas: 0,
+    prazoInscricaoInicio: "",
+    prazoInscricaoFim: "",
+    prazoRecursoInicio: "",
+    prazoRecursoFim: "",
+  });
+  const [detailEdital, setDetailEdital] = useState<EditalResumo | null>(null);
 
   const handlePublish = (e: React.FormEvent) => {
     e.preventDefault();
-    const ed: Edital = {
-      id: "EDT-2025-" + (editais.length + 1).toString().padStart(2, "0"),
-      nome: newEdital.nome,
-      vagas: newEdital.vagas,
-      prazo: newEdital.prazo,
-      status: "Aberto",
-      descricao: "Novo edital publicado.",
-      criterios: ["Renda familiar per capita até 1,5 salário mínimo", "CR mínimo: 7,0"],
-    };
-    setEditais([...editais, ed]);
-    setShowAdd(false);
-    toast.success("Edital publicado com sucesso!");
-  };
-
-  const handleEncerrar = (id: string) => {
-    setEditais(editais.map(e => e.id === id ? { ...e, status: "Encerrado" } : e));
-    toast.info("Edital encerrado.");
-  };
-
-  const handleUpdateInscricao = (id: string, status: InscricaoAssistencia["status"]) => {
-    setInscricoesAssistencia(inscricoesAssistencia.map(i => i.id === id ? { ...i, status } : i));
-    if (status === "Deferida") toast.success("Inscrição deferida!");
-    if (status === "Indeferida") toast.error("Inscrição indeferida.");
-  };
-
-  if (detailInscricao) {
-    return (
-      <div className="space-y-4">
-        <Button variant="ghost" size="sm" onClick={() => setDetailInscricao(null)}><ArrowLeft className="mr-1 h-4 w-4" /> Voltar</Button>
-        <SectionTitle title={`Análise ${detailInscricao.id}`} subtitle={`${detailInscricao.aluno} · ${detailInscricao.edital}`} />
-        <div className="grid gap-4 md:grid-cols-2">
-          <div className="rounded-xl border bg-card p-5 shadow-card space-y-3">
-            <h3 className="font-semibold flex items-center gap-2"><User className="h-4 w-4" /> Dados do aluno</h3>
-            <div className="text-[13px]"><span className="text-muted-foreground">Nome:</span> {detailInscricao.aluno}</div>
-            <div className="text-[13px]"><span className="text-muted-foreground">Matrícula:</span> {detailInscricao.matricula}</div>
-            <div className="text-[13px]"><span className="text-muted-foreground">Curso:</span> {detailInscricao.curso}</div>
-            <div className="text-[13px]"><span className="text-muted-foreground">Período:</span> {detailInscricao.periodo}</div>
-            <div className="text-[13px]"><span className="text-muted-foreground">CR:</span> {detailInscricao.cr}</div>
-            <div className="text-[13px]"><span className="text-muted-foreground">Renda per capita:</span> {detailInscricao.renda}</div>
-          </div>
-          <div className="rounded-xl border bg-card p-5 shadow-card space-y-3">
-            <h3 className="font-semibold flex items-center gap-2"><FileText className="h-4 w-4" /> Documentação</h3>
-            <ul className="list-disc pl-5 text-[13px] text-muted-foreground">
-              {detailInscricao.documentos?.map((d, i) => <li key={i}>{d}</li>)}
-            </ul>
-            <div className="mt-2 text-[13px]"><span className="text-muted-foreground">Data de envio:</span> {detailInscricao.dataEnvio}</div>
-            <div className="mt-2 text-[13px]"><span className="text-muted-foreground">Status atual:</span> <StatusBadge tone={detailInscricao.status === "Deferida" ? "success" : detailInscricao.status === "Indeferida" ? "danger" : "warning"}>{detailInscricao.status}</StatusBadge></div>
-          </div>
-        </div>
-        {detailInscricao.status === "Em análise" || detailInscricao.status === "Pendente doc." ? (
-          <div className="rounded-xl border bg-card p-5 shadow-card">
-            <h3 className="font-semibold mb-3">Decisão</h3>
-            <div className="flex gap-2">
-              <Button variant="outline" className="text-red-600 border-red-200 hover:bg-red-50" onClick={() => { handleUpdateInscricao(detailInscricao.id, "Indeferida"); setDetailInscricao(null); }}><XCircle className="mr-1 h-4 w-4" /> Indeferir</Button>
-              <Button className="bg-green-600 hover:bg-green-700" onClick={() => { handleUpdateInscricao(detailInscricao.id, "Deferida"); setDetailInscricao(null); }}><CheckCircle className="mr-1 h-4 w-4" /> Deferir</Button>
-            </div>
-          </div>
-        ) : (
-          <div className="rounded-xl border bg-card p-5 shadow-card">
-            <h3 className="font-semibold mb-2">Parecer final</h3>
-            <p className="text-[13px] text-muted-foreground">Inscrição {detailInscricao.status.toLowerCase()} em {detailInscricao.dataEnvio}.</p>
-          </div>
-        )}
-      </div>
+    criar.mutate(
+      {
+        programa: form.programa,
+        descricao: form.descricao || null,
+        vagas: form.vagas,
+        prazoInscricaoInicio: form.prazoInscricaoInicio,
+        prazoInscricaoFim: form.prazoInscricaoFim,
+        prazoRecursoInicio: form.prazoRecursoInicio,
+        prazoRecursoFim: form.prazoRecursoFim,
+        prazoRenovacao: null,
+      },
+      {
+        onSuccess: () => {
+          setShowAdd(false);
+          setForm({
+            programa: "",
+            descricao: "",
+            vagas: 0,
+            prazoInscricaoInicio: "",
+            prazoInscricaoFim: "",
+            prazoRecursoInicio: "",
+            prazoRecursoFim: "",
+          });
+          toast.success("Edital publicado com sucesso!");
+        },
+        onError: notifyError,
+      },
     );
-  }
+  };
+
+  const handlePublicarResultado = (id: number) => {
+    publicarResultado.mutate(id, {
+      onSuccess: () => toast.success("Resultado publicado! O edital já pode ser encerrado."),
+      onError: notifyError,
+    });
+  };
+
+  const handleEncerrar = (id: number) => {
+    encerrar.mutate(id, { onSuccess: () => toast.info("Edital encerrado."), onError: notifyError });
+  };
+
+  const handleDeferir = (id: number) => {
+    deferir.mutate(
+      { inscricaoId: id, pontuacao: 0 },
+      { onSuccess: () => toast.success("Inscrição deferida!"), onError: notifyError },
+    );
+  };
+  const handleIndeferir = (id: number) => {
+    indeferir.mutate(id, {
+      onSuccess: () => toast.error("Inscrição indeferida."),
+      onError: notifyError,
+    });
+  };
 
   if (detailEdital) {
+    const doEdital = inscricoes.filter((i) => i.editalId === detailEdital.id);
     return (
       <div className="space-y-4">
-        <Button variant="ghost" size="sm" onClick={() => setDetailEdital(null)}><ArrowLeft className="mr-1 h-4 w-4" /> Voltar</Button>
-        <SectionTitle title={`${detailEdital.id} — ${detailEdital.nome}`} subtitle={`${detailEdital.vagas} vagas · inscrições até ${detailEdital.prazo}`} />
+        <Button variant="ghost" size="sm" onClick={() => setDetailEdital(null)}>
+          <ArrowLeft className="mr-1 h-4 w-4" /> Voltar
+        </Button>
+        <SectionTitle
+          title={`EDT-${detailEdital.id} — ${detailEdital.programa}`}
+          subtitle={`${detailEdital.vagas} vagas · inscrições até ${formatData(detailEdital.prazoInscricaoFim)}`}
+        />
+        {detailEdital.descricao && (
+          <div className="rounded-xl border bg-card p-5 shadow-card">
+            <h3 className="font-semibold">Sobre o programa</h3>
+            <p className="mt-2 text-[13px] text-muted-foreground">{detailEdital.descricao}</p>
+          </div>
+        )}
         <div className="rounded-xl border bg-card p-5 shadow-card">
-          <h3 className="font-semibold">Descrição</h3>
-          <p className="mt-2 text-[13px] text-muted-foreground">{detailEdital.descricao}</p>
-        </div>
-        <div className="rounded-xl border bg-card p-5 shadow-card">
-          <h3 className="font-semibold">Critérios</h3>
-          <ul className="mt-2 list-disc pl-5 text-[13px] text-muted-foreground">
-            {detailEdital.criterios?.map((c, i) => <li key={i}>{c}</li>)}
-          </ul>
+          <h3 className="font-semibold">Prazos</h3>
+          <div className="mt-3 grid gap-2 text-[13px] text-muted-foreground sm:grid-cols-2">
+            <div>
+              <span className="text-foreground">Inscrições:</span>{" "}
+              {formatData(detailEdital.prazoInscricaoInicio)} a{" "}
+              {formatData(detailEdital.prazoInscricaoFim)}
+            </div>
+            <div>
+              <span className="text-foreground">Recursos:</span>{" "}
+              {formatData(detailEdital.prazoRecursoInicio)} a{" "}
+              {formatData(detailEdital.prazoRecursoFim)}
+            </div>
+          </div>
         </div>
         <div className="rounded-xl border bg-card p-5 shadow-card">
           <h3 className="font-semibold">Estatísticas</h3>
-          <StatsRow className="mt-3" stats={[
-            { label: "Inscrições recebidas", value: inscricoesAssistencia.filter(i => i.edital === detailEdital.nome).length, tone: "info" },
-            { label: "Em análise", value: inscricoesAssistencia.filter(i => i.edital === detailEdital.nome && i.status === "Em análise").length, tone: "warning" },
-            { label: "Deferidas", value: inscricoesAssistencia.filter(i => i.edital === detailEdital.nome && i.status === "Deferida").length, tone: "success" },
-          ]} />
+          <StatsRow
+            className="mt-3"
+            stats={[
+              { label: "Inscrições recebidas", value: doEdital.length, tone: "info" },
+              {
+                label: "Em análise",
+                value: doEdital.filter((i) => i.status === "PENDENTE").length,
+                tone: "warning",
+              },
+              {
+                label: "Deferidas",
+                value: doEdital.filter((i) => i.status === "DEFERIDA").length,
+                tone: "success",
+              },
+            ]}
+          />
         </div>
         <div className="flex justify-end">
-          <Button variant="outline" onClick={() => setDetailEdital(null)}>Voltar</Button>
+          <Button variant="outline" onClick={() => setDetailEdital(null)}>
+            Voltar
+          </Button>
         </div>
       </div>
     );
@@ -426,67 +903,219 @@ function AssistenciaView({ editais, setEditais, inscricoes, setInscricoes }: { e
 
   return (
     <div className="space-y-5">
-      <StatsRow stats={[
-        { label: "Pedidos aguardando", value: inscricoesAssistencia.filter((i) => i.status === "Em análise").length, tone: "warning" },
-        { label: "Pendentes de documento", value: inscricoesAssistencia.filter((i) => i.status === "Pendente doc.").length, tone: "danger" },
-        { label: "Deferidas no mês", value: inscricoesAssistencia.filter((i) => i.status === "Deferida").length, tone: "success" },
-        { label: "Editais vigentes", value: editais.filter((e) => e.status === "Aberto").length, tone: "info" },
-      ]} />
+      <StatsRow
+        stats={[
+          {
+            label: "Pedidos aguardando",
+            value: inscricoes.filter((i) => i.status === "PENDENTE").length,
+            tone: "warning",
+          },
+          {
+            label: "Recursos",
+            value: inscricoes.filter((i) => i.status === "RECURSO_INTERPOSTO").length,
+            tone: "danger",
+          },
+          {
+            label: "Deferidas",
+            value: inscricoes.filter((i) => i.status === "DEFERIDA").length,
+            tone: "success",
+          },
+          { label: "Renovações", value: renovacoesPendentes.length, tone: "warning" },
+          {
+            label: "Editais vigentes",
+            value: editais.filter(inscricaoAberta).length,
+            tone: "info",
+          },
+        ]}
+      />
 
       <div className="flex items-center justify-between">
         <SectionTitle title="Editais publicados" />
-        <Button size="sm" onClick={() => setShowAdd(!showAdd)}><Plus className="mr-1 h-4 w-4" /> Publicar edital</Button>
+        <Button size="sm" onClick={() => setShowAdd(!showAdd)}>
+          <Plus className="mr-1 h-4 w-4" /> Publicar edital
+        </Button>
       </div>
 
       {showAdd && (
-        <form onSubmit={handlePublish} className="rounded-xl border bg-card p-5 shadow-card animate-in fade-in slide-in-from-top-2">
+        <form
+          onSubmit={handlePublish}
+          className="rounded-xl border bg-card p-5 shadow-card animate-in fade-in slide-in-from-top-2"
+        >
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <FormField label="Título do Edital" required><Input value={newEdital.nome} onChange={e => setNewEdital({ ...newEdital, nome: e.target.value })} required /></FormField>
-            <FormField label="Vagas" required><Input type="number" value={newEdital.vagas} onChange={e => setNewEdital({ ...newEdital, vagas: parseInt(e.target.value) })} required /></FormField>
-            <FormField label="Prazo (DD/MM/AAAA)" required><Input value={newEdital.prazo} onChange={e => setNewEdital({ ...newEdital, prazo: e.target.value })} required /></FormField>
+            <FormField label="Programa" required>
+              <Input
+                value={form.programa}
+                onChange={(e) => setForm({ ...form, programa: e.target.value })}
+                required
+              />
+            </FormField>
+            <FormField label="Vagas" required>
+              <Input
+                type="number"
+                value={form.vagas}
+                onChange={(e) => setForm({ ...form, vagas: parseInt(e.target.value) || 0 })}
+                required
+              />
+            </FormField>
+            <FormField label="Início inscrições" required>
+              <Input
+                type="date"
+                value={form.prazoInscricaoInicio}
+                onChange={(e) => setForm({ ...form, prazoInscricaoInicio: e.target.value })}
+                required
+              />
+            </FormField>
+            <FormField label="Fim inscrições" required>
+              <Input
+                type="date"
+                value={form.prazoInscricaoFim}
+                onChange={(e) => setForm({ ...form, prazoInscricaoFim: e.target.value })}
+                required
+              />
+            </FormField>
+            <FormField label="Início recursos" required>
+              <Input
+                type="date"
+                value={form.prazoRecursoInicio}
+                onChange={(e) => setForm({ ...form, prazoRecursoInicio: e.target.value })}
+                required
+              />
+            </FormField>
+            <FormField label="Fim recursos" required>
+              <Input
+                type="date"
+                value={form.prazoRecursoFim}
+                onChange={(e) => setForm({ ...form, prazoRecursoFim: e.target.value })}
+                required
+              />
+            </FormField>
+            <FormField label="Descrição" full className="md:col-span-3">
+              <Textarea
+                rows={3}
+                placeholder="Descreva o programa, critérios e informações relevantes para os estudantes."
+                value={form.descricao}
+                onChange={(e) => setForm({ ...form, descricao: e.target.value })}
+              />
+            </FormField>
           </div>
           <div className="mt-4 flex justify-end gap-2">
-            <Button type="button" variant="outline" onClick={() => setShowAdd(false)}>Cancelar</Button>
-            <Button type="submit">Publicar</Button>
+            <Button type="button" variant="outline" onClick={() => setShowAdd(false)}>
+              Cancelar
+            </Button>
+            <Button type="submit" disabled={criar.isPending}>
+              Publicar
+            </Button>
           </div>
         </form>
       )}
 
-      <DataTable
-        columns={[
-          { key: "id", header: "Código" }, { key: "nome", header: "Edital" },
-          { key: "vagas", header: "Vagas", align: "right" }, { key: "prazo", header: "Prazo" },
-          { key: "status", header: "Status", render: (r) => <StatusBadge tone={r.status === "Aberto" ? "success" : "neutral"}>{r.status}</StatusBadge> },
-          { key: "acoes", header: "", align: "right", render: (r) => (
-            <div className="flex justify-end gap-1.5">
-              {r.status === "Aberto" && <RowActionButton tone="danger" onClick={() => handleEncerrar(r.id)}>Encerrar</RowActionButton>}
-              <RowActionButton tone="neutral" onClick={() => setDetailEdital(r)}>Detalhes</RowActionButton>
-            </div>
-          )},
-        ]}
-        rows={editais}
-      />
+      {loading ? (
+        <p className="text-sm text-muted-foreground">Carregando editais…</p>
+      ) : (
+        <DataTable
+          columns={[
+            { key: "codigo", header: "Código", render: (r) => `EDT-${r.id}` },
+            { key: "programa", header: "Edital" },
+            { key: "vagas", header: "Vagas", align: "right" },
+            { key: "prazo", header: "Prazo", render: (r) => formatData(r.prazoInscricaoFim) },
+            {
+              key: "status",
+              header: "Status",
+              render: (r) => <StatusBadge tone={editalTone(r)}>{editalLabel(r)}</StatusBadge>,
+            },
+            {
+              key: "acoes",
+              header: "",
+              align: "right",
+              render: (r) => (
+                <div className="flex justify-end gap-1.5">
+                  {r.status === "INSCRICOES_ABERTAS" && recursoEncerrado(r) && (
+                    <RowActionButton onClick={() => handlePublicarResultado(r.id)}>
+                      Publicar resultado
+                    </RowActionButton>
+                  )}
+                  {r.status === "RESULTADO_PUBLICADO" && (
+                    <RowActionButton tone="danger" onClick={() => handleEncerrar(r.id)}>
+                      Encerrar
+                    </RowActionButton>
+                  )}
+                  <RowActionButton tone="neutral" onClick={() => setDetailEdital(r)}>
+                    Detalhes
+                  </RowActionButton>
+                </div>
+              ),
+            },
+          ]}
+          rows={editais}
+        />
+      )}
+
       <SectionTitle title="Fila de análise" />
-      <DataTable
-        columns={[
-          { key: "id", header: "Protocolo" }, { key: "aluno", header: "Aluno" },
-          { key: "edital", header: "Edital" }, { key: "renda", header: "Renda per capita", align: "right" },
-          { key: "cr", header: "CR", align: "right" },
-          { key: "status", header: "Status", render: (r) => (
-            <StatusBadge tone={r.status === "Deferida" ? "success" : r.status === "Indeferida" ? "danger" : r.status === "Pendente doc." ? "warning" : "info"}>{r.status}</StatusBadge>
-          )},
-          { key: "acoes", header: "", align: "right", render: (r) => (
-            r.status === "Em análise" || r.status === "Pendente doc." ? (
-              <div className="flex justify-end gap-1.5">
-                <RowActionButton tone="danger" onClick={() => handleUpdateInscricao(r.id, "Indeferida")}>Indeferir</RowActionButton>
-                <RowActionButton onClick={() => handleUpdateInscricao(r.id, "Deferida")}>Deferir</RowActionButton>
-                <RowActionButton tone="neutral" onClick={() => setDetailInscricao(r)}>Detalhes</RowActionButton>
-              </div>
-            ) : <RowActionButton tone="neutral" onClick={() => setDetailInscricao(r)}>Detalhes</RowActionButton>
-          )},
-        ]}
-        rows={inscricoesAssistencia}
+      {inscricoesQuery.isLoading ? (
+        <p className="text-sm text-muted-foreground">Carregando inscrições…</p>
+      ) : inscricoes.length === 0 ? (
+        <ValidationCallout tone="info">Nenhuma inscrição recebida até o momento.</ValidationCallout>
+      ) : (
+        <DataTable
+          columns={[
+            { key: "protocolo", header: "Protocolo", render: (r) => `INS-${r.id}` },
+            { key: "aluno", header: "Estudante", render: (r) => `Estudante #${r.estudanteId}` },
+            { key: "edital", header: "Edital", render: (r) => editalNome(r.editalId) },
+            { key: "pontuacao", header: "Pontuação", align: "right" },
+            {
+              key: "status",
+              header: "Status",
+              render: (r) => (
+                <StatusBadge tone={inscricaoTone(r.status)}>{inscricaoLabel(r.status)}</StatusBadge>
+              ),
+            },
+            {
+              key: "acoes",
+              header: "",
+              align: "right",
+              render: (r) =>
+                r.status === "PENDENTE" ? (
+                  <div className="flex justify-end gap-1.5">
+                    <RowActionButton tone="danger" onClick={() => handleIndeferir(r.id)}>
+                      Indeferir
+                    </RowActionButton>
+                    <RowActionButton onClick={() => handleDeferir(r.id)}>Deferir</RowActionButton>
+                  </div>
+                ) : (
+                  <span className="text-[12px] text-muted-foreground">—</span>
+                ),
+            },
+          ]}
+          rows={inscricoes}
+        />
+      )}
+
+      <SectionTitle
+        title="Solicitações de renovação"
+        subtitle="Renovações de benefício pedidas pelos estudantes"
       />
+      {beneficiosQuery.isLoading ? (
+        <p className="text-sm text-muted-foreground">Carregando solicitações…</p>
+      ) : renovacoesPendentes.length === 0 ? (
+        <ValidationCallout tone="info">
+          Nenhuma solicitação de renovação pendente.
+        </ValidationCallout>
+      ) : (
+        <DataTable
+          columns={[
+            { key: "protocolo", header: "Protocolo", render: (r) => `BEN-${r.id}` },
+            { key: "aluno", header: "Estudante", render: (r) => `Estudante #${r.estudanteId}` },
+            { key: "edital", header: "Benefício", render: (r) => editalNome(r.editalId) },
+            { key: "prazo", header: "Renova em", render: (r) => formatData(r.prazoRenovacao) },
+            {
+              key: "status",
+              header: "Status",
+              render: () => <StatusBadge tone="warning">Aguardando análise</StatusBadge>,
+            },
+          ]}
+          rows={renovacoesPendentes}
+        />
+      )}
     </div>
   );
 }
