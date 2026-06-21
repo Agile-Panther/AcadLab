@@ -28,7 +28,7 @@ public class Pagamento {
         notNull(justificativa, "justificativa obrigatória");
         notNull(responsavel, "responsavel obrigatório");
         if (status != StatusPagamento.CONFIRMADO)
-            throw new IllegalStateException("RN10: Apenas pagamentos confirmados podem ser cancelados");
+            throw new IllegalStateException("pagamento já cancelado não pode ser cancelado novamente");
         this.status = StatusPagamento.CANCELADO;
     }
 

@@ -1,16 +1,17 @@
-#language: pt
+# language: pt
+
 Funcionalidade: Criar matriz curricular
 
-  Cenário: Coordinator creates a curricular matrix with sufficient workload
-    Dado a course with id 10
-    E a new curricular matrix named "Engenharia de Software" with minimum workload 2400 and minimum credits 160
-    E a discipline with id 1 is added with workload 2400 and credits 160
-    Quando the coordinator activates the matrix
-    Então the matrix status should be ATIVA
+  Cenário: Coordenador cria matriz curricular com carga horária suficiente
+    Dado um curso com id 10
+    E uma nova matriz curricular chamada "Engenharia de Software" com carga horária mínima 2400 e créditos mínimos 160
+    E uma disciplina com id 1 adicionada com carga horária 2400 e créditos 160
+    Quando o coordenador ativa a matriz
+    Então o status da matriz deve ser ATIVA
 
-  Cenário: Activating matrix with insufficient workload is rejected
-    Dado a course with id 10
-    E a new curricular matrix named "Engenharia de Software" with minimum workload 2400 and minimum credits 160
-    E a discipline with id 1 is added with workload 60 and credits 4
-    Quando the coordinator tries to activate the matrix
-    Então the system rejects the activation with message containing "RN-2"
+  Cenário: Ativar matriz com carga horária insuficiente é rejeitado
+    Dado um curso com id 10
+    E uma nova matriz curricular chamada "Engenharia de Software" com carga horária mínima 2400 e créditos mínimos 160
+    E uma disciplina com id 1 adicionada com carga horária 60 e créditos 4
+    Quando o coordenador tenta ativar a matriz
+    Então o sistema deve rejeitar informando "carga horária total não atinge o mínimo exigido"

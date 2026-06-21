@@ -51,16 +51,16 @@ function Painel() {
   return (
     <>
       <StatsRow stats={[
-        { label: "Status", value: isLoading ? "…" : statusLabel(data?.status ?? ""), tone: statusTone(data?.status ?? "") },
+        { label: "Status", value: isLoading ? "…" : data ? statusLabel(data.status) : "—", tone: data ? statusTone(data.status) : "neutral" as any },
         { label: "Período Letivo", value: isLoading ? "…" : data ? `Período ${data.periodoLetivoId}` : "—", tone: "info" },
-        { label: "Janela de Ajuste", value: "11 dias", tone: "warning" },
+        { label: "Janela de Ajuste", value: "—", tone: "warning" },
         { label: "Pendências", value: 0, tone: "neutral" as any },
       ]} />
       {isError && <p className="text-sm text-destructive px-1">Não foi possível conectar ao servidor.</p>}
       <div className="rounded-xl border bg-card p-5 shadow-card">
         <SectionTitle
           title="Visão geral da matrícula"
-          subtitle={data ? `Matrícula ${data.id} · Estudante ${data.estudanteId} · ${statusLabel(data.status)}` : "Carregando..."}
+          subtitle={isLoading ? "Carregando..." : data ? `Matrícula ${data.id} · Estudante ${data.estudanteId} · ${statusLabel(data.status)}` : "Nenhuma matrícula ativa para este período"}
         />
       </div>
     </>

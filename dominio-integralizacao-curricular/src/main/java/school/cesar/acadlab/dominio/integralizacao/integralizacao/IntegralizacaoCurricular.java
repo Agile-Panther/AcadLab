@@ -66,7 +66,7 @@ public class IntegralizacaoCurricular {
     public AptidaoAprovadaEvento aprovarAptidao(CoordenadorId aprovadorId) {
         notNull(aprovadorId, "O aprovador não pode ser nulo");
         if (status != StatusIntegralizacao.APTO) {
-            throw new IllegalStateException("RN5: Apenas integralizações com resultado apto podem ser aprovadas");
+            throw new IllegalStateException("resultado da análise de integralização é inapto");
         }
         this.aprovadorId = aprovadorId;
         this.dataAprovacao = LocalDate.now();

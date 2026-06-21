@@ -12,11 +12,15 @@ import school.cesar.acadlab.dominio.ofertaturmas.turma.decorator.EstudanteId;
 import school.cesar.acadlab.dominio.ofertaturmas.turma.decorator.TurmaComListaEspera;
 import school.cesar.acadlab.dominio.ofertaturmas.turma.decorator.TurmaOnline;
 
-public class TurmaDecoradorFuncionalidade extends OfertaTurmasFuncionalidade {
+public class TurmaDecoradorFuncionalidade {
 
+    private final OfertaTurmasFuncionalidade ctx;
     private TurmaComListaEspera turmaComLista;
     private TurmaOnline turmaOnline;
-    private RuntimeException excecao;
+
+    public TurmaDecoradorFuncionalidade(OfertaTurmasFuncionalidade ctx) {
+        this.ctx = ctx;
+    }
 
     @Dado("uma turma ofertada com lista de espera habilitada")
     public void turma_com_lista_espera() {
@@ -30,13 +34,13 @@ public class TurmaDecoradorFuncionalidade extends OfertaTurmasFuncionalidade {
         try {
             turmaComLista.entrarListaEspera(new EstudanteId(id));
         } catch (RuntimeException e) {
-            excecao = e;
+            ctx.excecao = e;
         }
     }
 
     @Entao("a lista de espera contém {int} estudante")
     public void lista_contem_estudante(int quantidade) {
-        assertNull(excecao);
+        assertNull(ctx.excecao);
         assertEquals(quantidade, turmaComLista.getListaEspera().size());
     }
 
@@ -45,14 +49,8 @@ public class TurmaDecoradorFuncionalidade extends OfertaTurmasFuncionalidade {
         try {
             turmaComLista.entrarListaEspera(new EstudanteId(id));
         } catch (RuntimeException e) {
-            excecao = e;
+            ctx.excecao = e;
         }
-    }
-
-    @Entao("o sistema rejeita a entrada duplicada na lista de espera")
-    public void rejeitar_entrada_duplicada() {
-        assertNotNull(excecao);
-        assertInstanceOf(IllegalStateException.class, excecao);
     }
 
     @Dado("uma turma EAD com decorator online")

@@ -10,19 +10,23 @@ import school.cesar.acadlab.dominio.permanenciaacademica.EditalId;
 import school.cesar.acadlab.dominio.permanenciaacademica.PermanenciaAcademicaFuncionalidade;
 import school.cesar.acadlab.dominio.permanenciaacademica.StatusEdital;
 
-public class PublicarResultadoFuncionalidade extends PermanenciaAcademicaFuncionalidade {
+public class PublicarResultadoFuncionalidade {
+    private final PermanenciaAcademicaFuncionalidade ctx;
     private EditalId editalId;
-    private RuntimeException excecao;
+
+    public PublicarResultadoFuncionalidade(PermanenciaAcademicaFuncionalidade ctx) {
+        this.ctx = ctx;
+    }
 
     private static final String PROGRAMA = "Bolsa Permanência";
 
     private EditalId criarEditalComStatus(LocalDate prazoRecursoFim) {
-        var id = repositorio.proximoEditalId();
+        var id = ctx.repositorio.proximoEditalId();
         var edital = Edital.reconstituir(id, PROGRAMA, 5,
                 LocalDate.now().minusDays(20), LocalDate.now().minusDays(10),
                 LocalDate.now().minusDays(9), prazoRecursoFim,
                 LocalDate.now().plusDays(180), StatusEdital.INSCRICOES_ABERTAS);
-        repositorio.salvar(edital);
+        ctx.repositorio.salvar(edital);
         return id;
     }
 
@@ -33,12 +37,12 @@ public class PublicarResultadoFuncionalidade extends PermanenciaAcademicaFuncion
 
     @Quando("a assistência estudantil publica o resultado final")
     public void publica_resultado() {
-        editalServico.publicarResultado(editalId, LocalDate.now());
+        ctx.editalServico.publicarResultado(editalId, LocalDate.now());
     }
 
     @Entao("o sistema atualiza o status do edital para resultado publicado")
     public void status_resultado_publicado() {
-        var edital = repositorio.obter(editalId);
+        var edital = ctx.repositorio.obter(editalId);
         assertEquals(StatusEdital.RESULTADO_PUBLICADO, edital.getStatus());
     }
 
@@ -50,32 +54,32 @@ public class PublicarResultadoFuncionalidade extends PermanenciaAcademicaFuncion
     @Quando("a assistência estudantil tenta publicar o resultado final")
     public void tenta_publicar_resultado() {
         try {
-            editalServico.publicarResultado(editalId, LocalDate.now());
+            ctx.editalServico.publicarResultado(editalId, LocalDate.now());
         } catch (RuntimeException e) {
-            excecao = e;
+            ctx.excecao = e;
         }
     }
 
     @Entao("o sistema informa que o prazo de recursos ainda não encerrou")
     public void informa_prazo_recurso_aberto() {
-        assertNotNull(excecao);
-        assertInstanceOf(IllegalStateException.class, excecao);
+        assertNotNull(ctx.excecao);
+        assertInstanceOf(IllegalStateException.class, ctx.excecao);
     }
 
     @Dado("existe um edital com resultado final publicado")
     public void edital_com_resultado_publicado() {
         editalId = criarEditalComStatus(LocalDate.now().minusDays(1));
-        editalServico.publicarResultado(editalId, LocalDate.now());
+        ctx.editalServico.publicarResultado(editalId, LocalDate.now());
     }
 
     @Quando("a secretaria encerra o edital")
     public void secretaria_encerra_edital() {
-        editalServico.encerrar(editalId);
+        ctx.editalServico.encerrar(editalId);
     }
 
     @Entao("o sistema atualiza o status do edital para encerrado")
     public void status_encerrado() {
-        var edital = repositorio.obter(editalId);
+        var edital = ctx.repositorio.obter(editalId);
         assertEquals(StatusEdital.ENCERRADO, edital.getStatus());
     }
 
@@ -87,15 +91,15 @@ public class PublicarResultadoFuncionalidade extends PermanenciaAcademicaFuncion
     @Quando("a secretaria tenta encerrar o edital")
     public void tenta_encerrar_edital() {
         try {
-            editalServico.encerrar(editalId);
+            ctx.editalServico.encerrar(editalId);
         } catch (RuntimeException e) {
-            excecao = e;
+            ctx.excecao = e;
         }
     }
 
     @Entao("o sistema informa que o resultado final ainda não foi publicado")
     public void informa_resultado_nao_publicado() {
-        assertNotNull(excecao);
-        assertInstanceOf(IllegalStateException.class, excecao);
+        assertNotNull(ctx.excecao);
+        assertInstanceOf(IllegalStateException.class, ctx.excecao);
     }
 }

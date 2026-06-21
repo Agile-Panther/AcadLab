@@ -3,6 +3,7 @@ package school.cesar.acadlab.dominio.estagios.estagio;
 import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import school.cesar.acadlab.dominio.estagios.candidatura.CandidaturaId;
 import school.cesar.acadlab.dominio.estagios.oportunidade.CoordenadorId;
 import school.cesar.acadlab.dominio.estagios.oportunidade.EmpresaId;
 import school.cesar.acadlab.dominio.estagios.oportunidade.EstudanteId;
@@ -16,7 +17,7 @@ class EstagioTest {
     @BeforeEach
     void setUp() {
         estagio = new Estagio(new EstagioId(1), new OportunidadeId(1),
-                new EstudanteId(1), new EmpresaId(1));
+                new CandidaturaId(1), new EstudanteId(1), new EmpresaId(1));
         coordenadorId = new CoordenadorId(10);
     }
 
@@ -38,7 +39,7 @@ class EstagioTest {
         estagio.submeterRelatorio(1, "Primeiro relatório");
         var ex = assertThrows(IllegalStateException.class,
                 () -> estagio.submeterRelatorio(1, "Duplicado"));
-        assertTrue(ex.getMessage().contains("RN-8"));
+        assertTrue(ex.getMessage().contains("relatório com este número já foi submetido"));
     }
 
     @Test
@@ -60,7 +61,7 @@ class EstagioTest {
         estagio.submeterRelatorio(1, "Relatório mensal");
         var ex = assertThrows(IllegalArgumentException.class,
                 () -> estagio.avaliarRelatorio(1, StatusRelatorio.PENDENTE));
-        assertTrue(ex.getMessage().contains("RN-9"));
+        assertTrue(ex.getMessage().contains("resultado da avaliação não pode ser PENDENTE"));
     }
 
     @Test
@@ -69,7 +70,7 @@ class EstagioTest {
         estagio.avaliarRelatorio(1, StatusRelatorio.APROVADO);
         var ex = assertThrows(IllegalStateException.class,
                 () -> estagio.avaliarRelatorio(1, StatusRelatorio.REJEITADO));
-        assertTrue(ex.getMessage().contains("RN-10"));
+        assertTrue(ex.getMessage().contains("apenas relatórios pendentes podem ser avaliados"));
     }
 
     @Test
@@ -82,7 +83,7 @@ class EstagioTest {
     void deveRejeitarSolicitacaoEncerramentoQuandoNaoEmAndamento() {
         estagio.solicitarEncerramento();
         var ex = assertThrows(IllegalStateException.class, () -> estagio.solicitarEncerramento());
-        assertTrue(ex.getMessage().contains("RN-11"));
+        assertTrue(ex.getMessage().contains("encerramento já solicitado para este estágio"));
     }
 
     @Test
@@ -96,6 +97,6 @@ class EstagioTest {
     void deveRejeitarHomologacaoSemSolicitacao() {
         var ex = assertThrows(IllegalStateException.class,
                 () -> estagio.homologarEncerramento(coordenadorId));
-        assertTrue(ex.getMessage().contains("RN-12"));
+        assertTrue(ex.getMessage().contains("não há solicitação de encerramento para homologar"));
     }
 }

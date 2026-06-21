@@ -42,7 +42,7 @@ public class ResultadoEstudante {
     // RN-8: resultado fechado exige revisão formal para alteração.
     public void adicionarNota(AvaliacaoId avaliacaoId, double nota) {
         if (fechado) {
-            throw new IllegalStateException("RN-8: Resultado fechado exige revisão formal para alteração");
+            throw new IllegalStateException("resultado já está fechado");
         }
         notas.put(avaliacaoId, nota);
     }

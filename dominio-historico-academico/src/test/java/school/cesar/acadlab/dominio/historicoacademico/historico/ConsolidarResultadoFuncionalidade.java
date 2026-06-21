@@ -6,39 +6,43 @@ import io.cucumber.java.pt.Entao;
 import io.cucumber.java.pt.Quando;
 import school.cesar.acadlab.dominio.historicoacademico.HistoricoFuncionalidade;
 
-public class ConsolidarResultadoFuncionalidade extends HistoricoFuncionalidade {
+public class ConsolidarResultadoFuncionalidade {
+    private final HistoricoFuncionalidade ctx;
     private HistoricoAcademico historico;
-    private RuntimeException excecao;
+
+    public ConsolidarResultadoFuncionalidade(HistoricoFuncionalidade ctx) {
+        this.ctx = ctx;
+    }
 
     @Dado("um histórico acadêmico de estudante ativo para consolidação")
     public void historicoDeEstudanteAtivo() {
         historico = new HistoricoAcademico(
-                repositorio.proximoId(),
+                ctx.repositorio.proximoId(),
                 new EstudanteId(1),
                 new MatrizCurricularId(1));
-        repositorio.salvar(historico);
+        ctx.repositorio.salvar(historico);
     }
 
     @Quando("a secretaria consolida o resultado de uma turma encerrada com situação {string}")
     public void consolidaResultadoTurmaEncerrada(String situacaoStr) {
         try {
             historico.consolidarRegistro(
-                    repositorio.proximoRegistroId(),
+                    ctx.repositorio.proximoRegistroId(),
                     new DisciplinaId(1),
                     new TurmaId(1),
                     new PeriodoLetivoId(1),
                     8.5, 85.0,
                     SituacaoAcademica.valueOf(situacaoStr),
                     true);
-            repositorio.salvar(historico);
+            ctx.repositorio.salvar(historico);
         } catch (RuntimeException e) {
-            excecao = e;
+            ctx.excecao = e;
         }
     }
 
     @Entao("o registro é adicionado ao histórico com a situação {string}")
     public void registroAdicionadoComSituacao(String situacaoStr) {
-        assertNull(excecao, "Não deveria ter lançado exceção");
+        assertNull(ctx.excecao, "Não deveria ter lançado exceção");
         assertEquals(1, historico.getRegistros().size());
         assertEquals(SituacaoAcademica.valueOf(situacaoStr),
                 historico.getRegistros().get(0).getSituacao());
@@ -48,7 +52,7 @@ public class ConsolidarResultadoFuncionalidade extends HistoricoFuncionalidade {
     public void tentaConsolidarTurmaNaoEncerrada() {
         try {
             historico.consolidarRegistro(
-                    repositorio.proximoRegistroId(),
+                    ctx.repositorio.proximoRegistroId(),
                     new DisciplinaId(1),
                     new TurmaId(1),
                     new PeriodoLetivoId(1),
@@ -56,22 +60,15 @@ public class ConsolidarResultadoFuncionalidade extends HistoricoFuncionalidade {
                     SituacaoAcademica.APROVADO,
                     false);
         } catch (RuntimeException e) {
-            excecao = e;
+            ctx.excecao = e;
         }
-    }
-
-    @Entao("o sistema rejeita a consolidação informando RN-1")
-    public void sistemaRejeitaRN1() {
-        assertNotNull(excecao);
-        assertInstanceOf(IllegalStateException.class, excecao);
-        assertTrue(excecao.getMessage().contains("RN-1"));
     }
 
     @Quando("a secretaria tenta consolidar resultado sem informar situação acadêmica")
     public void tentaConsolidarSemSituacao() {
         try {
             historico.consolidarRegistro(
-                    repositorio.proximoRegistroId(),
+                    ctx.repositorio.proximoRegistroId(),
                     new DisciplinaId(1),
                     new TurmaId(1),
                     new PeriodoLetivoId(1),
@@ -79,14 +76,7 @@ public class ConsolidarResultadoFuncionalidade extends HistoricoFuncionalidade {
                     null,
                     true);
         } catch (RuntimeException e) {
-            excecao = e;
+            ctx.excecao = e;
         }
-    }
-
-    @Entao("o sistema rejeita a consolidação informando RN-2")
-    public void sistemaRejeitaRN2() {
-        assertNotNull(excecao);
-        assertInstanceOf(IllegalStateException.class, excecao);
-        assertTrue(excecao.getMessage().contains("RN-2"));
     }
 }

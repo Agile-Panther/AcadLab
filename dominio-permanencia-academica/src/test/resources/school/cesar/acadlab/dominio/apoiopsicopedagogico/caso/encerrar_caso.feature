@@ -1,4 +1,5 @@
-#language: pt
+# language: pt
+
 Funcionalidade: Encerrar caso psicopedagógico
 
   Cenário: Caso encerrado com conclusão registrada
@@ -9,7 +10,7 @@ Funcionalidade: Encerrar caso psicopedagógico
   Cenário: Encerrar caso sem conclusão ou encaminhamento falha
     Dado um caso psicopedagógico com atendimentos sem conclusão ou encaminhamento
     Quando o psicopedagogo tenta encerrar o caso
-    Então o sistema informa que é necessário registrar uma conclusão ou encaminhamento final antes de encerrar
+    Então o sistema deve rejeitar informando "necessário registrar conclusão ou encaminhamento antes de encerrar o caso"
 
   Cenário: Encerrar caso com atendimento de encaminhamento registrado
     Dado um caso psicopedagógico com atendimento de encaminhamento final registrado

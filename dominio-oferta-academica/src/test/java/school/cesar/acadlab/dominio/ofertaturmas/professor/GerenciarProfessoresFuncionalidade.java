@@ -9,52 +9,45 @@ import school.cesar.acadlab.dominio.ofertaturmas.OfertaTurmasFuncionalidade;
 import school.cesar.acadlab.dominio.ofertaturmas.PeriodoLetivoId;
 import school.cesar.acadlab.dominio.ofertaturmas.turma.ModalidadeTurma;
 
-public class GerenciarProfessoresFuncionalidade extends OfertaTurmasFuncionalidade {
+public class GerenciarProfessoresFuncionalidade {
 
+    private final OfertaTurmasFuncionalidade ctx;
     private ProfessorId professorId;
-    private RuntimeException excecao;
+
+    public GerenciarProfessoresFuncionalidade(OfertaTurmasFuncionalidade ctx) {
+        this.ctx = ctx;
+    }
 
     @Dado("um professor ativo cadastrado")
     public void professor_ativo_cadastrado() {
-        professorId = professorRepositorio.proximoId();
-        professorRepositorio.salvar(new Professor(professorId, "Prof. Santos"));
+        professorId = ctx.professorRepositorio.proximoId();
+        ctx.professorRepositorio.salvar(new Professor(professorId, "Prof. Santos"));
     }
 
     @Quando("a secretaria inativa o professor")
     public void secretaria_inativa_professor() {
-        try {
-            var professor = professorRepositorio.obter(professorId);
-            professor.inativar();
-            professorRepositorio.salvar(professor);
-        } catch (RuntimeException e) {
-            excecao = e;
-        }
+        var professor = ctx.professorRepositorio.obter(professorId);
+        professor.inativar();
+        ctx.professorRepositorio.salvar(professor);
     }
 
     @Entao("o professor passa a ter status inativo")
     public void professor_inativo() {
-        assertNull(excecao, "Não deveria ter lançado exceção");
-        var professor = professorRepositorio.obter(professorId);
+        var professor = ctx.professorRepositorio.obter(professorId);
         assertFalse(professor.isAtivo());
     }
 
     @Quando("a coordenação tenta vincular o professor inativo a uma turma")
     public void vincular_professor_inativo() {
         try {
-            var professor = professorRepositorio.obter(professorId);
+            var professor = ctx.professorRepositorio.obter(professorId);
             professor.inativar();
-            professorRepositorio.salvar(professor);
-            var turma = ofertaTurmaServico.ofertar(
+            ctx.professorRepositorio.salvar(professor);
+            var turma = ctx.ofertaTurmaServico.ofertar(
                     new PeriodoLetivoId(1), new DisciplinaId(1), ModalidadeTurma.PRESENCIAL, 30);
-            ofertaTurmaServico.vincularProfessor(turma.getId(), professorId);
+            ctx.ofertaTurmaServico.vincularProfessor(turma.getId(), professorId);
         } catch (RuntimeException e) {
-            excecao = e;
+            ctx.excecao = e;
         }
-    }
-
-    @Entao("o sistema rejeita a vinculação do professor inativo")
-    public void rejeitar_professor_inativo() {
-        assertNotNull(excecao);
-        assertInstanceOf(IllegalStateException.class, excecao);
     }
 }

@@ -8,32 +8,33 @@ import java.util.List;
 import school.cesar.acadlab.dominio.historicoacademico.ConsultaHistoricoServico;
 import school.cesar.acadlab.dominio.historicoacademico.HistoricoFuncionalidade;
 
-public class ConsultarHistoricoOficialFuncionalidade extends HistoricoFuncionalidade {
+public class ConsultarHistoricoOficialFuncionalidade {
 
+    private final HistoricoFuncionalidade ctx;
     private HistoricoAcademico historico;
     private List<RegistroDisciplina> resultado;
-    private RuntimeException excecao;
     private final ConsultaHistoricoServico consultaServico;
 
-    public ConsultarHistoricoOficialFuncionalidade() {
-        consultaServico = new ConsultaHistoricoServico(repositorio);
+    public ConsultarHistoricoOficialFuncionalidade(HistoricoFuncionalidade ctx) {
+        this.ctx = ctx;
+        this.consultaServico = new ConsultaHistoricoServico(ctx.repositorio);
     }
 
     @Dado("um histórico com um registro consolidado de turma encerrada")
     public void historicoComRegistroConsolidado() {
         historico = new HistoricoAcademico(
-                repositorio.proximoId(),
+                ctx.repositorio.proximoId(),
                 new EstudanteId(1),
                 new MatrizCurricularId(1));
         historico.consolidarRegistro(
-                repositorio.proximoRegistroId(),
+                ctx.repositorio.proximoRegistroId(),
                 new DisciplinaId(1),
                 new TurmaId(1),
                 new PeriodoLetivoId(1),
                 8.5, 85.0,
                 SituacaoAcademica.APROVADO,
                 true);
-        repositorio.salvar(historico);
+        ctx.repositorio.salvar(historico);
     }
 
     @Quando("o sistema consulta o histórico oficial do estudante")
@@ -41,13 +42,13 @@ public class ConsultarHistoricoOficialFuncionalidade extends HistoricoFuncionali
         try {
             resultado = consultaServico.obterHistoricoOficial(new EstudanteId(1));
         } catch (RuntimeException e) {
-            excecao = e;
+            ctx.excecao = e;
         }
     }
 
     @Entao("o histórico oficial contém {int} registro consolidado")
     public void historicoOficialContemRegistros(int quantidade) {
-        assertNull(excecao, "Não deveria ter lançado exceção");
+        assertNull(ctx.excecao, "Não deveria ter lançado exceção");
         assertEquals(quantidade, resultado.size());
     }
 
@@ -61,13 +62,7 @@ public class ConsultarHistoricoOficialFuncionalidade extends HistoricoFuncionali
         try {
             resultado = consultaServico.obterHistoricoOficial(new EstudanteId(99));
         } catch (RuntimeException e) {
-            excecao = e;
+            ctx.excecao = e;
         }
-    }
-
-    @Entao("o sistema informa que o estudante não possui histórico")
-    public void sistemaInformaQueNaoPossuiHistorico() {
-        assertNotNull(excecao);
-        assertInstanceOf(IllegalArgumentException.class, excecao);
     }
 }

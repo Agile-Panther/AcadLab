@@ -13,18 +13,22 @@ import school.cesar.acadlab.dominio.permanenciaacademica.InscricaoId;
 import school.cesar.acadlab.dominio.permanenciaacademica.PermanenciaAcademicaFuncionalidade;
 import school.cesar.acadlab.dominio.permanenciaacademica.StatusBeneficio;
 
-public class BeneficioFuncionalidade extends PermanenciaAcademicaFuncionalidade {
+public class BeneficioFuncionalidade {
+    private final PermanenciaAcademicaFuncionalidade ctx;
     private final EstudantePermanenciaId estudanteId = new EstudantePermanenciaId(1);
     private BeneficioId beneficioId;
-    private RuntimeException excecao;
+
+    public BeneficioFuncionalidade(PermanenciaAcademicaFuncionalidade ctx) {
+        this.ctx = ctx;
+    }
 
     private BeneficioId criarBeneficioAtivo(LocalDate prazoRenovacao) {
-        var id = repositorio.proximoBeneficioId();
+        var id = ctx.repositorio.proximoBeneficioId();
         var beneficio = Beneficio.reconstituir(id,
                 new InscricaoId(1), estudanteId, new EditalId(1),
                 StatusBeneficio.ATIVO, LocalDate.now().minusDays(30),
                 prazoRenovacao, false);
-        repositorio.salvar(beneficio);
+        ctx.repositorio.salvar(beneficio);
         return id;
     }
 
@@ -35,12 +39,12 @@ public class BeneficioFuncionalidade extends PermanenciaAcademicaFuncionalidade 
 
     @Quando("o estudante solicita a renovação do benefício")
     public void solicita_renovacao() {
-        beneficioServico.solicitarRenovacao(beneficioId, LocalDate.now());
+        ctx.beneficioServico.solicitarRenovacao(beneficioId, LocalDate.now());
     }
 
     @Entao("o sistema registra a solicitação de renovação")
     public void sistema_registra_renovacao() {
-        var beneficio = repositorio.obter(beneficioId);
+        var beneficio = ctx.repositorio.obter(beneficioId);
         assertTrue(beneficio.isSolicitouRenovacao());
     }
 
@@ -52,16 +56,16 @@ public class BeneficioFuncionalidade extends PermanenciaAcademicaFuncionalidade 
     @Quando("o estudante tenta solicitar a renovação do benefício")
     public void tenta_solicitar_renovacao() {
         try {
-            beneficioServico.solicitarRenovacao(beneficioId, LocalDate.now());
+            ctx.beneficioServico.solicitarRenovacao(beneficioId, LocalDate.now());
         } catch (RuntimeException e) {
-            excecao = e;
+            ctx.excecao = e;
         }
     }
 
     @Entao("o sistema informa que o prazo de renovação já encerrou")
     public void sistema_informa_prazo_vencido() {
-        assertNotNull(excecao);
-        assertInstanceOf(IllegalStateException.class, excecao);
+        assertNotNull(ctx.excecao);
+        assertInstanceOf(IllegalStateException.class, ctx.excecao);
     }
 
     @Dado("um estudante possui um benefício ativo")
@@ -71,33 +75,33 @@ public class BeneficioFuncionalidade extends PermanenciaAcademicaFuncionalidade 
 
     @Quando("o sistema suspende o benefício por não cumprimento dos critérios")
     public void suspende_beneficio() {
-        beneficioServico.suspender(beneficioId);
+        ctx.beneficioServico.suspender(beneficioId);
     }
 
     @Entao("o status do benefício é atualizado para suspenso")
     public void status_suspenso() {
-        var beneficio = repositorio.obter(beneficioId);
+        var beneficio = ctx.repositorio.obter(beneficioId);
         assertEquals(StatusBeneficio.SUSPENSO, beneficio.getStatus());
     }
 
     @Entao("um evento de suspensão é publicado no barramento")
     public void evento_suspensao_publicado() {
-        assertTrue(eventoBarramento.foiPostado(Beneficio.BeneficioSuspensosEvento.class));
+        assertTrue(ctx.eventoBarramento.foiPostado(Beneficio.BeneficioSuspensosEvento.class));
     }
 
     @Quando("o sistema cancela o benefício por não cumprimento dos critérios")
     public void cancela_beneficio() {
-        beneficioServico.cancelar(beneficioId);
+        ctx.beneficioServico.cancelar(beneficioId);
     }
 
     @Entao("o status do benefício é atualizado para cancelado")
     public void status_cancelado() {
-        var beneficio = repositorio.obter(beneficioId);
+        var beneficio = ctx.repositorio.obter(beneficioId);
         assertEquals(StatusBeneficio.CANCELADO, beneficio.getStatus());
     }
 
     @Entao("um evento de cancelamento é publicado no barramento")
     public void evento_cancelamento_publicado() {
-        assertTrue(eventoBarramento.foiPostado(Beneficio.BeneficioCanceladoEvento.class));
+        assertTrue(ctx.eventoBarramento.foiPostado(Beneficio.BeneficioCanceladoEvento.class));
     }
 }

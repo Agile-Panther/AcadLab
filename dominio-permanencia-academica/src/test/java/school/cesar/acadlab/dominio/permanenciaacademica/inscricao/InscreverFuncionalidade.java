@@ -13,20 +13,24 @@ import school.cesar.acadlab.dominio.permanenciaacademica.PermanenciaAcademicaFun
 import school.cesar.acadlab.dominio.permanenciaacademica.StatusEdital;
 import school.cesar.acadlab.dominio.permanenciaacademica.StatusInscricao;
 
-public class InscreverFuncionalidade extends PermanenciaAcademicaFuncionalidade {
+public class InscreverFuncionalidade {
+    private final PermanenciaAcademicaFuncionalidade ctx;
     private final EstudantePermanenciaId estudanteId = new EstudantePermanenciaId(1);
     private EditalId editalId;
     private InscricaoId inscricaoId;
     private boolean atendeElegibilidade;
-    private RuntimeException excecao;
+
+    public InscreverFuncionalidade(PermanenciaAcademicaFuncionalidade ctx) {
+        this.ctx = ctx;
+    }
 
     private EditalId criarEditalAberto() {
-        var id = repositorio.proximoEditalId();
+        var id = ctx.repositorio.proximoEditalId();
         var edital = Edital.reconstituir(id, "Bolsa Permanência", 5,
                 LocalDate.now().minusDays(1), LocalDate.now().plusDays(10),
                 LocalDate.now().plusDays(11), LocalDate.now().plusDays(20),
                 LocalDate.now().plusDays(180), StatusEdital.INSCRICOES_ABERTAS);
-        repositorio.salvar(edital);
+        ctx.repositorio.salvar(edital);
         return id;
     }
 
@@ -43,27 +47,27 @@ public class InscreverFuncionalidade extends PermanenciaAcademicaFuncionalidade 
     @Quando("o estudante solicita inscrição no edital")
     public void estudante_solicita_inscricao() {
         try {
-            inscricaoId = inscricaoServico.inscrever(estudanteId, editalId, LocalDate.now(), atendeElegibilidade);
+            inscricaoId = ctx.inscricaoServico.inscrever(estudanteId, editalId, LocalDate.now(), atendeElegibilidade);
         } catch (RuntimeException e) {
-            excecao = e;
+            ctx.excecao = e;
         }
     }
 
     @Entao("o sistema registra a inscrição com status pendente")
     public void sistema_registra_inscricao_pendente() {
         assertNotNull(inscricaoId);
-        var inscricao = repositorio.obter(inscricaoId);
+        var inscricao = ctx.repositorio.obter(inscricaoId);
         assertEquals(StatusInscricao.PENDENTE, inscricao.getStatus());
     }
 
     @Dado("existe um edital cujo prazo de inscrição já encerrou")
     public void edital_com_prazo_encerrado() {
-        var id = repositorio.proximoEditalId();
+        var id = ctx.repositorio.proximoEditalId();
         var edital = Edital.reconstituir(id, "Auxílio Transporte", 5,
                 LocalDate.now().minusDays(10), LocalDate.now().minusDays(1),
                 LocalDate.now(), LocalDate.now().plusDays(10),
                 LocalDate.now().plusDays(180), StatusEdital.INSCRICOES_ABERTAS);
-        repositorio.salvar(edital);
+        ctx.repositorio.salvar(edital);
         editalId = id;
         atendeElegibilidade = true;
     }
@@ -71,16 +75,16 @@ public class InscreverFuncionalidade extends PermanenciaAcademicaFuncionalidade 
     @Quando("o estudante tenta se inscrever no edital")
     public void estudante_tenta_inscricao() {
         try {
-            inscricaoServico.inscrever(estudanteId, editalId, LocalDate.now(), atendeElegibilidade);
+            ctx.inscricaoServico.inscrever(estudanteId, editalId, LocalDate.now(), atendeElegibilidade);
         } catch (RuntimeException e) {
-            excecao = e;
+            ctx.excecao = e;
         }
     }
 
     @Entao("o sistema informa que a inscrição está fora do prazo")
     public void sistema_informa_fora_prazo() {
-        assertNotNull(excecao);
-        assertInstanceOf(IllegalStateException.class, excecao);
+        assertNotNull(ctx.excecao);
+        assertInstanceOf(IllegalStateException.class, ctx.excecao);
     }
 
     @Dado("o estudante não atende aos critérios de elegibilidade")
@@ -90,7 +94,7 @@ public class InscreverFuncionalidade extends PermanenciaAcademicaFuncionalidade 
 
     @Entao("o sistema informa que o estudante não atende aos critérios de elegibilidade")
     public void sistema_informa_nao_elegivel() {
-        assertNotNull(excecao);
-        assertInstanceOf(IllegalStateException.class, excecao);
+        assertNotNull(ctx.excecao);
+        assertInstanceOf(IllegalStateException.class, ctx.excecao);
     }
 }

@@ -8,13 +8,17 @@ import io.cucumber.java.pt.Quando;
 import school.cesar.acadlab.dominio.permanenciaacademica.PermanenciaAcademicaFuncionalidade;
 import school.cesar.acadlab.dominio.permanenciaacademica.StatusEdital;
 
-public class CriarEditalFuncionalidade extends PermanenciaAcademicaFuncionalidade {
-    private RuntimeException excecao;
+public class CriarEditalFuncionalidade {
+    private final PermanenciaAcademicaFuncionalidade ctx;
+
+    public CriarEditalFuncionalidade(PermanenciaAcademicaFuncionalidade ctx) {
+        this.ctx = ctx;
+    }
 
     private static java.time.LocalDate hoje() { return LocalDate.now(); }
 
     private void criarEditalParaPrograma(String programa) {
-        editalServico.criar(programa, 5,
+        ctx.editalServico.criar(programa, 5,
                 hoje(), hoje().plusDays(10),
                 hoje().plusDays(11), hoje().plusDays(20),
                 hoje().plusDays(180));
@@ -27,7 +31,7 @@ public class CriarEditalFuncionalidade extends PermanenciaAcademicaFuncionalidad
 
     @Quando("a secretaria cria um edital para o programa {string} com {int} vagas")
     public void secretaria_cria_edital(String programa, int vagas) {
-        editalServico.criar(programa, vagas,
+        ctx.editalServico.criar(programa, vagas,
                 hoje(), hoje().plusDays(10),
                 hoje().plusDays(11), hoje().plusDays(20),
                 hoje().plusDays(180));
@@ -35,7 +39,7 @@ public class CriarEditalFuncionalidade extends PermanenciaAcademicaFuncionalidad
 
     @Entao("o sistema registra o edital com status de inscrições abertas")
     public void o_sistema_registra_edital() {
-        var editais = repositorio.buscarPorPrograma("Bolsa Permanência");
+        var editais = ctx.repositorio.buscarPorPrograma("Bolsa Permanência");
         assertFalse(editais.isEmpty());
         assertEquals(StatusEdital.INSCRICOES_ABERTAS, editais.get(0).getStatus());
     }
@@ -48,18 +52,18 @@ public class CriarEditalFuncionalidade extends PermanenciaAcademicaFuncionalidad
     @Quando("a secretaria tenta criar um novo edital para o programa {string} com {int} vagas")
     public void secretaria_tenta_criar_edital(String programa, int vagas) {
         try {
-            editalServico.criar(programa, vagas,
+            ctx.editalServico.criar(programa, vagas,
                     hoje(), hoje().plusDays(10),
                     hoje().plusDays(11), hoje().plusDays(20),
                     hoje().plusDays(180));
         } catch (RuntimeException e) {
-            excecao = e;
+            ctx.excecao = e;
         }
     }
 
     @Entao("o sistema informa que já existe um edital com inscrições abertas para o programa")
     public void o_sistema_informa_edital_existente() {
-        assertNotNull(excecao);
-        assertInstanceOf(IllegalStateException.class, excecao);
+        assertNotNull(ctx.excecao);
+        assertInstanceOf(IllegalStateException.class, ctx.excecao);
     }
 }

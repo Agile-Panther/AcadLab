@@ -4,6 +4,7 @@ import static org.apache.commons.lang3.Validate.notNull;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import school.cesar.acadlab.dominio.estagios.candidatura.CandidaturaId;
 import school.cesar.acadlab.dominio.estagios.oportunidade.CoordenadorId;
 import school.cesar.acadlab.dominio.estagios.oportunidade.EmpresaId;
 import school.cesar.acadlab.dominio.estagios.oportunidade.EstudanteId;
@@ -12,60 +13,86 @@ import school.cesar.acadlab.dominio.estagios.oportunidade.OportunidadeId;
 public class Estagio {
     private final EstagioId id;
     private final OportunidadeId oportunidadeId;
+    private final CandidaturaId candidaturaId;
     private final EstudanteId estudanteId;
     private final EmpresaId empresaId;
     private StatusEstagio status;
     private final List<Relatorio> relatorios;
 
-    public Estagio(EstagioId id, OportunidadeId oportunidadeId, EstudanteId estudanteId, EmpresaId empresaId) {
+    public Estagio(EstagioId id, OportunidadeId oportunidadeId, CandidaturaId candidaturaId,
+                   EstudanteId estudanteId, EmpresaId empresaId) {
         this.id = notNull(id, "id é obrigatório");
         this.oportunidadeId = notNull(oportunidadeId, "oportunidadeId é obrigatório");
+        this.candidaturaId = notNull(candidaturaId, "candidaturaId é obrigatório");
         this.estudanteId = notNull(estudanteId, "estudanteId é obrigatório");
         this.empresaId = notNull(empresaId, "empresaId é obrigatório");
         this.status = StatusEstagio.EM_ANDAMENTO;
         this.relatorios = new ArrayList<>();
     }
 
-    public void submeterRelatorio(int numero, String descricao) {
+    public RelatorioSubmetidoEvento submeterRelatorio(int numero, String descricao) {
         if (status != StatusEstagio.EM_ANDAMENTO) {
-            throw new IllegalStateException("RN-7: Relatórios só podem ser submetidos com estágio em andamento");
+            throw new IllegalStateException("relatório só pode ser submetido com estágio em andamento");
         }
         boolean numeroDuplicado = relatorios.stream().anyMatch(r -> r.getNumero() == numero);
         if (numeroDuplicado) {
-            throw new IllegalStateException("RN-8: Já existe relatório com o número " + numero);
+            throw new IllegalStateException("relatório com este número já foi submetido");
         }
         relatorios.add(new Relatorio(numero, descricao));
+        return new RelatorioSubmetidoEvento(this);
     }
 
-    public void avaliarRelatorio(int numero, StatusRelatorio resultado) {
+    public RelatorioAvaliadoEvento avaliarRelatorio(int numero, StatusRelatorio resultado) {
         if (resultado == StatusRelatorio.PENDENTE) {
-            throw new IllegalArgumentException("RN-9: Resultado da avaliação não pode ser PENDENTE");
+            throw new IllegalArgumentException("resultado da avaliação não pode ser PENDENTE");
         }
         var relatorio = encontrarRelatorioPorNumero(numero);
         if (relatorio.getStatus() != StatusRelatorio.PENDENTE) {
-            throw new IllegalStateException("RN-10: Apenas relatórios pendentes podem ser avaliados");
+            throw new IllegalStateException("apenas relatórios pendentes podem ser avaliados");
         }
         relatorio.avaliar(resultado);
+        return new RelatorioAvaliadoEvento(this);
     }
 
-    public void solicitarEncerramento() {
+    public EncerramentoSolicitadoEvento solicitarEncerramento() {
         if (status != StatusEstagio.EM_ANDAMENTO) {
-            throw new IllegalStateException("RN-11: Encerramento só pode ser solicitado com estágio em andamento");
+            throw new IllegalStateException("encerramento já solicitado para este estágio");
         }
         this.status = StatusEstagio.ENCERRAMENTO_SOLICITADO;
+        return new EncerramentoSolicitadoEvento(this);
     }
 
-    public void homologarEncerramento(CoordenadorId coordenadorId) {
+    public EstagioEncerradoEvento homologarEncerramento(CoordenadorId coordenadorId) {
         if (status != StatusEstagio.ENCERRAMENTO_SOLICITADO) {
-            throw new IllegalStateException("RN-12: Homologação só permitida após solicitação de encerramento");
+            throw new IllegalStateException("não há solicitação de encerramento para homologar");
         }
         this.status = StatusEstagio.ENCERRADO;
+        return new EstagioEncerradoEvento(this);
+    }
+
+    public static abstract class EstagioEvento {
+        private final Estagio estagio;
+        protected EstagioEvento(Estagio estagio) { this.estagio = estagio; }
+        public Estagio getEstagio() { return estagio; }
+    }
+    public static class RelatorioSubmetidoEvento extends EstagioEvento {
+        private RelatorioSubmetidoEvento(Estagio estagio) { super(estagio); }
+    }
+    public static class RelatorioAvaliadoEvento extends EstagioEvento {
+        private RelatorioAvaliadoEvento(Estagio estagio) { super(estagio); }
+    }
+    public static class EncerramentoSolicitadoEvento extends EstagioEvento {
+        private EncerramentoSolicitadoEvento(Estagio estagio) { super(estagio); }
+    }
+    public static class EstagioEncerradoEvento extends EstagioEvento {
+        private EstagioEncerradoEvento(Estagio estagio) { super(estagio); }
     }
 
     public static Estagio reconstituir(EstagioId id, OportunidadeId oportunidadeId,
-                                       EstudanteId estudanteId, EmpresaId empresaId,
-                                       StatusEstagio status, List<Relatorio> relatorios) {
-        var e = new Estagio(id, oportunidadeId, estudanteId, empresaId);
+                                       CandidaturaId candidaturaId, EstudanteId estudanteId,
+                                       EmpresaId empresaId, StatusEstagio status,
+                                       List<Relatorio> relatorios) {
+        var e = new Estagio(id, oportunidadeId, candidaturaId, estudanteId, empresaId);
         e.status = status;
         e.relatorios.addAll(relatorios);
         return e;
@@ -75,11 +102,12 @@ public class Estagio {
         return relatorios.stream()
                 .filter(r -> r.getNumero() == numero)
                 .findFirst()
-                .orElseThrow(() -> new IllegalStateException("Relatório " + numero + " não encontrado"));
+                .orElseThrow(() -> new IllegalStateException("relatório " + numero + " não encontrado"));
     }
 
     public EstagioId getId() { return id; }
     public OportunidadeId getOportunidadeId() { return oportunidadeId; }
+    public CandidaturaId getCandidaturaId() { return candidaturaId; }
     public EstudanteId getEstudanteId() { return estudanteId; }
     public EmpresaId getEmpresaId() { return empresaId; }
     public StatusEstagio getStatus() { return status; }

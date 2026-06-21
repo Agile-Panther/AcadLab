@@ -11,6 +11,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
 import jakarta.persistence.ElementCollection;
@@ -19,14 +20,18 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import school.cesar.acadlab.aplicacao.matricula.MatriculaResumo;
 import school.cesar.acadlab.aplicacao.matricula.MatriculaRepositorioAplicacao;
 import school.cesar.acadlab.dominio.matricula.matricula.CoordenadorId;
 import school.cesar.acadlab.dominio.matricula.matricula.DisciplinaId;
 import school.cesar.acadlab.dominio.matricula.matricula.EstudanteId;
+import school.cesar.acadlab.dominio.matricula.matricula.ValidacaoRegular;
 import school.cesar.acadlab.dominio.matricula.matricula.ExcecaoMatricula;
 import school.cesar.acadlab.dominio.matricula.matricula.HorarioAula;
 import school.cesar.acadlab.dominio.matricula.matricula.ItemMatricula;
@@ -50,8 +55,8 @@ class MatriculaJpa {
     @Enumerated(EnumType.STRING)
     StatusMatricula status;
 
-    @ElementCollection(fetch = FetchType.EAGER)
-    @CollectionTable(name = "ITEM_MATRICULA", joinColumns = @JoinColumn(name = "matriculaId"))
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
+    @JoinColumn(name = "matriculaId")
     List<ItemMatriculaJpa> itens = new ArrayList<>();
 
     @ElementCollection(fetch = FetchType.EAGER)
@@ -59,8 +64,12 @@ class MatriculaJpa {
     List<ExcecaoMatriculaJpa> excecoes = new ArrayList<>();
 }
 
-@Embeddable
+@Entity
+@Table(name = "ITEM_MATRICULA")
 class ItemMatriculaJpa {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    int id;
     int turmaId;
     int disciplinaId;
     int creditos;
@@ -70,10 +79,7 @@ class ItemMatriculaJpa {
     StatusItemMatricula status;
 
     @ElementCollection(fetch = FetchType.EAGER)
-    @CollectionTable(name = "HORARIO_ITEM_MATRICULA", joinColumns = {
-            @JoinColumn(name = "matriculaId", referencedColumnName = "matriculaId"),
-            @JoinColumn(name = "turmaId", referencedColumnName = "turmaId")
-    })
+    @CollectionTable(name = "HORARIO_ITEM_MATRICULA", joinColumns = @JoinColumn(name = "itemMatriculaId"))
     List<HorarioAulaJpa> horarios = new ArrayList<>();
 }
 
@@ -200,7 +206,8 @@ class MatriculaRepositorioImpl implements MatriculaRepositorio, MatriculaReposit
                 jpa.limiteCreditos,
                 jpa.status,
                 itens,
-                excecoes);
+                excecoes,
+                new ValidacaoRegular());
     }
 
     private MatriculaResumo toResumo(MatriculaJpa jpa) {

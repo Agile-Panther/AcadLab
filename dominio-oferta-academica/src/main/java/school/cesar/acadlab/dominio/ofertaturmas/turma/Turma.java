@@ -49,7 +49,7 @@ public class Turma implements TurmaOferecida {
     public SalaVinculadaEvento vincularSala(SalaId salaId, int capacidadeSala) {
         notNull(salaId, "A sala não pode ser nula");
         if (this.capacidade > capacidadeSala) {
-            throw new IllegalStateException("RN8: A capacidade da turma excede a capacidade da sala");
+            throw new IllegalStateException("capacidade da sala é insuficiente para a turma");
         }
         this.salaId = salaId;
         return new SalaVinculadaEvento(this);

@@ -6,37 +6,41 @@ import io.cucumber.java.pt.Entao;
 import io.cucumber.java.pt.Quando;
 import school.cesar.acadlab.dominio.historicoacademico.HistoricoFuncionalidade;
 
-public class RegistrarAproveitamentoFuncionalidade extends HistoricoFuncionalidade {
+public class RegistrarAproveitamentoFuncionalidade {
+    private final HistoricoFuncionalidade ctx;
     private HistoricoAcademico historico;
-    private RuntimeException excecao;
+
+    public RegistrarAproveitamentoFuncionalidade(HistoricoFuncionalidade ctx) {
+        this.ctx = ctx;
+    }
 
     @Dado("um histórico de estudante para registro de aproveitamento")
     public void historicoParaAproveitamento() {
         historico = new HistoricoAcademico(
-                repositorio.proximoId(),
+                ctx.repositorio.proximoId(),
                 new EstudanteId(4),
                 new MatrizCurricularId(1));
-        repositorio.salvar(historico);
+        ctx.repositorio.salvar(historico);
     }
 
     @Quando("a secretaria registra aproveitamento com carga horária externa igual à requerida")
     public void registraAproveitamentoCargaCompativel() {
         try {
             historico.registrarAproveitamento(
-                    repositorio.proximoAproveitamentoId(),
+                    ctx.repositorio.proximoAproveitamentoId(),
                     new DisciplinaId(10),
                     60, 60,
                     "Universidade Federal",
                     "Cálculo I");
-            repositorio.salvar(historico);
+            ctx.repositorio.salvar(historico);
         } catch (RuntimeException e) {
-            excecao = e;
+            ctx.excecao = e;
         }
     }
 
     @Entao("o aproveitamento é adicionado ao histórico")
     public void aproveitamentoAdicionado() {
-        assertNull(excecao, "Não deveria ter lançado exceção");
+        assertNull(ctx.excecao, "Não deveria ter lançado exceção");
         assertEquals(1, historico.getAproveitamentos().size());
     }
 
@@ -44,20 +48,13 @@ public class RegistrarAproveitamentoFuncionalidade extends HistoricoFuncionalida
     public void tentaAproveitamentoCargaInsuficiente() {
         try {
             historico.registrarAproveitamento(
-                    repositorio.proximoAproveitamentoId(),
+                    ctx.repositorio.proximoAproveitamentoId(),
                     new DisciplinaId(10),
                     40, 60,
                     "Universidade Federal",
                     "Cálculo I");
         } catch (RuntimeException e) {
-            excecao = e;
+            ctx.excecao = e;
         }
-    }
-
-    @Entao("o sistema rejeita o aproveitamento informando RN-7")
-    public void sistemaRejeitaRN7() {
-        assertNotNull(excecao);
-        assertInstanceOf(IllegalStateException.class, excecao);
-        assertTrue(excecao.getMessage().contains("RN-7"));
     }
 }

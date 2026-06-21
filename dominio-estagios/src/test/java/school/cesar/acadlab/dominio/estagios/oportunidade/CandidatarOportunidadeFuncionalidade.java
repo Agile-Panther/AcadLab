@@ -1,73 +1,88 @@
 package school.cesar.acadlab.dominio.estagios.oportunidade;
 
 import static org.junit.jupiter.api.Assertions.*;
-import io.cucumber.java.en.Given;
-import io.cucumber.java.en.Then;
-import io.cucumber.java.en.When;
+import io.cucumber.java.pt.Dado;
+import io.cucumber.java.pt.Então;
+import io.cucumber.java.pt.Quando;
+import java.time.LocalDate;
+import school.cesar.acadlab.dominio.estagios.EstagioServico;
 import school.cesar.acadlab.dominio.estagios.EstagiosFuncionalidade;
 
-public class CandidatarOportunidadeFuncionalidade extends EstagiosFuncionalidade {
+public class CandidatarOportunidadeFuncionalidade {
 
+    private final EstagiosFuncionalidade ctx;
     private OportunidadeId oportunidadeId;
+    private final SetorEstagiosId setorId = new SetorEstagiosId(1);
 
-    @Given("uma oportunidade de estágio aberta para a empresa de id {int} com descrição {string} e carga horária {int}")
-    public void uma_oportunidade_de_estagio_aberta(int empresaId, String descricao, int cargaHoraria) {
-        oportunidadeId = servico.cadastrarOportunidade(new EmpresaId(empresaId), descricao, cargaHoraria);
+    public CandidatarOportunidadeFuncionalidade(EstagiosFuncionalidade ctx) {
+        this.ctx = ctx;
     }
 
-    @When("o estudante de id {int} se candidata à oportunidade")
-    public void o_estudante_se_candidata(int estudanteId) {
-        servico.candidatar(oportunidadeId, new EstudanteId(estudanteId));
+    @Dado("uma oportunidade publicada")
+    public void uma_oportunidade_publicada() {
+        oportunidadeId = ctx.servico.cadastrarOportunidade(new EmpresaId(10), "Estágio em TI", 480);
+        ctx.servico.publicarOportunidade(oportunidadeId, setorId);
     }
 
-    @Then("a oportunidade possui candidato com id {int}")
-    public void a_oportunidade_possui_candidato_com_id(int estudanteId) {
-        var oportunidade = oportunidadeRepositorio.buscarPorId(oportunidadeId).orElseThrow();
-        assertEquals(new EstudanteId(estudanteId), oportunidade.getCandidato());
+    @Quando("o estudante se candidata à oportunidade")
+    public void o_estudante_se_candidata() {
+        ctx.candidaturaId = ctx.servico.registrarCandidatura(oportunidadeId, new EstudanteId(20), LocalDate.now());
     }
 
-    @Given("uma oportunidade de estágio já encaminhada")
-    public void uma_oportunidade_ja_encaminhada() {
-        oportunidadeId = servico.cadastrarOportunidade(new EmpresaId(10), "Estágio em TI", 480);
-        servico.candidatar(oportunidadeId, new EstudanteId(20));
-        servico.encaminhar(oportunidadeId, new CoordenadorId(30));
+    @Então("a candidatura é registrada com sucesso")
+    public void a_candidatura_e_registrada_com_sucesso() {
+        var candidatura = ctx.candidaturaRepositorio.buscarPorId(ctx.candidaturaId).orElseThrow();
+        assertNotNull(candidatura);
     }
 
-    @When("o estudante de id {int} tenta se candidatar à oportunidade encaminhada")
-    public void o_estudante_tenta_se_candidatar_encaminhada(int estudanteId) {
+    @Dado("uma oportunidade ainda não publicada")
+    public void uma_oportunidade_nao_publicada() {
+        oportunidadeId = ctx.servico.cadastrarOportunidade(new EmpresaId(10), "Estágio em TI", 480);
+    }
+
+    @Quando("o estudante tenta se candidatar à oportunidade")
+    public void o_estudante_tenta_se_candidatar() {
         try {
-            servico.candidatar(oportunidadeId, new EstudanteId(estudanteId));
+            ctx.servico.registrarCandidatura(oportunidadeId, new EstudanteId(20), LocalDate.now());
         } catch (RuntimeException e) {
-            excecao = e;
+            ctx.excecao = e;
         }
     }
 
-    @Then("o sistema rejeita a candidatura com mensagem sobre RN-1")
-    public void sistema_rejeita_candidatura_rn1() {
-        assertNotNull(excecao);
-        assertInstanceOf(IllegalStateException.class, excecao);
-        assertTrue(excecao.getMessage().contains("RN-1"));
+    @Dado("uma oportunidade publicada com prazo de inscrição encerrado")
+    public void uma_oportunidade_publicada_com_prazo_encerrado() {
+        oportunidadeId = ctx.servico.cadastrarOportunidade(new EmpresaId(10), "Estágio em TI", 480);
+        ctx.servico.publicarOportunidade(oportunidadeId, setorId);
     }
 
-    @Given("uma oportunidade de estágio aberta com candidato de id {int}")
-    public void uma_oportunidade_aberta_com_candidato(int estudanteId) {
-        oportunidadeId = servico.cadastrarOportunidade(new EmpresaId(10), "Estágio em TI", 480);
-        servico.candidatar(oportunidadeId, new EstudanteId(estudanteId));
-    }
-
-    @When("o estudante de id {int} tenta se candidatar à oportunidade com candidato")
-    public void o_estudante_tenta_se_candidatar_com_candidato(int estudanteId) {
+    @Quando("o estudante tenta se candidatar à oportunidade fora do prazo")
+    public void o_estudante_tenta_candidatar_fora_do_prazo() {
         try {
-            servico.candidatar(oportunidadeId, new EstudanteId(estudanteId));
+            var prazoEncerrado = LocalDate.now().minusDays(1);
+            ctx.servico.registrarCandidaturaComPrazo(oportunidadeId, new EstudanteId(20),
+                    prazoEncerrado, LocalDate.now());
         } catch (RuntimeException e) {
-            excecao = e;
+            ctx.excecao = e;
         }
     }
 
-    @Then("o sistema rejeita a candidatura com mensagem sobre RN-2")
-    public void sistema_rejeita_candidatura_rn2() {
-        assertNotNull(excecao);
-        assertInstanceOf(IllegalStateException.class, excecao);
-        assertTrue(excecao.getMessage().contains("RN-2"));
+    @Dado("uma oportunidade publicada com critério de elegibilidade exigindo curso {string}")
+    public void uma_oportunidade_publicada_com_criterio(String curso) {
+        oportunidadeId = ctx.servico.cadastrarOportunidade(new EmpresaId(10), "Estágio em TI", 480);
+        ctx.servico.definirCriterios(oportunidadeId, setorId,
+                new CriterioElegibilidade(curso, 4, true));
+        ctx.servico.publicarOportunidade(oportunidadeId, setorId);
+    }
+
+    @Quando("estudante que não atende aos critérios tenta se candidatar")
+    public void estudante_que_nao_atende_tenta_candidatar() {
+        try {
+            var servicoRestritivo = new EstagioServico(
+                    ctx.oportunidadeRepositorio, ctx.candidaturaRepositorio, ctx.estagioRepositorio,
+                    (estudante, criterio) -> false);
+            servicoRestritivo.registrarCandidatura(oportunidadeId, new EstudanteId(99), LocalDate.now());
+        } catch (RuntimeException e) {
+            ctx.excecao = e;
+        }
     }
 }

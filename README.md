@@ -8,6 +8,8 @@
 
 As seções [Mapa por Integrante](#mapa-por-integrante) e [Padrões de Projeto — Mapa de Arquivos](#padrões-de-projeto--mapa-de-arquivos) foram criadas para localizar rapidamente, por aluno, os arquivos de cada funcionalidade e os arquivos onde cada padrão de projeto está implementado.
 
+O mapa de histórias do usuário está disponível no Miro: [User Story Map — AcadLab](https://miro.com/app/board/uXjVHD2I-jQ=/?share_link_id=491267891599)
+
 ---
 
 ## Visão Geral
@@ -26,9 +28,9 @@ O sistema se organiza em três eixos:
 
 | Integrante | Funcionalidades | Padrão de Projeto | Módulo(s) |
 |---|---|---|---|
-| **Julia** | F-01 · Gestão Curricular · F-06 · Histórico Acadêmico | Iterator | `dominio-curriculo` · `dominio-historico-academico` |
-| **Neto** | F-02 · Período Letivo · F-05 · Gestão Pedagógica | Template Method | `dominio-oferta-academica` · `dominio-gestao-pedagogica` |
-| **Clara** | F-03 · Oferta de Turmas · F-14 · Estágios | Decorator | `dominio-oferta-academica` · `dominio-estagios` |
+| **Julia Torres** | F-01 · Gestão Curricular · F-06 · Histórico Acadêmico | Iterator | `dominio-curriculo` · `dominio-historico-academico` |
+| **Maria Claudia** | F-02 · Período Letivo · F-05 · Gestão Pedagógica | Template Method | `dominio-oferta-academica` · `dominio-gestao-pedagogica` |
+| **Maria Clara** | F-03 · Oferta de Turmas · F-14 · Estágios | Decorator | `dominio-oferta-academica` · `dominio-estagios` |
 | **Vinicius** | F-04 · Matrícula · F-12 · Mobilidade Acadêmica | Strategy | `dominio-matricula` · `dominio-mobilidade-academica` |
 | **Bernardo** | F-07 · Secretaria Virtual · F-08 · Integralização | Proxy | `dominio-secretaria-virtual` · `dominio-integralizacao-curricular` |
 | **Matheus** | F-10 · Permanência Acadêmica · F-11 · Apoio Psicopedagógico | Observer | `dominio-permanencia-academica` |
@@ -38,17 +40,142 @@ O sistema se organiza em três eixos:
 
 ## Padrões de Projeto — Mapa de Arquivos
 
-São **6 padrões distintos** implementados. Observer aparece em dois contextos independentes, totalizando 7 implementações.
+São **6 padrões distintos** implementados. Observer aparece em dois contextos independentes (Matheus e Jera), totalizando 7 implementações. Decorator também aparece em dois contextos (Turma e Oportunidade).
 
-| Padrão | Integrante | Arquivos | Camada |
-|---|---|---|---|
-| **Iterator** | Julia | `IteradorHistorico<T>` · `IteradorRegistrosDisciplina` · `ConsultaHistoricoServico` | Domínio |
-| **Template Method** | Neto | Fluxo de abertura → aulas → frequência → avaliações → resultado em `DiarioTurmaServico` | Domínio |
-| **Decorator** | Clara | `TurmaComListaEspera`, `TurmaOnline` sobre `OfertaTurmaServico`; Decorator sobre `Oportunidade` | Domínio |
-| **Strategy** | Vinicius | Estratégias de elegibilidade para matrícula (regular, por exceção, por mobilidade) em `MatriculaServico` | Domínio |
-| **Proxy** | Bernardo | `SolicitacaoServicoProxy` · `IntegralizacaoServicoProxy` — controle de permissões e pré-condições | Domínio |
-| **Observer** | Matheus | `EventoObservador` em benefícios de permanência e mudanças de estado em casos psicopedagógicos | Domínio |
-| **Observer** | Jera | Eventos financeiros (pagamento confirmado, cobrança vencida) e deferimento de atividades complementares | Domínio |
+O prefixo `src/main/java/school/cesar/acadlab/` é omitido nos caminhos abaixo para brevidade; todos os arquivos partem dessa raiz dentro do respectivo módulo Maven.
+
+---
+
+### Iterator — Julia Torres
+
+**Intenção:** fornecer uma forma de percorrer os registros do histórico acadêmico sem expor a estrutura interna da coleção (`List<RegistroDisciplina>`).
+
+| Papel no padrão | Arquivo `.java` |
+|---|---|
+| Interface do iterador | `dominio-historico-academico/dominio/historicoacademico/iterador/IteradorHistorico.java` |
+| Iterador concreto | `dominio-historico-academico/dominio/historicoacademico/iterador/IteradorRegistrosDisciplina.java` |
+| Agregado iterável (fornece o iterador) | `dominio-historico-academico/dominio/historicoacademico/historico/HistoricoAcademico.java` |
+| Serviço consumidor do iterador | `dominio-historico-academico/dominio/historicoacademico/ConsultaHistoricoServico.java` |
+
+**Como aparece no código:** `HistoricoAcademico.iteradorRegistros()` retorna uma instância de `IteradorRegistrosDisciplina` que encapsula a lista interna com `Collections.unmodifiableList`. `ConsultaHistoricoServico` usa apenas `temProximo()` / `proximo()`, sem tocar a coleção diretamente.
+
+---
+
+### Template Method — Maria Claudia
+
+**Intenção:** definir o esqueleto do fluxo pedagógico — abertura → registro de aulas → frequência → avaliações → lançamento de notas → fechamento do resultado — no serviço base, delegando cada passo ao agregado `DiarioTurma`.
+
+| Papel no padrão | Arquivo `.java` |
+|---|---|
+| Template (sequência fixa de passos orquestrada pelo serviço) | `dominio-gestao-pedagogica/dominio/gestaopedagogica/DiarioTurmaServico.java` |
+| Passo 1 — registrar aula | `dominio-gestao-pedagogica/dominio/gestaopedagogica/diario/DiarioTurma.java` (método `registrarAula`) |
+| Passo 2 — registrar frequência | `dominio-gestao-pedagogica/dominio/gestaopedagogica/diario/DiarioTurma.java` (método `registrarFrequencia`) |
+| Passo 3 — adicionar avaliação | `dominio-gestao-pedagogica/dominio/gestaopedagogica/diario/DiarioTurma.java` (método `adicionarAvaliacao`) |
+| Passo 4 — lançar nota | `dominio-gestao-pedagogica/dominio/gestaopedagogica/diario/DiarioTurma.java` (método `lancarNota`) |
+| Passo 5 — fechar resultado | `dominio-gestao-pedagogica/dominio/gestaopedagogica/diario/DiarioTurma.java` (método `fecharResultado`) |
+| Passo opcional — nota de recuperação | `dominio-gestao-pedagogica/dominio/gestaopedagogica/diario/DiarioTurma.java` (método `lancarNotaRecuperacao`) |
+
+**Como aparece no código:** `DiarioTurmaServico` define a sequência invariável de chamadas e aplica pré-condições (ex.: só aceita nota se o diário não estiver fechado); `DiarioTurma` implementa cada passo individual com suas próprias regras de negócio.
+
+---
+
+### Decorator — Maria Clara
+
+**Intenção:** adicionar comportamentos opcionais — lista de espera e modalidade online — às turmas ofertadas, e critério de elegibilidade às oportunidades de estágio, sem alterar as classes base.
+
+#### Contexto A — Oferta de Turmas
+
+| Papel no padrão | Arquivo `.java` |
+|---|---|
+| Interface componente | `dominio-oferta-academica/dominio/ofertaturmas/turma/decorator/TurmaOferecida.java` |
+| Decorador abstrato | `dominio-oferta-academica/dominio/ofertaturmas/turma/decorator/TurmaDecorador.java` |
+| Decorador concreto: lista de espera | `dominio-oferta-academica/dominio/ofertaturmas/turma/decorator/TurmaComListaEspera.java` |
+| Decorador concreto: turma online (EAD) | `dominio-oferta-academica/dominio/ofertaturmas/turma/decorator/TurmaOnline.java` |
+| Serviço que constrói e aplica os decoradores | `dominio-oferta-academica/dominio/ofertaturmas/OfertaTurmaServico.java` |
+
+#### Contexto B — Oportunidades de Estágio
+
+| Papel no padrão | Arquivo `.java` |
+|---|---|
+| Decorador abstrato | `dominio-estagios/dominio/estagios/oportunidade/OportunidadeDecorador.java` |
+| Decorador concreto: elegibilidade | `dominio-estagios/dominio/estagios/oportunidade/OportunidadeComCriterioElegibilidade.java` |
+| Serviço que aplica o decorador | `dominio-estagios/dominio/estagios/EstagioServico.java` |
+
+**Como aparece no código:** `TurmaDecorador` implementa `TurmaOferecida` e mantém uma referência `protected final TurmaOferecida turma`, delegando todos os métodos ao componente encapsulado e sobrescrevendo apenas o comportamento adicionado. `OfertaTurmaServico` envolve a `Turma` concreta nos decoradores adequados conforme a modalidade ou configuração.
+
+---
+
+### Strategy — Vinicius
+
+**Intenção:** encapsular as regras de elegibilidade para adicionar itens ao plano de matrícula em estratégias intercambiáveis, permitindo trocar a política de validação (regular vs. por exceção) sem modificar o serviço principal.
+
+| Papel no padrão | Arquivo `.java` |
+|---|---|
+| Interface da estratégia | `dominio-matricula/dominio/matricula/matricula/EstrategiaMatricula.java` |
+| Estratégia concreta: matrícula regular | `dominio-matricula/dominio/matricula/matricula/ValidacaoRegular.java` |
+| Estratégia concreta: matrícula por exceção | `dominio-matricula/dominio/matricula/matricula/ValidacaoExcecao.java` |
+| Contexto (injeta e usa a estratégia) | `dominio-matricula/dominio/matricula/MatriculaServico.java` |
+| Agregado que armazena a estratégia ativa | `dominio-matricula/dominio/matricula/matricula/Matricula.java` |
+
+**Como aparece no código:** `EstrategiaMatricula` declara `validarAdicao(...)`. `ValidacaoRegular` exige pré-requisitos cumpridos e ausência de pendências; `ValidacaoExcecao` ignora essas restrições (exceção aprovada pela coordenação). `Matricula` guarda a estratégia e a chama em `adicionarItem(...)`.
+
+---
+
+### Proxy — Bernardo
+
+**Intenção:** interpor uma camada de pré-condições e controle de acesso antes de delegar às operações reais — verificando janela do calendário acadêmico na secretaria virtual e validando portas externas antes de calcular integralização.
+
+#### Contexto A — Secretaria Virtual
+
+| Papel no padrão | Arquivo `.java` |
+|---|---|
+| Interface sujeito | `dominio-secretaria-virtual/dominio/secretariavirtual/SolicitacaoServico.java` |
+| Proxy (pré-condições + delegação) | `dominio-secretaria-virtual/dominio/secretariavirtual/SolicitacaoServicoProxy.java` |
+| Sujeito real | `dominio-secretaria-virtual/dominio/secretariavirtual/SolicitacaoServicoReal.java` |
+
+#### Contexto B — Integralização Curricular
+
+| Papel no padrão | Arquivo `.java` |
+|---|---|
+| Interface sujeito | `dominio-integralizacao-curricular/dominio/integralizacao/IntegralizacaoOperacoes.java` |
+| Proxy (consulta portas externas antes de delegar) | `dominio-integralizacao-curricular/dominio/integralizacao/IntegralizacaoServicoProxy.java` |
+| Sujeito real | `dominio-integralizacao-curricular/dominio/integralizacao/IntegralizacaoServico.java` |
+
+**Como aparece no código:** `SolicitacaoServicoProxy` verifica `CalendarioAcademicoPorta.estaDentroDoPrazo(...)` e a ausência de duplicidade antes de chamar `servicoReal.abrirSolicitacao(...)`. `IntegralizacaoServicoProxy` consulta `ConsultaPeriodoLetivoPorta`, `ConsultaPendenciasPorta` e `ConsultaRequisitosIntegralizacaoPorta` antes de delegar ao `IntegralizacaoServico`. Ambos os proxies são registrados como `@Bean` em `BackendAplicacao.java` e injetados nos respectivos controladores REST no lugar do sujeito real.
+
+---
+
+### Observer — Matheus Veríssimo
+
+**Intenção:** notificar automaticamente outros componentes quando o estado de um benefício de permanência acadêmica ou de um caso psicopedagógico muda, sem criar dependência direta entre os contextos.
+
+| Papel no padrão | Arquivo `.java` |
+|---|---|
+| Interface do publicador (Subject) | `dominio-compartilhado/dominio/evento/EventoBarramento.java` |
+| Interface do observador (Observer) | `dominio-compartilhado/dominio/evento/EventoObservador.java` |
+| Publisher: ciclo de vida de benefícios | `dominio-permanencia-academica/dominio/permanenciaacademica/BeneficioServico.java` |
+| Entidade que emite eventos de benefício | `dominio-permanencia-academica/dominio/permanenciaacademica/Beneficio.java` |
+| Publisher: triagem psicopedagógica | `dominio-permanencia-academica/dominio/apoiopsicopedagogico/ApoioServico.java` |
+| Publisher: atendimento psicopedagógico | `dominio-permanencia-academica/dominio/apoiopsicopedagogico/AtendimentoServico.java` |
+| Publisher: triagem | `dominio-permanencia-academica/dominio/apoiopsicopedagogico/TriagemServico.java` |
+
+**Como aparece no código:** `Beneficio.suspender()` retorna um `EventoDominio`; `BeneficioServico` o repassa ao `EventoBarramento.postar(evento)`. Qualquer componente que implemente `EventoObservador<BeneficioSuspenso>` e se registre no barramento recebe a notificação sem que `BeneficioServico` precise conhecer os assinantes.
+
+---
+
+### Observer — Jera
+
+**Intenção:** notificar outros contextos quando cobranças são geradas ou liquidadas e quando atividades complementares são deferidas ou indeferidas, usando o mesmo barramento de eventos do shared kernel.
+
+| Papel no padrão | Arquivo `.java` |
+|---|---|
+| Interface do publicador (Subject) | `dominio-compartilhado/dominio/evento/EventoBarramento.java` |
+| Interface do observador (Observer) | `dominio-compartilhado/dominio/evento/EventoObservador.java` |
+| Publisher: gestão financeira | `dominio-gestao-financeira/dominio/gestaofinanceira/CobrancaServico.java` |
+| Entidade que emite eventos de cobrança | `dominio-gestao-financeira/dominio/gestaofinanceira/Cobranca.java` |
+| Publisher: atividades complementares | `dominio-atividades-complementares/dominio/atividadescomplementares/AtividadeComplementarServico.java` |
+
+**Como aparece no código:** `CobrancaServico` publica eventos ao registrar pagamentos ou ao gerar cobranças em lote; `AtividadeComplementarServico` publica eventos quando defere ou indefere horas complementares. O barramento (`EventoBarramento`) desacopla emissores de receptores — nenhum publicador conhece seus assinantes.
 
 ---
 
@@ -56,32 +183,32 @@ São **6 padrões distintos** implementados. Observer aparece em dois contextos 
 
 | F | Funcionalidade | Responsável | Padrão | Resumo |
 |---|---|---|---|---|
-| **F-01** | Gestão Curricular do Curso | Julia | Iterator | Criar e versionar matriz curricular com disciplinas, pré-requisitos, correquisitos e ciclo de vida ativo/inativo |
-| **F-02** | Planejamento do Período Letivo | Neto | Template Method | Definir semestre acadêmico com janelas que habilitam ou bloqueiam operações por intervalo de datas |
-| **F-03** | Oferta de Turmas | Clara | Decorator | Configurar turmas com professor, sala e horário; adicionar comportamentos dinâmicos sem alterar a classe base |
+| **F-01** | Gestão Curricular do Curso | Julia Torres | Iterator | Criar e versionar matriz curricular com disciplinas, pré-requisitos, correquisitos e ciclo de vida ativo/inativo |
+| **F-02** | Planejamento do Período Letivo | Maria Claudia | Template Method | Definir semestre acadêmico com janelas que habilitam ou bloqueiam operações por intervalo de datas |
+| **F-03** | Oferta de Turmas | Maria Clara | Decorator | Configurar turmas com professor, sala e horário; adicionar comportamentos dinâmicos sem alterar a classe base |
 | **F-04** | Montagem e Ajuste de Matrícula | Vinicius | Strategy | Plano de matrícula, confirmação, ajustes e trancamento com validação de elegibilidade por estratégia intercambiável |
-| **F-05** | Gestão Pedagógica da Turma | Neto | Template Method | Diário de turma: registro de aulas, frequência, avaliações, notas e resultado final com recuperação |
-| **F-06** | Gestão do Histórico Acadêmico | Julia | Iterator | Consolidação de resultados, aproveitamentos externos, retificações e acompanhamentos; histórico oficial via Iterator |
+| **F-05** | Gestão Pedagógica da Turma | Maria Claudia | Template Method | Diário de turma: registro de aulas, frequência, avaliações, notas e resultado final com recuperação |
+| **F-06** | Gestão do Histórico Acadêmico | Julia Torres | Iterator | Consolidação de resultados, aproveitamentos externos, retificações e acompanhamentos; histórico oficial via Iterator |
 | **F-07** | Secretaria Virtual Acadêmica | Bernardo | Proxy | Abertura e tramitação de protocolos acadêmicos com controle de permissões via Proxy |
 | **F-08** | Validação de Integralização e Colação | Bernardo | Proxy | Análise de cumprimento de requisitos curriculares e registro formal da colação de grau |
 | **F-09** | Atividades Complementares | Jera | Observer | Submissão e análise de horas extracurriculares; eventos de deferimento notificam outros contextos |
-| **F-10** | Permanência Acadêmica e Bolsas | Matheus | Observer | Editais, inscrições, análise e gestão de benefícios com notificação automática de mudanças de estado |
+| **F-10** | Permanência Acadêmica e Bolsas | Matheus | Observer | Editais, inscrições, análise, gestão de benefícios e registro de ações de permanência com notificação automática de mudanças de estado |
 | **F-11** | Apoio Psicopedagógico | Matheus | Observer | Solicitação, triagem, atendimentos e encerramento de caso com sigilo de atendimento |
 | **F-12** | Mobilidade Acadêmica | Vinicius | Strategy | Intercâmbio externo com plano de estudos, equivalências e registro de resultados no histórico |
 | **F-13** | Gestão Financeira Acadêmica | Jera | Observer | Cobranças, pagamentos, descontos, contestações e comprovantes; eventos de pagamento notificam outros contextos |
-| **F-14** | Centro de Estágios e Oportunidades | Clara | Decorator | Publicação de vagas, candidatura, formalização do estágio e entrega de relatórios |
+| **F-14** | Centro de Estágios e Oportunidades | Maria Clara | Decorator | Publicação de vagas, candidatura, formalização do estágio e entrega de relatórios |
 
 <details>
 <summary><strong>Regras de negócio selecionadas por funcionalidade</strong></summary>
 
-### F-01 — Gestão Curricular (Julia)
+### F-01 — Gestão Curricular (Julia Torres)
 - A mesma disciplina não pode aparecer mais de uma vez na mesma matriz curricular
 - A matriz só pode ser ativada se a carga horária e os créditos das disciplinas forem suficientes para o mínimo exigido
 - Apenas uma versão da matriz pode estar ativa por curso ao mesmo tempo
 - Pré-requisitos cíclicos são rejeitados — o sistema percorre o grafo e detecta caminhos circulares
 - Correquisitos devem pertencer à mesma matriz curricular
 
-### F-02 — Período Letivo (Neto)
+### F-02 — Período Letivo (Maria Claudia)
 - Janela acadêmica define o intervalo em que uma operação é permitida; fora da janela, a operação é bloqueada
 - O período encerrado torna os registros imutáveis sem reabertura formal autorizada
 
@@ -89,10 +216,10 @@ São **6 padrões distintos** implementados. Observer aparece em dois contextos 
 - O plano de matrícula é provisório — não gera vínculo acadêmico até a confirmação
 - A elegibilidade é verificada por estratégia (regular, exceção, mobilidade), sem alterar o serviço principal
 
-### F-05 — Gestão Pedagógica (Neto)
+### F-05 — Gestão Pedagógica (Maria Claudia)
 - Reprovação por frequência é aplicada quando a presença fica abaixo do mínimo, independentemente da média
 
-### F-06 — Histórico Acadêmico (Julia)
+### F-06 — Histórico Acadêmico (Julia Torres)
 - Apenas resultados de turmas encerradas podem ser consolidados (RN-1)
 - O histórico oficial retorna somente registros consolidados de períodos encerrados, via Iterator (RN-10)
 - Retificação exige responsável, justificativa e registra trilha de auditoria
@@ -111,18 +238,18 @@ São **6 padrões distintos** implementados. Observer aparece em dois contextos 
 acadlab-pai/
 │
 ├── dominio-compartilhado/            ← Shared Kernel — EstudanteId, CursoId, eventos de domínio
-├── dominio-curriculo/                ← F-01 (Julia)
-├── dominio-oferta-academica/         ← F-02 (Neto) + F-03 (Clara) — sub-pacotes separados
+├── dominio-curriculo/                ← F-01 (Julia Torres)
+├── dominio-oferta-academica/         ← F-02 (Maria Claudia) + F-03 (Maria Clara) — sub-pacotes separados
 ├── dominio-matricula/                ← F-04 (Vinicius)
-├── dominio-gestao-pedagogica/        ← F-05 (Neto)
-├── dominio-historico-academico/      ← F-06 (Julia)
+├── dominio-gestao-pedagogica/        ← F-05 (Maria Claudia)
+├── dominio-historico-academico/      ← F-06 (Julia Torres)
 ├── dominio-secretaria-virtual/       ← F-07 (Bernardo)
 ├── dominio-integralizacao-curricular/← F-08 (Bernardo)
 ├── dominio-atividades-complementares/← F-09 (Jera)
 ├── dominio-permanencia-academica/    ← F-10 + F-11 (Matheus) — dois bounded contexts
 ├── dominio-mobilidade-academica/     ← F-12 (Vinicius)
 ├── dominio-gestao-financeira/        ← F-13 (Jera)
-├── dominio-estagios/                 ← F-14 (Clara)
+├── dominio-estagios/                 ← F-14 (Maria Clara)
 │
 ├── aplicacao/                        ← Orquestração cross-domínio e DTOs (*Resumo)
 ├── infraestrutura/                   ← JPA, adaptadores de persistência
@@ -164,7 +291,7 @@ mvn test
 | F-01 · Gestão Curricular | `criar_matriz_curricular` · `configurar_prerequisitos` · `gerenciar_disciplinas_matriz` · `gerenciar_status_matriz` |
 | F-02 · Período Letivo | `us01_cadastrar_periodo_letivo` · `us02_definir_janelas_academicas` · `us03_encerrar_periodo_letivo` · `us05_editar_periodo_letivo` · `us06_cancelar_periodo_letivo` |
 | F-03 · Oferta de Turmas | `us01_gerenciar_salas` · `us02_gerenciar_professores` · `us03_ofertar_turma` · `us04_definir_professor_horario_sala` · `us_turma_decorator` |
-| F-04 · Matrícula | `montar_plano_matricula` · `confirmar_matricula` · `ajustar_matricula` · `trancar_disciplina` · `solicitar_excecao` |
+| F-04 · Matrícula | `montar_plano_matricula` · `confirmar_matricula` · `ajustar_matricula` · `trancar_disciplina` · `solicitar_excecao` · `trancar_periodo` |
 | F-05 · Gestão Pedagógica | `us01_registrar_aulas` · `us02_registrar_frequencia` · `us03_gerenciar_avaliacoes` · `us04_lancar_notas` · `us07_nota_recuperacao` |
 | F-06 · Histórico Acadêmico | `us01_consolidar_resultados` · `us02_consultar_historico_oficial` · `us03_registrar_acompanhamento` · `us04_atualizar_situacao_discente` · `us05_registrar_aproveitamento` · `us06_retificar_resultado` |
 | F-07 · Secretaria Virtual | `us01_abrir_solicitacao` · `us02_analisar_solicitacao` · `us03_complementar_solicitacao` · `us04_acompanhar_solicitacoes` · `us05_cancelar_solicitacao` |
@@ -231,23 +358,35 @@ Termos com significado fixo no projeto — sem variações ou sinônimos informa
 
 | Camada | Tecnologia |
 |---|---|
-| Linguagem | Java 17 |
+| Linguagem | Java 21 |
 | Framework Web | Spring Boot 4.0.5 |
-| Persistência | Spring Data JPA / Hibernate |
-| Banco de dados | PostgreSQL (Docker) |
+| Persistência | Spring Data JPA / Hibernate 7 |
+| Banco de dados | PostgreSQL 16 (Docker) |
 | Testes BDD | Cucumber 7.34.3 + JUnit 6.0.3 + Mockito 5.23.0 |
 | Build | Maven multi-módulo |
 | Utilitários | Apache Commons Lang3 |
-| Containerização | JIB Maven Plugin 3.5.1 (`eclipse-temurin:17-jre`) |
-| Frontend | React + Vite |
+| Containerização | Docker Compose (backend + frontend + postgres) |
+| Frontend | React + Vite (TanStack Router + React Query) |
 
 ---
 
 ## Como Rodar
 
-**Pré-requisitos:** Java 17+, Maven 3.8+, Docker
+**Pré-requisitos:** Docker e Docker Compose
 
 ```bash
+# Subir todos os serviços (backend, frontend, postgres) com hot reload
+docker compose up
+
+# Backend disponível em http://localhost:8080
+# Frontend disponível em http://localhost:5173
+```
+
+**Sem Docker (desenvolvimento local):**
+
+```bash
+# Pré-requisitos: Java 21+, Maven 3.9+, PostgreSQL local
+
 # 1. Build de todos os módulos
 mvn install -DskipTests
 
@@ -259,23 +398,20 @@ mvn spring-boot:run
 mvn test
 ```
 
-> Para desenvolvimento local, crie `apresentacao-backend/src/main/resources/application-desenvolvimento.properties` com a URL do banco local e use `BackendDesenvolvimentoAplicacao` como entry point (perfil `desenvolvimento`).
-
 ---
 
 ## Equipe
 
 | Integrante | Funcionalidades | Padrão |
 |---|---|---|
-| Julia Teixeira | F-01 · Gestão Curricular · F-06 · Histórico Acadêmico | Iterator |
+| Julia Torres   | F-01 · Gestão Curricular · F-06 · Histórico Acadêmico | Iterator |
 | Matheus Veríssimo | F-10 · Permanência Acadêmica · F-11 · Apoio Psicopedagógico | Observer |
 | Vinicius | F-04 · Matrícula · F-12 · Mobilidade Acadêmica | Strategy |
 | Bernardo | F-07 · Secretaria Virtual · F-08 · Integralização e Colação | Proxy |
-| Clara | F-03 · Oferta de Turmas · F-14 · Estágios | Decorator |
-| Neto | F-02 · Período Letivo · F-05 · Gestão Pedagógica | Template Method |
+| Maria Clara    | F-03 · Oferta de Turmas · F-14 · Estágios | Decorator |
+| Maria Claudia  | F-02 · Período Letivo · F-05 · Gestão Pedagógica | Template Method |
 | Jera | F-09 · Atividades Complementares · F-13 · Gestão Financeira | Observer |
 
-**Professor:** Saulo Meira Araujo — Disciplina de Requisitos, Projeto de Software e Validação · CESAR School
 
 ---
 

@@ -41,14 +41,22 @@ import school.cesar.acadlab.aplicacao.permanenciaacademica.PermanenciaAcademicaR
 import school.cesar.acadlab.aplicacao.permanenciaacademica.PermanenciaAcademicaServicoAplicacao;
 import school.cesar.acadlab.aplicacao.secretariavirtual.SolicitacaoAcademicaRepositorioAplicacao;
 import school.cesar.acadlab.aplicacao.secretariavirtual.SolicitacaoAcademicaServicoAplicacao;
+import school.cesar.acadlab.aplicacao.periodoletivo.PeriodoLetivoRepositorioAplicacao;
+import school.cesar.acadlab.aplicacao.periodoletivo.PeriodoLetivoServicoAplicacao;
 import school.cesar.acadlab.dominio.apoiopsicopedagogico.ApoioServico;
 import school.cesar.acadlab.dominio.apoiopsicopedagogico.AtendimentoServico;
 import school.cesar.acadlab.dominio.apoiopsicopedagogico.TriagemServico;
 import school.cesar.acadlab.dominio.apoiopsicopedagogico.caso.CasoRepositorio;
 import school.cesar.acadlab.dominio.apoiopsicopedagogico.solicitacao.SolicitacaoApoioRepositorio;
 import school.cesar.acadlab.dominio.estagios.EstagioServico;
+import school.cesar.acadlab.dominio.periodoletivo.PeriodoLetivoServico;
+import school.cesar.acadlab.dominio.periodoletivo.VerificadorMatriculasPeriodo;
+import school.cesar.acadlab.dominio.periodoletivo.VerificadorPendenciasPeriodo;
+import school.cesar.acadlab.dominio.periodoletivo.periodo.PeriodoLetivoRepositorio;
+import school.cesar.acadlab.dominio.estagios.candidatura.CandidaturaRepositorio;
 import school.cesar.acadlab.dominio.estagios.estagio.EstagioRepositorio;
 import school.cesar.acadlab.dominio.estagios.oportunidade.OportunidadeRepositorio;
+import school.cesar.acadlab.dominio.estagios.oportunidade.VerificadorElegibilidade;
 import school.cesar.acadlab.dominio.evento.EventoBarramento;
 import school.cesar.acadlab.dominio.gestaopedagogica.DiarioTurmaServico;
 import school.cesar.acadlab.dominio.gestaopedagogica.diario.DiarioTurmaRepositorio;
@@ -181,9 +189,17 @@ public class BackendAplicacao {
     }
 
     @Bean
+    VerificadorElegibilidade verificadorElegibilidade() {
+        return (estudanteId, criterio) -> true;
+    }
+
+    @Bean
     EstagioServico estagioServico(OportunidadeRepositorio oportunidadeRepositorio,
-                                   EstagioRepositorio estagioRepositorio) {
-        return new EstagioServico(oportunidadeRepositorio, estagioRepositorio);
+                                   CandidaturaRepositorio candidaturaRepositorio,
+                                   EstagioRepositorio estagioRepositorio,
+                                   VerificadorElegibilidade verificadorElegibilidade) {
+        return new EstagioServico(oportunidadeRepositorio, candidaturaRepositorio,
+                estagioRepositorio, verificadorElegibilidade);
     }
 
     @Bean
@@ -309,6 +325,30 @@ public class BackendAplicacao {
     HistoricoAcademicoServicoAplicacao historicoAcademicoServicoAplicacao(
             HistoricoAcademicoRepositorioAplicacao repositorio) {
         return new HistoricoAcademicoServicoAplicacao(repositorio);
+    }
+
+    /* ===== Período Letivo ===== */
+
+    @Bean
+    VerificadorPendenciasPeriodo verificadorPendenciasPeriodo() {
+        return id -> false;
+    }
+
+    @Bean
+    VerificadorMatriculasPeriodo verificadorMatriculasPeriodo() {
+        return id -> false;
+    }
+
+    @Bean
+    PeriodoLetivoServico periodoLetivoServico(PeriodoLetivoRepositorio repositorio,
+                                               VerificadorPendenciasPeriodo verificadorPendencias,
+                                               VerificadorMatriculasPeriodo verificadorMatriculas) {
+        return new PeriodoLetivoServico(repositorio, verificadorPendencias, verificadorMatriculas);
+    }
+
+    @Bean
+    PeriodoLetivoServicoAplicacao periodoLetivoServicoAplicacao(PeriodoLetivoRepositorioAplicacao repositorio) {
+        return new PeriodoLetivoServicoAplicacao(repositorio);
     }
 
     public static void main(String[] args) {

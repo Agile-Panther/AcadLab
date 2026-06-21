@@ -1,4 +1,5 @@
-#language: pt
+# language: pt
+
 Funcionalidade: Analisar inscrições e interpor recurso
 
   Cenário: Assistência estudantil defere inscrição com sucesso
@@ -19,4 +20,4 @@ Funcionalidade: Analisar inscrições e interpor recurso
   Cenário: Recurso falha quando já foi interposto anteriormente
     Dado existe uma inscrição com recurso já interposto
     Quando o estudante tenta interpor novo recurso
-    Então o sistema informa que já foi interposto um recurso para esta inscrição
+    Então o sistema deve rejeitar informando "já foi interposto um recurso para esta inscrição"

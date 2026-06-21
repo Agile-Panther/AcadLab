@@ -39,9 +39,9 @@ public class AtividadeComplementarServico {
             int horas, LocalDate dataRealizacao, String identificadorCertificado, String descricao) {
         notNull(estudanteId, "estudanteId obrigatório");
         if (!verificadorVinculo.estaNoVinculo(estudanteId, dataRealizacao))
-            throw new IllegalStateException("RN1: A atividade deve ter sido realizada durante o período de vínculo do estudante");
+            throw new IllegalStateException("estudante não possui vínculo ativo na data da atividade");
         if (verificadorCertificado.jaUtilizado(estudanteId, identificadorCertificado))
-            throw new IllegalStateException("RN2: O mesmo comprovante não pode ser usado em duas atividades");
+            throw new IllegalStateException("certificado já utilizado em outra atividade");
         var id = repositorio.proximoId();
         var atividade = new AtividadeComplementar(id, estudanteId, categoriaId,
                 identificadorCertificado, descricao, horas, dataRealizacao);
@@ -53,7 +53,7 @@ public class AtividadeComplementarServico {
         notNull(id, "id obrigatório");
         var atividade = repositorio.obter(id);
         if (verificadorLimite.excedeLimite(atividade.getEstudanteId(), atividade.getCategoriaId(), horasAprovadas))
-            throw new IllegalStateException("RN3: Limite máximo de horas por categoria não pode ser excedido");
+            throw new IllegalStateException("horas aprovadas excedem o limite da categoria");
         var evento = atividade.deferir(horasAprovadas);
         repositorio.salvar(atividade);
         barramento.postar(evento);
@@ -70,7 +70,7 @@ public class AtividadeComplementarServico {
     public void solicitarRevisao(AtividadeComplementarId id, String justificativa) {
         notNull(id, "id obrigatório");
         if (verificadorContabilizacao.foiContabilizada(id))
-            throw new IllegalStateException("RN4: Revisão não permitida para atividade já contabilizada na integralização curricular");
+            throw new IllegalStateException("atividade já foi contabilizada na integralização");
         var atividade = repositorio.obter(id);
         var evento = atividade.solicitarRevisao(justificativa);
         repositorio.salvar(atividade);

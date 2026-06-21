@@ -1,7 +1,8 @@
 package school.cesar.acadlab.dominio.mobilidadeacademica;
 
 public class MobilidadeFuncionalidade {
-    protected MobilidadeAcademicaRepositorioTest repositorio;
+    public MobilidadeAcademicaRepositorioTest repositorio;
+    public RuntimeException excecao;
 
     public MobilidadeFuncionalidade() {
         repositorio = new MobilidadeAcademicaRepositorioTest();

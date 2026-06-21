@@ -25,7 +25,7 @@ public class Contestacao {
     public void resolver(String parecer) {
         notNull(parecer, "parecer obrigatório");
         if (status != StatusContestacao.PENDENTE)
-            throw new IllegalStateException("Contestação já foi resolvida");
+            throw new IllegalStateException("contestação já foi resolvida");
         this.status = StatusContestacao.RESOLVIDA;
         this.parecer = parecer;
     }

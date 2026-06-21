@@ -8,43 +8,47 @@ import io.cucumber.java.pt.Entao;
 import io.cucumber.java.pt.Quando;
 import school.cesar.acadlab.dominio.historicoacademico.HistoricoFuncionalidade;
 
-public class RetificarRegistroFuncionalidade extends HistoricoFuncionalidade {
+public class RetificarRegistroFuncionalidade {
+    private final HistoricoFuncionalidade ctx;
     private HistoricoAcademico historico;
     private RegistroDisciplinaId registroId;
-    private RuntimeException excecao;
     private final SecretariaId secretaria = new SecretariaId(1);
+
+    public RetificarRegistroFuncionalidade(HistoricoFuncionalidade ctx) {
+        this.ctx = ctx;
+    }
 
     @Dado("um histórico com registro de disciplina consolidado para retificação")
     public void historicoComRegistroConsolidado() {
         historico = new HistoricoAcademico(
-                repositorio.proximoId(),
+                ctx.repositorio.proximoId(),
                 new EstudanteId(5),
                 new MatrizCurricularId(1));
-        registroId = repositorio.proximoRegistroId();
+        registroId = ctx.repositorio.proximoRegistroId();
         historico.consolidarRegistro(registroId, new DisciplinaId(1), new TurmaId(1),
                 new PeriodoLetivoId(1), 4.0, 80.0, SituacaoAcademica.REPROVADO_NOTA, true);
-        repositorio.salvar(historico);
+        ctx.repositorio.salvar(historico);
     }
 
     @Quando("a secretaria retifica o registro para situação {string}")
     public void retificaRegistro(String novaSituacao) {
         try {
             historico.retificarRegistro(
-                    repositorio.proximoRetificacaoId(),
+                    ctx.repositorio.proximoRetificacaoId(),
                     registroId,
                     SituacaoAcademica.valueOf(novaSituacao),
                     secretaria,
                     "Revisão da nota após recurso deferido",
                     LocalDate.of(2025, 8, 1));
-            repositorio.salvar(historico);
+            ctx.repositorio.salvar(historico);
         } catch (RuntimeException e) {
-            excecao = e;
+            ctx.excecao = e;
         }
     }
 
     @Entao("a situação do registro é atualizada para {string}")
     public void situacaoAtualizada(String situacaoEsperada) {
-        assertNull(excecao, "Não deveria ter lançado exceção");
+        assertNull(ctx.excecao, "Não deveria ter lançado exceção");
         var registro = historico.getRegistros().stream()
                 .filter(r -> r.getId().equals(registroId))
                 .findFirst().orElseThrow();
@@ -63,20 +67,14 @@ public class RetificarRegistroFuncionalidade extends HistoricoFuncionalidade {
     public void tentaRetificarRegistroInexistente() {
         try {
             historico.retificarRegistro(
-                    repositorio.proximoRetificacaoId(),
+                    ctx.repositorio.proximoRetificacaoId(),
                     new RegistroDisciplinaId(999),
                     SituacaoAcademica.APROVADO,
                     secretaria,
                     "Justificativa",
                     LocalDate.of(2025, 8, 1));
         } catch (RuntimeException e) {
-            excecao = e;
+            ctx.excecao = e;
         }
-    }
-
-    @Entao("o sistema lança erro de registro não encontrado")
-    public void sistemaLancaErroRegistroNaoEncontrado() {
-        assertNotNull(excecao);
-        assertInstanceOf(IllegalArgumentException.class, excecao);
     }
 }
