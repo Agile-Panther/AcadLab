@@ -3,7 +3,6 @@ import { createFileRoute } from "@tanstack/react-router";
 import {
   AppShell, SectionTitle, StatusBadge, StatCard, Avatar, FormField, GradientText, DotPattern,
 } from "@/components/acadlab";
-
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -14,6 +13,7 @@ import {
   BookMarked, Users, Building2, FileText, Award, Clock, Activity,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/perfil")({
   head: () => ({ meta: [{ title: "Perfil — AcadLab" }] }),
@@ -110,6 +110,7 @@ function ProfileHeader({
               <Avatar initials={initials} size={88} variant="solid" className="ring-4 ring-card" />
               <button
                 aria-label="Alterar foto"
+                onClick={() => toast.info("Selecione uma imagem para alterar sua foto de perfil.")}
                 className="absolute bottom-1 right-1 inline-flex h-7 w-7 items-center justify-center rounded-full bg-card text-foreground shadow ring-1 ring-border hover:bg-muted"
               >
                 <Camera className="h-3.5 w-3.5" />
@@ -119,7 +120,6 @@ function ProfileHeader({
           <div className="pb-1">
             <GradientText as="h2" className="text-[20px] font-semibold leading-tight">{name}</GradientText>
             <p className="mt-0.5 text-[13px] text-muted-foreground">{role}</p>
-
             <div className="mt-2 flex flex-wrap gap-1.5">
               {tags.map((t, i) => (
                 <StatusBadge key={i} tone={(t.tone ?? "info") as any}>{t.label}</StatusBadge>
@@ -128,7 +128,7 @@ function ProfileHeader({
           </div>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm"><Pencil className="mr-1.5 h-3.5 w-3.5" /> Editar perfil</Button>
+          <Button variant="outline" size="sm" onClick={() => toast.info("Modo de edição completo do perfil aberto.")}><Pencil className="mr-1.5 h-3.5 w-3.5" /> Editar perfil</Button>
         </div>
       </div>
     </div>
@@ -168,6 +168,25 @@ function TwoCol({ children }: { children: ReactNode }) {
 /* ---------- Estudante ---------- */
 
 function EstudanteProfile() {
+  const [editing, setEditing] = useState(false);
+  const [dados, setDados] = useState({
+    email: "maria.santos@acad.edu.br",
+    telefone: "(11) 98765-4321",
+    endereco: "Rua das Acácias, 120 — São Paulo/SP",
+    nascimento: "14/03/2003",
+  });
+  const [draft, setDraft] = useState(dados);
+
+  const salvar = () => {
+    setDados(draft);
+    setEditing(false);
+    toast.success("Dados pessoais atualizados com sucesso!");
+  };
+  const cancelar = () => {
+    setDraft(dados);
+    setEditing(false);
+  };
+
   return (
     <div className="space-y-6">
       <ProfileHeader
@@ -190,15 +209,45 @@ function EstudanteProfile() {
 
       <TwoCol>
         <div className="lg:col-span-2 space-y-5">
-          <Card title="Dados pessoais" action={<Button variant="ghost" size="sm"><Pencil className="h-3.5 w-3.5" /></Button>}>
-            <div className="grid gap-1 sm:grid-cols-2">
-              <InfoRow icon={IdCard} label="Matrícula" value="2022.1.08.0142" />
-              <InfoRow icon={Calendar} label="Data de nascimento" value="14/03/2003" />
-              <InfoRow icon={Mail} label="E-mail" value="maria.santos@acad.edu.br" />
-              <InfoRow icon={Phone} label="Telefone" value="(11) 98765-4321" />
-              <InfoRow icon={MapPin} label="Endereço" value="Rua das Acácias, 120 — São Paulo/SP" />
-              <InfoRow icon={Activity} label="Status acadêmico" value={<StatusBadge tone="success">Regular</StatusBadge>} />
-            </div>
+          <Card
+            title="Dados pessoais"
+            action={
+              <Button variant="ghost" size="sm" onClick={() => setEditing((e) => !e)}>
+                <Pencil className="h-3.5 w-3.5" />
+              </Button>
+            }
+          >
+            {editing ? (
+              <div className="space-y-3">
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <FormField label="E-mail" full>
+                    <Input className="h-9" value={draft.email} onChange={(e) => setDraft((d) => ({ ...d, email: e.target.value }))} />
+                  </FormField>
+                  <FormField label="Telefone" full>
+                    <Input className="h-9" value={draft.telefone} onChange={(e) => setDraft((d) => ({ ...d, telefone: e.target.value }))} />
+                  </FormField>
+                  <FormField label="Data de nascimento" full>
+                    <Input className="h-9" value={draft.nascimento} onChange={(e) => setDraft((d) => ({ ...d, nascimento: e.target.value }))} />
+                  </FormField>
+                  <FormField label="Endereço" full>
+                    <Input className="h-9" value={draft.endereco} onChange={(e) => setDraft((d) => ({ ...d, endereco: e.target.value }))} />
+                  </FormField>
+                </div>
+                <div className="flex justify-end gap-2 pt-1">
+                  <Button variant="outline" size="sm" onClick={cancelar}>Cancelar</Button>
+                  <Button size="sm" onClick={salvar}>Salvar</Button>
+                </div>
+              </div>
+            ) : (
+              <div className="grid gap-1 sm:grid-cols-2">
+                <InfoRow icon={IdCard} label="Matrícula" value="2022.1.08.0142" />
+                <InfoRow icon={Calendar} label="Data de nascimento" value={dados.nascimento} />
+                <InfoRow icon={Mail} label="E-mail" value={dados.email} />
+                <InfoRow icon={Phone} label="Telefone" value={dados.telefone} />
+                <InfoRow icon={MapPin} label="Endereço" value={dados.endereco} />
+                <InfoRow icon={Activity} label="Status acadêmico" value={<StatusBadge tone="success">Regular</StatusBadge>} />
+              </div>
+            )}
           </Card>
 
           <Card title="Histórico recente" subtitle="Últimas disciplinas concluídas">
@@ -228,19 +277,90 @@ function EstudanteProfile() {
             <InfoRow icon={Clock} label="Previsão de conclusão" value="2026.1" />
           </Card>
 
-          <Card title="Acessibilidade & preferências">
-            <InfoRow icon={Award} label="Necessidades específicas" value="Nenhuma declarada" />
-            <InfoRow icon={Mail} label="Notificações" value="E-mail e Push" />
-          </Card>
+          <PreferenciasCard />
+          <SenhaCard />
         </div>
       </TwoCol>
     </div>
   );
 }
 
+function PreferenciasCard() {
+  const [notif, setNotif] = useState("E-mail e Push");
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(notif);
+  const salvar = () => { setNotif(draft); setEditing(false); toast.success("Preferências salvas!"); };
+  return (
+    <Card
+      title="Acessibilidade & preferências"
+      action={<Button variant="ghost" size="sm" onClick={() => setEditing((e) => !e)}><Pencil className="h-3.5 w-3.5" /></Button>}
+    >
+      {editing ? (
+        <div className="space-y-3">
+          <FormField label="Notificações" full>
+            <Input className="h-9" value={draft} onChange={(e) => setDraft(e.target.value)} />
+          </FormField>
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" size="sm" onClick={() => { setDraft(notif); setEditing(false); }}>Cancelar</Button>
+            <Button size="sm" onClick={salvar}>Salvar</Button>
+          </div>
+        </div>
+      ) : (
+        <>
+          <InfoRow icon={Award} label="Necessidades específicas" value="Nenhuma declarada" />
+          <InfoRow icon={Mail} label="Notificações" value={notif} />
+        </>
+      )}
+    </Card>
+  );
+}
+
+function SenhaCard() {
+  const [senhaAtual, setSenhaAtual] = useState("");
+  const [novaSenha, setNovaSenha] = useState("");
+  const [confirmar, setConfirmar] = useState("");
+  const [open, setOpen] = useState(false);
+  const salvar = () => {
+    if (!senhaAtual || !novaSenha) { toast.error("Preencha todos os campos de senha."); return; }
+    if (novaSenha !== confirmar) { toast.error("A nova senha e a confirmação não coincidem."); return; }
+    if (novaSenha.length < 8) { toast.error("A senha deve ter pelo menos 8 caracteres."); return; }
+    setSenhaAtual(""); setNovaSenha(""); setConfirmar(""); setOpen(false);
+    toast.success("Senha alterada com sucesso!");
+  };
+  return (
+    <Card
+      title="Segurança"
+      action={<Button variant="ghost" size="sm" onClick={() => setOpen((o) => !o)}><Pencil className="h-3.5 w-3.5" /></Button>}
+    >
+      {open ? (
+        <div className="space-y-3">
+          <FormField label="Senha atual" full><Input type="password" className="h-9" value={senhaAtual} onChange={(e) => setSenhaAtual(e.target.value)} /></FormField>
+          <FormField label="Nova senha" full><Input type="password" className="h-9" value={novaSenha} onChange={(e) => setNovaSenha(e.target.value)} /></FormField>
+          <FormField label="Confirmar nova senha" full><Input type="password" className="h-9" value={confirmar} onChange={(e) => setConfirmar(e.target.value)} /></FormField>
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" size="sm" onClick={() => setOpen(false)}>Cancelar</Button>
+            <Button size="sm" onClick={salvar}>Alterar senha</Button>
+          </div>
+        </div>
+      ) : (
+        <>
+          <InfoRow icon={ShieldCheck} label="Autenticação" value="Senha + 2FA" />
+          <InfoRow icon={Clock} label="Última troca" value="há 45 dias" />
+        </>
+      )}
+    </Card>
+  );
+}
+
 /* ---------- Professor ---------- */
 
 function ProfessorProfile() {
+  const [contato, setContato] = useState({ email: "carlos.lima@acad.edu.br", ramal: "2341", sala: "B-204" });
+  const [editContato, setEditContato] = useState(false);
+  const [draft, setDraft] = useState(contato);
+
+  const salvarContato = () => { setContato(draft); setEditContato(false); toast.success("Dados de contato atualizados!"); };
+
   return (
     <div className="space-y-6">
       <ProfileHeader
@@ -266,7 +386,7 @@ function ProfessorProfile() {
           <Card title="Dados profissionais">
             <div className="grid gap-1 sm:grid-cols-2">
               <InfoRow icon={IdCard} label="Matrícula funcional" value="DOC-2005-0341" />
-              <InfoRow icon={Mail} label="E-mail institucional" value="carlos.lima@acad.edu.br" />
+              <InfoRow icon={Mail} label="E-mail institucional" value={contato.email} />
               <InfoRow icon={Award} label="Titulação" value="Doutor em Ciência da Computação" />
               <InfoRow icon={Building2} label="Lotação" value="Depto. de Computação · Bloco B" />
               <InfoRow icon={Clock} label="Regime" value="Dedicação Exclusiva (40h)" />
@@ -303,10 +423,27 @@ function ProfessorProfile() {
         </div>
 
         <div className="space-y-5">
-          <Card title="Contato">
-            <InfoRow icon={Mail} label="E-mail" value="carlos.lima@acad.edu.br" />
-            <InfoRow icon={Phone} label="Ramal" value="2341" />
-            <InfoRow icon={MapPin} label="Sala" value="B-204" />
+          <Card
+            title="Contato"
+            action={<Button variant="ghost" size="sm" onClick={() => { setDraft(contato); setEditContato((e) => !e); }}><Pencil className="h-3.5 w-3.5" /></Button>}
+          >
+            {editContato ? (
+              <div className="space-y-3">
+                <FormField label="E-mail" full><Input className="h-9" value={draft.email} onChange={(e) => setDraft((d) => ({ ...d, email: e.target.value }))} /></FormField>
+                <FormField label="Ramal" full><Input className="h-9" value={draft.ramal} onChange={(e) => setDraft((d) => ({ ...d, ramal: e.target.value }))} /></FormField>
+                <FormField label="Sala" full><Input className="h-9" value={draft.sala} onChange={(e) => setDraft((d) => ({ ...d, sala: e.target.value }))} /></FormField>
+                <div className="flex justify-end gap-2">
+                  <Button variant="outline" size="sm" onClick={() => setEditContato(false)}>Cancelar</Button>
+                  <Button size="sm" onClick={salvarContato}>Salvar</Button>
+                </div>
+              </div>
+            ) : (
+              <>
+                <InfoRow icon={Mail} label="E-mail" value={contato.email} />
+                <InfoRow icon={Phone} label="Ramal" value={contato.ramal} />
+                <InfoRow icon={MapPin} label="Sala" value={contato.sala} />
+              </>
+            )}
           </Card>
           <Card title="Atendimento">
             <InfoRow icon={Clock} label="Horário fixo" value="Quartas, 14h–16h" />
@@ -399,6 +536,10 @@ function CoordenadorProfile() {
 /* ---------- Secretaria / Admin ---------- */
 
 function SecretariaProfile() {
+  const [editSeg, setEditSeg] = useState(false);
+  const [senha2FA, setSenha2FA] = useState("2FA ativo");
+  const [draftSeg, setDraftSeg] = useState(senha2FA);
+
   return (
     <div className="space-y-6">
       <ProfileHeader
@@ -469,10 +610,27 @@ function SecretariaProfile() {
         </div>
 
         <div className="space-y-5">
-          <Card title="Segurança">
-            <InfoRow icon={ShieldCheck} label="Autenticação" value="2FA ativo" />
-            <InfoRow icon={Clock} label="Último acesso" value="Hoje, 09:14" />
-            <InfoRow icon={MapPin} label="Localidade" value="São Paulo/SP" />
+          <Card
+            title="Segurança"
+            action={<Button variant="ghost" size="sm" onClick={() => { setDraftSeg(senha2FA); setEditSeg((e) => !e); }}><Pencil className="h-3.5 w-3.5" /></Button>}
+          >
+            {editSeg ? (
+              <div className="space-y-3">
+                <FormField label="Status 2FA" full>
+                  <Input className="h-9" value={draftSeg} onChange={(e) => setDraftSeg(e.target.value)} />
+                </FormField>
+                <div className="flex justify-end gap-2">
+                  <Button variant="outline" size="sm" onClick={() => setEditSeg(false)}>Cancelar</Button>
+                  <Button size="sm" onClick={() => { setSenha2FA(draftSeg); setEditSeg(false); toast.success("Configurações de segurança salvas!"); }}>Salvar</Button>
+                </div>
+              </div>
+            ) : (
+              <>
+                <InfoRow icon={ShieldCheck} label="Autenticação" value={senha2FA} />
+                <InfoRow icon={Clock} label="Último acesso" value="Hoje, 09:14" />
+                <InfoRow icon={MapPin} label="Localidade" value="São Paulo/SP" />
+              </>
+            )}
           </Card>
           <Card title="Setores que atende">
             <div className="flex flex-wrap gap-1.5">
@@ -490,6 +648,28 @@ function SecretariaProfile() {
 /* ---------- Psicólogo ---------- */
 
 function PsicologoProfile() {
+  const [bio, setBio] = useState("Atendimento humanizado, foco em saúde mental estudantil.");
+  const [boasVindas, setBoasVindas] = useState("Você não está sozinho(a). Agende um horário.");
+  const [sobre, setSobre] = useState("Psicóloga com 12 anos de experiência em contexto universitário.");
+
+  const [draftBio, setDraftBio] = useState(bio);
+  const [draftBoasVindas, setDraftBoasVindas] = useState(boasVindas);
+  const [draftSobre, setDraftSobre] = useState(sobre);
+
+  const salvar = () => {
+    setBio(draftBio);
+    setBoasVindas(draftBoasVindas);
+    setSobre(draftSobre);
+    toast.success("Nota pública do perfil salva com sucesso!");
+  };
+
+  const cancelar = () => {
+    setDraftBio(bio);
+    setDraftBoasVindas(boasVindas);
+    setDraftSobre(sobre);
+    toast("Alterações descartadas.");
+  };
+
   return (
     <div className="space-y-6">
       <ProfileHeader
@@ -566,14 +746,20 @@ function PsicologoProfile() {
 
       <Card title="Editar nota pública do perfil">
         <div className="grid gap-4 sm:grid-cols-2">
-          <FormField label="Bio resumida"><Input className="h-10" defaultValue="Atendimento humanizado, foco em saúde mental estudantil." /></FormField>
-          <FormField label="Mensagem de boas-vindas"><Input className="h-10" defaultValue="Você não está sozinho(a). Agende um horário." /></FormField>
-          <FormField label="Sobre" full><Textarea rows={3} defaultValue="Psicóloga com 12 anos de experiência em contexto universitário." /></FormField>
+          <FormField label="Bio resumida">
+            <Input className="h-10" value={draftBio} onChange={(e) => setDraftBio(e.target.value)} />
+          </FormField>
+          <FormField label="Mensagem de boas-vindas">
+            <Input className="h-10" value={draftBoasVindas} onChange={(e) => setDraftBoasVindas(e.target.value)} />
+          </FormField>
+          <FormField label="Sobre" full>
+            <Textarea rows={3} value={draftSobre} onChange={(e) => setDraftSobre(e.target.value)} />
+          </FormField>
         </div>
         <Separator className="my-4" />
         <div className="flex justify-end gap-2">
-          <Button variant="outline">Cancelar</Button>
-          <Button>Salvar alterações</Button>
+          <Button variant="outline" onClick={cancelar}>Cancelar</Button>
+          <Button onClick={salvar}>Salvar alterações</Button>
         </div>
       </Card>
     </div>

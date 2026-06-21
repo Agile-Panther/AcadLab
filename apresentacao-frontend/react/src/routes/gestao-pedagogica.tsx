@@ -1,224 +1,372 @@
+import { useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { toast } from "sonner";
 import {
-  FeaturePage, StatsRow, DataTable, StatusBadge, RowActionButton, FormField,
-  ValidationCallout, SuccessBanner, SectionTitle, ProgressRow,
+  AppShell, SectionTitle, StatsRow, DataTable, StatusBadge, RowActionButton,
+  ProgressRow, ValidationCallout, FormField, TabsRow, useProfileSwitcher,
 } from "@/components/acadlab";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Button } from "@/components/ui/button";
-import { api } from "@/lib/api";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
+} from "@/components/ui/dialog";
+import { ArrowLeft, CheckCircle2 } from "lucide-react";
 
 export const Route = createFileRoute("/gestao-pedagogica")({
   head: () => ({ meta: [{ title: "Gestão Pedagógica — AcadLab" }] }),
   component: Page,
 });
 
-const TURMA_ID = 1;
+type Turma = {
+  id: string; codigo: string; disciplina: string; matriculados: number;
+  aulasDadas: number; aulasTotal: number; notasFechadas: boolean;
+};
 
-function Painel() {
-  const { data, isLoading, isError } = useQuery({
-    queryKey: ["diario", TURMA_ID],
-    queryFn: () => api.diarios.getByTurma(TURMA_ID),
-  });
+const turmas: Turma[] = [
+  { id: "T1", codigo: "AED301", disciplina: "Algoritmos Avançados", matriculados: 28, aulasDadas: 22, aulasTotal: 30, notasFechadas: false },
+  { id: "T2", codigo: "BD302", disciplina: "Banco de Dados II", matriculados: 30, aulasDadas: 28, aulasTotal: 30, notasFechadas: false },
+  { id: "T3", codigo: "ES303", disciplina: "Testes de Software", matriculados: 22, aulasDadas: 30, aulasTotal: 30, notasFechadas: true },
+];
 
-  const diarTone = (s: string) =>
-    s === "ABERTO" ? "info" : s === "FECHADO" ? "success" : "warning";
-  const diarLabel = (s: string) =>
-    ({ ABERTO: "Aberto", FECHADO: "Fechado", PENDENTE: "Pendente" }[s] ?? s);
+const subTabs = [
+  { value: "overview", label: "Visão geral" },
+  { value: "aulas", label: "Aulas" },
+  { value: "freq", label: "Frequência" },
+  { value: "aval", label: "Avaliações & Notas" },
+  { value: "fechar", label: "Fechamento" },
+];
+
+type TurmaCurso = Turma & { prof: string; freq: number; risco: number };
+
+const turmasCurso: TurmaCurso[] = [
+  { id: "T1", codigo: "AED301", disciplina: "Algoritmos Avançados", prof: "Carlos Lima", matriculados: 28, aulasDadas: 22, aulasTotal: 30, freq: 87, risco: 3, notasFechadas: false },
+  { id: "T2", codigo: "BD302", disciplina: "Banco de Dados II", prof: "Carlos Lima", matriculados: 30, aulasDadas: 28, aulasTotal: 30, freq: 84, risco: 5, notasFechadas: false },
+  { id: "T4", codigo: "ENG201", disciplina: "Eng. de Requisitos", prof: "Ana Souza", matriculados: 26, aulasDadas: 20, aulasTotal: 30, freq: 72, risco: 8, notasFechadas: false },
+  { id: "T5", codigo: "POO101", disciplina: "POO", prof: "Renato Dias", matriculados: 34, aulasDadas: 30, aulasTotal: 30, freq: 91, risco: 2, notasFechadas: true },
+  { id: "T3", codigo: "ES303", disciplina: "Testes de Software", prof: "Carlos Lima", matriculados: 22, aulasDadas: 30, aulasTotal: 30, freq: 89, risco: 1, notasFechadas: true },
+];
+
+function Page() {
+  const [selected, setSelected] = useState<string | null>(null);
+  const turma = turmas.find((t) => t.id === selected);
+  const [tab, setTab] = useState("overview");
+  const [acompanhar, setAcompanhar] = useState<TurmaCurso | null>(null);
+  const { active: perfil } = useProfileSwitcher([
+    { value: "professor", label: "Professor", description: "Lança aulas, frequência e notas" },
+    { value: "coordenador", label: "Coordenador", description: "Acompanha turmas do curso" },
+  ]);
+  const isCoord = perfil === "coordenador";
+  const subtitle = isCoord
+    ? "Coordenação · Acompanhamento das turmas — 2025.2"
+    : "Professor: Carlos Lima — 2025.2";
 
   return (
-    <>
-      <StatsRow stats={[
-        { label: "Status do Diário", value: isLoading ? "…" : diarLabel(data?.status ?? ""), tone: diarTone(data?.status ?? "") },
-        { label: "Turma", value: isLoading ? "…" : data ? `Turma ${data.turmaId}` : "—", tone: "info" },
-        { label: "Média Mínima", value: isLoading ? "…" : data?.mediaMinima ?? "—", tone: "warning" },
-        { label: "Freq. Mínima", value: isLoading ? "…" : data ? `${data.frequenciaMinima}%` : "—", tone: "danger" },
-      ]} />
-      {isError && <p className="text-sm text-destructive px-1">Não foi possível conectar ao servidor.</p>}
-      <div className="rounded-xl border bg-card p-5 shadow-card">
-        <SectionTitle
-          title="Visão Geral do Diário de Turma"
-          subtitle={isLoading ? "Carregando..." : data ? `Período ${data.dataInicioPeriodo} a ${data.dataFimPeriodo} · Prof. ${data.professorResponsavelId}` : "Nenhum diário de turma encontrado"}
-        />
-      </div>
-    </>
+    <AppShell title="Gestão Pedagógica" subtitle={subtitle}>
+      {isCoord ? (
+        <div className="space-y-5">
+          <StatsRow stats={[
+            { label: "Turmas do curso", value: turmasCurso.length, tone: "info" },
+            { label: "Estudantes", value: turmasCurso.reduce((s, t) => s + t.matriculados, 0), tone: "info" },
+            { label: "Em risco", value: turmasCurso.reduce((s, t) => s + t.risco, 0), tone: "danger" },
+            { label: "Diários fechados", value: turmasCurso.filter((t) => t.notasFechadas).length, tone: "success" },
+          ]} />
+          <ValidationCallout tone="info">Visão somente-leitura. Coordenação não lança notas nem frequência — apenas monitora.</ValidationCallout>
+          <DataTable
+            columns={[
+              { key: "codigo", header: "Código" },
+              { key: "disciplina", header: "Disciplina" },
+              { key: "prof", header: "Professor" },
+              { key: "matriculados", header: "Alunos", align: "right" },
+              { key: "freq", header: "Freq. média", align: "right", render: (r) => `${r.freq}%` },
+              { key: "risco", header: "Em risco", align: "right", render: (r) => (
+                <StatusBadge tone={r.risco >= 5 ? "danger" : r.risco >= 3 ? "warning" : "success"}>{r.risco}</StatusBadge>
+              )},
+              { key: "status", header: "Diário", render: (r) => (
+                <StatusBadge tone={r.notasFechadas ? "success" : "warning"}>{r.notasFechadas ? "Fechado" : "Aberto"}</StatusBadge>
+              )},
+              { key: "acoes", header: "", align: "right", render: (r) => <RowActionButton onClick={() => setAcompanhar(r)}>Acompanhar</RowActionButton> },
+            ]}
+            rows={turmasCurso}
+          />
+          <AcompanharDialog turma={acompanhar} onClose={() => setAcompanhar(null)} />
+        </div>
+      ) : !turma ? (
+        <div className="space-y-5">
+          <StatsRow stats={[
+            { label: "Minhas turmas", value: turmas.length, tone: "info" },
+            { label: "Estudantes", value: turmas.reduce((s, t) => s + t.matriculados, 0), tone: "info" },
+            { label: "Fechadas", value: turmas.filter((t) => t.notasFechadas).length, tone: "success" },
+            { label: "Em andamento", value: turmas.filter((t) => !t.notasFechadas).length, tone: "warning" },
+          ]} />
+          <DataTable
+            columns={[
+              { key: "codigo", header: "Código" }, { key: "disciplina", header: "Disciplina" },
+              { key: "matriculados", header: "Alunos", align: "right" },
+              { key: "aulas", header: "Aulas", render: (r) => `${r.aulasDadas}/${r.aulasTotal}` },
+              { key: "status", header: "Status", render: (r) => (
+                <StatusBadge tone={r.notasFechadas ? "success" : "warning"}>{r.notasFechadas ? "Fechada" : "Em andamento"}</StatusBadge>
+              )},
+              { key: "acoes", header: "", align: "right", render: (r) => <RowActionButton onClick={() => { setSelected(r.id); setTab("overview"); }}>Abrir diário</RowActionButton> },
+            ]}
+            rows={turmas}
+          />
+        </div>
+      ) : (
+        <div className="space-y-5">
+          <Button variant="ghost" size="sm" onClick={() => setSelected(null)}><ArrowLeft className="mr-1 h-4 w-4" /> Minhas turmas</Button>
+          <SectionTitle title={`${turma.codigo} — ${turma.disciplina}`} subtitle={`${turma.matriculados} estudantes · ${turma.aulasDadas}/${turma.aulasTotal} aulas registradas`} />
+          <TabsRow items={subTabs} value={tab} onChange={setTab} />
+          {tab === "overview" && <OverviewTurma turma={turma} />}
+          {tab === "aulas" && <Aulas />}
+          {tab === "freq" && <Frequencia />}
+          {tab === "aval" && <Avaliacoes />}
+          {tab === "fechar" && <Fechar turma={turma} />}
+        </div>
+      )}
+    </AppShell>
   );
 }
 
-function RegistrarAula() {
+function AcompanharDialog({ turma, onClose }: { turma: TurmaCurso | null; onClose: () => void }) {
   return (
-    <div className="space-y-4">
-      <SuccessBanner title="Aula registrada com sucesso!" description="Aula de 12/03/2025 incluída no plano de AED301-T01." />
-      <div className="rounded-xl border bg-card p-6 shadow-card">
-        <SectionTitle title="Registrar Aula" />
-        <div className="mt-4 grid grid-cols-2 gap-4">
-          <FormField label="Turma" required><Input className="h-10" defaultValue="AED301-T01" /></FormField>
-          <FormField label="Data" required><Input className="h-10" type="date" /></FormField>
-          <FormField label="Conteúdo ministrado" required full><Textarea rows={3} /></FormField>
-          <FormField label="Observações" full><Textarea rows={2} /></FormField>
+    <Dialog open={!!turma} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="max-w-2xl">
+        {turma && (
+          <>
+            <DialogHeader>
+              <DialogTitle>{turma.codigo} — {turma.disciplina}</DialogTitle>
+              <DialogDescription>Professor: {turma.prof} · {turma.matriculados} estudantes matriculados</DialogDescription>
+            </DialogHeader>
+            <div className="space-y-3 py-2">
+              <ProgressRow label="Aulas ministradas" current={turma.aulasDadas} total={turma.aulasTotal} unit="" tone="info" />
+              <ProgressRow label="Frequência média" current={turma.freq} total={100} unit="%" tone={turma.freq >= 80 ? "success" : "warning"} />
+              <ProgressRow label="Estudantes em risco" current={turma.risco} total={turma.matriculados} unit="" tone={turma.risco >= 5 ? "danger" : "warning"} />
+            </div>
+            <SectionTitle title="Estudantes em alerta" />
+            <DataTable
+              columns={[
+                { key: "nome", header: "Estudante" },
+                { key: "freq", header: "Freq.", align: "right" },
+                { key: "media", header: "Média parcial", align: "right" },
+                { key: "alerta", header: "Alerta", render: (r) => <StatusBadge tone="danger">{r.alerta}</StatusBadge> },
+              ]}
+              rows={[
+                { nome: "João Silva", freq: "62%", media: 4.2, alerta: "Frequência baixa" },
+                { nome: "Lucas Pereira", freq: "70%", media: 5.1, alerta: "Risco reprovação" },
+              ].slice(0, Math.max(1, Math.min(turma.risco, 3)))}
+            />
+            <DialogFooter>
+              <Button variant="outline" onClick={onClose}>Fechar</Button>
+              <Button onClick={() => { toast.success(`Mensagem enviada ao professor ${turma.prof}.`); onClose(); }}>Falar com o professor</Button>
+            </DialogFooter>
+          </>
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function OverviewTurma({ turma }: { turma: Turma }) {
+  return (
+    <div className="grid gap-4 lg:grid-cols-3">
+      <div className="lg:col-span-2 rounded-xl border bg-card p-5 shadow-card">
+        <SectionTitle title="Progresso do período" />
+        <div className="mt-3 space-y-3">
+          <ProgressRow label="Aulas ministradas" current={turma.aulasDadas} total={turma.aulasTotal} unit="" tone="info" />
+          <ProgressRow label="Frequência média da turma" current={87} total={100} unit="%" tone="success" />
+          <ProgressRow label="Notas lançadas (P1, P2)" current={2} total={3} unit="aval" tone="warning" />
         </div>
-        <div className="mt-4 flex justify-end gap-2"><Button variant="outline">Cancelar</Button><Button>Registrar</Button></div>
+      </div>
+      <div className="rounded-xl border bg-card p-5 shadow-card">
+        <SectionTitle title="Pendências" />
+        <ul className="mt-3 space-y-2 text-[13px]">
+          <li className="text-warning">• 1 avaliação sem nota (P3)</li>
+          <li className="text-warning">• 2 aulas pendentes de registro</li>
+          <li className="text-muted-foreground">• Fechamento abre em 15/06</li>
+        </ul>
       </div>
     </div>
+  );
+}
+
+type AulaRow = { data: string; conteudo: string; presentes: number };
+
+function Aulas() {
+  const [aulas, setAulas] = useState<AulaRow[]>([
+    { data: "12/03/2025", conteudo: "Algoritmos gulosos", presentes: 26 },
+    { data: "10/03/2025", conteudo: "Programação dinâmica II", presentes: 24 },
+    { data: "05/03/2025", conteudo: "Programação dinâmica I", presentes: 27 },
+  ]);
+  const [editAula, setEditAula] = useState<AulaRow | null>(null);
+
+  const salvar = (orig: AulaRow, novo: AulaRow) => {
+    setAulas((p) => p.map((a) => a === orig ? novo : a));
+    toast.success(`Aula de ${novo.data} atualizada.`);
+    setEditAula(null);
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="rounded-xl border bg-card p-5 shadow-card">
+        <SectionTitle title="Registrar nova aula" />
+        <div className="mt-3 grid grid-cols-3 gap-3">
+          <FormField label="Data" required><Input type="date" className="h-10" /></FormField>
+          <FormField label="Conteúdo" required full><Input className="h-10" placeholder="Ex.: Análise de complexidade O(n log n)" /></FormField>
+        </div>
+        <div className="mt-3 flex justify-end"><Button onClick={() => toast.success("Aula registrada e enviada para conferência.")}>Registrar aula</Button></div>
+      </div>
+      <DataTable
+        columns={[
+          { key: "data", header: "Data" }, { key: "conteudo", header: "Conteúdo" },
+          { key: "presentes", header: "Presentes", align: "right" },
+          { key: "acoes", header: "", align: "right", render: (r) => <RowActionButton onClick={() => setEditAula(r)}>Editar</RowActionButton> },
+        ]}
+        rows={aulas}
+      />
+      <EditarAulaDialog aula={editAula} onClose={() => setEditAula(null)} onSave={salvar} />
+    </div>
+  );
+}
+
+function EditarAulaDialog({ aula, onClose, onSave }: { aula: AulaRow | null; onClose: () => void; onSave: (orig: AulaRow, novo: AulaRow) => void }) {
+  const [data, setData] = useState("");
+  const [conteudo, setConteudo] = useState("");
+  const [presentes, setPresentes] = useState(0);
+  return (
+    <Dialog open={!!aula} onOpenChange={(o) => { if (!o) onClose(); else if (aula) { setData(aula.data); setConteudo(aula.conteudo); setPresentes(aula.presentes); } }}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Editar aula</DialogTitle>
+          <DialogDescription>Ajuste data, conteúdo e número de presentes.</DialogDescription>
+        </DialogHeader>
+        <div className="grid grid-cols-2 gap-3">
+          <FormField label="Data"><Input className="h-10" value={data} onChange={(e) => setData(e.target.value)} /></FormField>
+          <FormField label="Presentes"><Input type="number" className="h-10" value={presentes} onChange={(e) => setPresentes(Number(e.target.value))} /></FormField>
+          <FormField label="Conteúdo" full><Textarea rows={3} value={conteudo} onChange={(e) => setConteudo(e.target.value)} /></FormField>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>Cancelar</Button>
+          <Button onClick={() => aula && onSave(aula, { data, conteudo, presentes })}>Salvar alterações</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 
 function Frequencia() {
   return (
-    <div className="space-y-4">
-      <SectionTitle title="Registrar Frequência" subtitle="AED301-T01 · 12/03/2025" />
-      <DataTable
+    <div className="rounded-xl border bg-card p-5 shadow-card">
+      <SectionTitle title="Chamada — Aula de 12/03/2025" subtitle="Marque presença ou falta para cada estudante." />
+      <DataTable className="mt-3"
         columns={[
-          { key: "mat", header: "Matrícula" },
-          { key: "nome", header: "Estudante" },
-          { key: "pres", header: "Presença", render: (r) => <StatusBadge tone={r.pres === "Presente" ? "success" : "danger"}>{r.pres}</StatusBadge> },
-          { key: "faltas", header: "Faltas no semestre", align: "right" },
-          { key: "acoes", header: "", render: () => <RowActionButton>Alternar</RowActionButton>, align: "right" },
+          { key: "nome", header: "Estudante" }, { key: "freq", header: "% Frequência", align: "right" },
+          { key: "marcar", header: "Marcar", align: "right", render: (r) => (
+            <div className="flex justify-end gap-1.5"><RowActionButton onClick={() => toast.success(`${r.nome} marcado(a) como presente.`)}>Presente</RowActionButton><RowActionButton tone="danger" onClick={() => toast.error(`${r.nome} marcado(a) como falta.`)}>Falta</RowActionButton></div>
+          )},
         ]}
         rows={[
-          { mat: "2023001", nome: "Maria Santos", pres: "Presente", faltas: 2 },
-          { mat: "2023002", nome: "João Souza", pres: "Falta", faltas: 6 },
-          { mat: "2023003", nome: "Ana Lima", pres: "Presente", faltas: 0 },
-          { mat: "2023004", nome: "Carlos R.", pres: "Presente", faltas: 1 },
+          { nome: "Maria Santos", freq: "92%" },
+          { nome: "João Silva", freq: "78%" },
+          { nome: "Lucas Pereira", freq: "65%" },
+          { nome: "Ana Lima", freq: "88%" },
         ]}
       />
+      <div className="mt-4 flex justify-end"><Button onClick={() => toast.success("Chamada salva com sucesso.")}>Salvar chamada</Button></div>
     </div>
   );
 }
 
-function Avaliacao() {
-  return (
-    <div className="rounded-xl border bg-card p-6 shadow-card">
-      <SectionTitle title="Criar Avaliação" subtitle="Compõe a fórmula da média final." />
-      <div className="mt-4 grid grid-cols-2 gap-4">
-        <FormField label="Nome" required><Input className="h-10" defaultValue="Prova 1" /></FormField>
-        <FormField label="Tipo" required><Input className="h-10" defaultValue="Prova" /></FormField>
-        <FormField label="Peso" required><Input className="h-10" defaultValue="3" /></FormField>
-        <FormField label="Data" required><Input className="h-10" type="date" /></FormField>
-      </div>
-      <div className="mt-4 flex justify-end gap-2"><Button variant="outline">Cancelar</Button><Button>Salvar</Button></div>
-    </div>
-  );
-}
+type Avaliacao = { nome: string; peso: string; prazo: string; status: string };
 
-function Fechar() {
+function Avaliacoes() {
+  const [lancando, setLancando] = useState<Avaliacao | null>(null);
   return (
     <div className="space-y-4">
-      <SuccessBanner title="Resultado final fechado!" description="AED301-T01 · 28 aprovados, 5 em recuperação, 2 reprovados." />
-      <div className="rounded-xl border bg-card p-6 shadow-card">
-        <SectionTitle title="Fechar Resultado Final" />
-        <StatsRow className="mt-4" stats={[
-          { label: "Aprovados", value: 28, tone: "success" },
-          { label: "Recuperação", value: 5, tone: "warning" },
-          { label: "Reprovados", value: 2, tone: "danger" },
-          { label: "Média da turma", value: "7.4", tone: "info" },
-        ]} />
-        <ValidationCallout className="mt-4">Todas as avaliações lançadas.</ValidationCallout>
-        <div className="mt-4 flex justify-end gap-2"><Button variant="outline">Cancelar</Button><Button>Fechar Resultado</Button></div>
-      </div>
+      <DataTable
+        columns={[
+          { key: "nome", header: "Avaliação" }, { key: "peso", header: "Peso", align: "right" },
+          { key: "prazo", header: "Prazo" },
+          { key: "status", header: "Status", render: (r) => <StatusBadge tone={r.status === "Notas lançadas" ? "success" : "warning"}>{r.status}</StatusBadge> },
+          { key: "acoes", header: "", align: "right", render: (r) => <RowActionButton onClick={() => setLancando(r)}>{r.status === "Notas lançadas" ? "Revisar notas" : "Lançar notas"}</RowActionButton> },
+        ]}
+        rows={[
+          { nome: "P1", peso: "30%", prazo: "20/03/2025", status: "Notas lançadas" },
+          { nome: "P2", peso: "30%", prazo: "10/05/2025", status: "Notas lançadas" },
+          { nome: "P3", peso: "40%", prazo: "20/06/2025", status: "Pendente" },
+        ]}
+      />
+      <ValidationCallout tone="info">Soma dos pesos: 100% ✓</ValidationCallout>
+      <LancarNotasDialog aval={lancando} onClose={() => setLancando(null)} />
     </div>
   );
 }
 
-function Revisao() {
+function LancarNotasDialog({ aval, onClose }: { aval: Avaliacao | null; onClose: () => void }) {
+  const alunos = ["Maria Santos", "João Silva", "Lucas Pereira", "Ana Lima", "Pedro Almeida"];
+  const [notas, setNotas] = useState<Record<string, string>>({});
   return (
-    <div className="rounded-xl border bg-card p-6 shadow-card">
-      <SectionTitle title="Solicitar Revisão de Nota" />
-      <div className="mt-4 grid grid-cols-2 gap-4">
-        <FormField label="Disciplina" required><Input className="h-10" defaultValue="BD302" /></FormField>
-        <FormField label="Avaliação" required><Input className="h-10" defaultValue="Prova 2" /></FormField>
-        <FormField label="Justificativa" required full><Textarea rows={4} /></FormField>
-      </div>
-      <div className="mt-4 flex justify-end gap-2"><Button variant="outline">Cancelar</Button><Button>Enviar</Button></div>
-    </div>
+    <Dialog open={!!aval} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="max-w-xl">
+        {aval && (
+          <>
+            <DialogHeader>
+              <DialogTitle>Lançar notas — {aval.nome}</DialogTitle>
+              <DialogDescription>Peso {aval.peso} · Prazo {aval.prazo}</DialogDescription>
+            </DialogHeader>
+            <div className="space-y-2 max-h-[360px] overflow-y-auto pr-2">
+              {alunos.map((a) => (
+                <div key={a} className="flex items-center justify-between gap-3 border-b py-2">
+                  <span className="text-[13px] text-foreground">{a}</span>
+                  <Input
+                    type="number" step="0.1" min="0" max="10"
+                    className="h-9 w-24"
+                    placeholder="0,0"
+                    value={notas[a] ?? ""}
+                    onChange={(e) => setNotas({ ...notas, [a]: e.target.value })}
+                  />
+                </div>
+              ))}
+            </div>
+            <ValidationCallout tone="info">Notas de 0,0 a 10,0. Valores em branco serão considerados pendentes.</ValidationCallout>
+            <DialogFooter>
+              <Button variant="outline" onClick={onClose}>Cancelar</Button>
+              <Button onClick={() => { toast.success(`Notas de ${aval.nome} lançadas (${Object.keys(notas).length}/${alunos.length}).`); onClose(); }}>Salvar notas</Button>
+            </DialogFooter>
+          </>
+        )}
+      </DialogContent>
+    </Dialog>
   );
 }
 
-function CorrigirAula() {
-  return (
-    <div className="rounded-xl border bg-card p-6 shadow-card">
-      <SectionTitle title="Corrigir Registro de Aula" subtitle="Alterações registradas em trilha de auditoria." />
-      <div className="mt-4 grid grid-cols-2 gap-4">
-        <FormField label="Aula"><Input className="h-10" defaultValue="AED301-T01 · 12/03/2025" /></FormField>
-        <FormField label="Nova data"><Input className="h-10" type="date" /></FormField>
-        <FormField label="Conteúdo corrigido" full><Textarea rows={3} /></FormField>
-      </div>
-      <div className="mt-4 flex justify-end gap-2"><Button variant="outline">Cancelar</Button><Button>Salvar Correção</Button></div>
-    </div>
-  );
-}
-
-function Recuperacao() {
+function Fechar({ turma }: { turma: Turma }) {
+  const podeFechar = turma.aulasDadas === turma.aulasTotal;
   return (
     <div className="space-y-4">
-      <SectionTitle title="Nota de Recuperação" />
+      {!podeFechar && <ValidationCallout tone="error">Fechamento bloqueado: ainda há {turma.aulasTotal - turma.aulasDadas} aulas ou avaliações pendentes.</ValidationCallout>}
       <DataTable
         columns={[
           { key: "nome", header: "Estudante" },
-          { key: "media", header: "Média final", align: "right" },
-          { key: "rec", header: "Nota Rec.", align: "right", render: () => <Input className="h-8 w-20" defaultValue="6.5" /> },
-          { key: "sit", header: "Situação Final", render: (r) => <StatusBadge tone={r.sit === "Aprovado" ? "success" : "danger"}>{r.sit}</StatusBadge> },
+          { key: "media", header: "Média", align: "right" },
+          { key: "freq", header: "Freq.", align: "right" },
+          { key: "situacao", header: "Situação", render: (r) => (
+            <StatusBadge tone={r.situacao === "Aprovado" ? "success" : r.situacao === "Recuperação" ? "warning" : "danger"}>{r.situacao}</StatusBadge>
+          )},
         ]}
         rows={[
-          { nome: "João Souza", media: 4.5, sit: "Aprovado" },
-          { nome: "Lia Tavares", media: 5.0, sit: "Aprovado" },
-          { nome: "Roberto P.", media: 3.0, sit: "Reprovado" },
+          { nome: "Maria Santos", media: 8.7, freq: "92%", situacao: "Aprovado" },
+          { nome: "João Silva", media: 5.4, freq: "78%", situacao: "Recuperação" },
+          { nome: "Lucas Pereira", media: 4.1, freq: "65%", situacao: "Reprovado" },
         ]}
       />
-    </div>
-  );
-}
-
-function VisualizarEstudante() {
-  return (
-    <div className="space-y-4">
-      <SectionTitle title="Notas e Frequência (Estudante)" subtitle="Disciplina: Banco de Dados II · 2025.2" />
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-        <div className="rounded-xl border bg-card p-5 shadow-card lg:col-span-2">
-          <DataTable
-            columns={[
-              { key: "av", header: "Avaliação" },
-              { key: "peso", header: "Peso", align: "right" },
-              { key: "nota", header: "Nota", align: "right" },
-            ]}
-            rows={[
-              { av: "Prova 1", peso: 3, nota: 8.0 },
-              { av: "Prova 2", peso: 3, nota: 7.5 },
-              { av: "Trabalho", peso: 2, nota: 9.0 },
-              { av: "Atividades", peso: 2, nota: 8.5 },
-            ]}
-          />
-        </div>
-        <div className="rounded-xl border bg-card p-5 shadow-card">
-          <SectionTitle title="Resumo" />
-          <div className="mt-3 space-y-3 text-[13px]">
-            <ProgressRow label="Frequência" current={92} total={100} unit="%" tone="success" />
-            <ProgressRow label="Média parcial" current={82} total={100} unit="pts" tone="info" />
-            <p>Situação: <StatusBadge tone="success">Aprovado parcial</StatusBadge></p>
-          </div>
+      <div className="rounded-xl border bg-card p-4 shadow-card">
+        <FormField label="Observação do fechamento" full><Textarea rows={3} /></FormField>
+        <div className="mt-3 flex justify-end gap-2">
+          <Button variant="outline" onClick={() => toast.success("Rascunho do fechamento salvo.")}>Salvar rascunho</Button>
+          <Button disabled={!podeFechar} onClick={() => toast.success("Resultado final fechado e enviado à Secretaria.")}><CheckCircle2 className="mr-2 h-4 w-4" /> Fechar resultado final</Button>
         </div>
       </div>
     </div>
-  );
-}
-
-function Page() {
-  return (
-    <FeaturePage
-      title="Gestão Pedagógica da Turma"
-      subtitle="Aulas, frequência, avaliações e fechamento"
-      sections={[
-        { value: "painel", label: "Painel", content: <Painel /> },
-        { value: "aula", label: "Registrar Aula", content: <RegistrarAula /> },
-        { value: "freq", label: "Frequência", content: <Frequencia /> },
-        { value: "av", label: "Criar Avaliação", content: <Avaliacao /> },
-        { value: "fechar", label: "Fechar Resultado", content: <Fechar /> },
-        { value: "rev", label: "Revisão de Nota", content: <Revisao /> },
-        { value: "corr", label: "Corrigir Aula", content: <CorrigirAula /> },
-        { value: "rec", label: "Recuperação", content: <Recuperacao /> },
-        { value: "vis", label: "Notas & Freq.", content: <VisualizarEstudante /> },
-      ]}
-    />
   );
 }
