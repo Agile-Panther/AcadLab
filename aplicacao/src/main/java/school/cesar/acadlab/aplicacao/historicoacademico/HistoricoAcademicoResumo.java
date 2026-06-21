@@ -9,5 +9,7 @@ public record HistoricoAcademicoResumo(
         String situacaoDiscente,
         List<RegistroDisciplinaResumo> registros,
         List<AproveitamentoResumo> aproveitamentos,
-        List<AcompanhamentoResumo> acompanhamentos) {
+        List<AcompanhamentoResumo> acompanhamentos,
+        List<RetificacaoResumo> retificacoes,
+        List<EntradaAuditoriaResumo> trilhaAuditoria) {
 }

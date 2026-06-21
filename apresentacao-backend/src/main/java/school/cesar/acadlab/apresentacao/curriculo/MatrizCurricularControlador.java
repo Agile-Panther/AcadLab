@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
+import school.cesar.acadlab.aplicacao.curriculo.MatrizCurricularDetalhe;
 import school.cesar.acadlab.aplicacao.curriculo.MatrizCurricularResumo;
 import school.cesar.acadlab.aplicacao.curriculo.MatrizCurricularServicoAplicacao;
 import school.cesar.acadlab.dominio.curriculo.CursoId;
@@ -53,6 +54,11 @@ class MatrizCurricularControlador {
         return servicoAplicacao.buscarPorId(id);
     }
 
+    @RequestMapping(method = GET, path = "{id}/detalhe")
+    Optional<MatrizCurricularDetalhe> buscarDetalhePorId(@PathVariable int id) {
+        return servicoAplicacao.buscarDetalhePorId(id);
+    }
+
     @RequestMapping(method = POST)
     int criar(@RequestBody CriarMatrizRequest request) {
         MatrizCurricularId novoId = repositorio.proximaMatrizId();
@@ -73,6 +79,19 @@ class MatrizCurricularControlador {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Matriz não encontrada"));
         matriz.adicionarDisciplina(
                 new DisciplinaId(request.disciplinaId()),
+                TipoDisciplina.valueOf(request.tipo()),
+                request.cargaHoraria(),
+                request.creditos());
+        repositorio.salvar(matriz);
+    }
+
+    @RequestMapping(method = PUT, path = "{id}/disciplinas/{disciplinaId}")
+    void editarDisciplina(@PathVariable int id, @PathVariable int disciplinaId,
+                          @RequestBody EditarDisciplinaRequest request) {
+        MatrizCurricular matriz = repositorio.buscarPorId(new MatrizCurricularId(id))
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Matriz não encontrada"));
+        matriz.editarDisciplina(
+                new DisciplinaId(disciplinaId),
                 TipoDisciplina.valueOf(request.tipo()),
                 request.cargaHoraria(),
                 request.creditos());
@@ -126,5 +145,6 @@ class MatrizCurricularControlador {
     record CriarMatrizRequest(int cursoId, String nome, int cargaHorariaMinima,
                               int creditosExigidos, int maximoTrancamentos) {}
     record AdicionarDisciplinaRequest(int disciplinaId, String tipo, int cargaHoraria, int creditos) {}
+    record EditarDisciplinaRequest(String tipo, int cargaHoraria, int creditos) {}
     record DependenciaRequest(int disciplinaId, int dependenciaId) {}
 }

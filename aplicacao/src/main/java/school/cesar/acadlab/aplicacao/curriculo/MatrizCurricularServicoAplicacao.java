@@ -21,4 +21,8 @@ public class MatrizCurricularServicoAplicacao {
     public Optional<MatrizCurricularResumo> buscarPorId(int id) {
         return repositorio.buscarPorId(id);
     }
+
+    public Optional<MatrizCurricularDetalhe> buscarDetalhePorId(int id) {
+        return repositorio.buscarDetalhePorId(id);
+    }
 }
