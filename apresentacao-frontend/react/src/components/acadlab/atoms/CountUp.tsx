@@ -21,17 +21,18 @@ export function CountUp({
 }) {
   const [value, setValue] = useState(0);
   const ref = useRef<HTMLSpanElement | null>(null);
-  const started = useRef(false);
 
   useEffect(() => {
-    if (!ref.current || started.current) return;
+    if (!ref.current) return;
     const node = ref.current;
+    let cancelled = false;
+    
     const io = new IntersectionObserver(
       (entries) => {
-        if (entries.some((e) => e.isIntersecting) && !started.current) {
-          started.current = true;
+        if (entries.some((e) => e.isIntersecting)) {
           const start = performance.now();
           const tick = (now: number) => {
+            if (cancelled) return;
             const t = Math.min(1, (now - start) / duration);
             const eased = 1 - Math.pow(1 - t, 3);
             setValue(end * eased);
@@ -44,7 +45,10 @@ export function CountUp({
       { threshold: 0.2 },
     );
     io.observe(node);
-    return () => io.disconnect();
+    return () => {
+      cancelled = true;
+      io.disconnect();
+    };
   }, [end, duration]);
 
   const formatted = value.toLocaleString("pt-BR", {
