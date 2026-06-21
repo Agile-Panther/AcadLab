@@ -57,6 +57,11 @@ public class ItemMatricula {
         this.status = StatusItemMatricula.TRANCADO;
     }
 
+    public void destrancar() {
+        isTrue(status == StatusItemMatricula.TRANCADO, "Apenas itens trancados podem ser destrancados");
+        this.status = StatusItemMatricula.CONFIRMADO;
+    }
+
     public boolean conflitaHorario(ItemMatricula outro) {
         for (HorarioAula h1 : this.horarios) {
             for (HorarioAula h2 : outro.horarios) {

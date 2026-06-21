@@ -64,7 +64,7 @@ public class MatriculaControlador {
                 new TurmaId(req.turmaId()),
                 new DisciplinaId(req.disciplinaId()),
                 req.creditos(),
-                List.of(),
+                req.horarios() != null ? req.horarios() : List.of(),
                 req.cumpriuPreRequisitos(),
                 req.correquisitosNoPlano(),
                 req.temPendencias(),
@@ -120,6 +120,26 @@ public class MatriculaControlador {
         servico.trancarPeriodo(new MatriculaId(id), req.hoje(),
                 req.inicioTrancamento(), req.fimTrancamento(),
                 req.totalTrancamentos(), req.limiteTrancamentos());
+    }
+
+    @PutMapping("/{id}/itens/{turmaId}/remover")
+    public void removerItem(@PathVariable int id, @PathVariable int turmaId) {
+        servico.removerItem(new MatriculaId(id), new TurmaId(turmaId));
+    }
+
+    @PutMapping("/{id}/itens/{turmaId}/destrancar")
+    public void destrancarDisciplina(@PathVariable int id, @PathVariable int turmaId) {
+        servico.destrancarDisciplina(new MatriculaId(id), new TurmaId(turmaId));
+    }
+
+    @PutMapping("/{id}/destrancar-periodo")
+    public void destrancarPeriodo(@PathVariable int id) {
+        servico.destrancarPeriodo(new MatriculaId(id));
+    }
+
+    @PutMapping("/{id}/aprovar-secretaria")
+    public void aprovarSecretaria(@PathVariable int id) {
+        servico.aprovarSecretaria(new MatriculaId(id));
     }
 
     record IniciarMatriculaRequest(int estudanteId, int periodoLetivoId, int limiteCreditos) {}
