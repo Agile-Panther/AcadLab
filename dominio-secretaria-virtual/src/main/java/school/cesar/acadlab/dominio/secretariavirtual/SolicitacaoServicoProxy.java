@@ -33,16 +33,14 @@ public class SolicitacaoServicoProxy implements SolicitacaoServico {
                                                   TipoSolicitacao tipo, String descricao,
                                                   List<Documento> documentos) {
         if (!calendario.estaDentroDoPrazo(tipo, periodoLetivoId)) {
-            throw new IllegalStateException(
-                    "Abertura de solicitação fora do prazo do calendário acadêmico para o tipo " + tipo);
+            throw new IllegalStateException("prazo para abertura de solicitação expirado");
         }
 
         if (!tipo.isPermiteMultiplasPorPeriodo()) {
             var existente = repositorio.pesquisarAbertaPorEstudanteTipoPeriodo(
                     estudanteId, tipo, periodoLetivoId);
             if (existente.isPresent()) {
-                throw new IllegalStateException(
-                        "Já existe uma solicitação do tipo " + tipo + " aberta para este período letivo");
+                throw new IllegalStateException("já existe uma solicitação aberta deste tipo no período");
             }
         }
 

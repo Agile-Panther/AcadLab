@@ -22,13 +22,9 @@ public class DefinirProfessorHorarioSalaFuncionalidade extends OfertaTurmasFunci
     private Turma turma;
     private ProfessorId professorId;
     private SalaId salaId;
-    private RuntimeException excecao;
+    private RuntimeException excecaoLocal;
 
-    // -----------------------------------------------------------------------
-    // Shared Given step
-    // -----------------------------------------------------------------------
-
-    @Dado("uma turma planejada com horario segunda 08h as 10h no periodo 1")
+    @Dado("uma turma planejada com horário segunda 08h às 10h no período 1")
     public void turma_planejada_com_horario() {
         turma = ofertaTurmaServico.ofertar(periodoId, disciplinaId, ModalidadeTurma.PRESENCIAL, 30);
         ofertaTurmaServico.adicionarHorario(turma.getId(),
@@ -36,42 +32,33 @@ public class DefinirProfessorHorarioSalaFuncionalidade extends OfertaTurmasFunci
         turma = turmaRepositorio.obter(turma.getId());
     }
 
-    // -----------------------------------------------------------------------
-    // Scenario 1 — vincular professor sem conflito
-    // -----------------------------------------------------------------------
-
-    @Dado("um professor sem turmas no mesmo periodo")
+    @Dado("um professor sem turmas no mesmo período")
     public void professor_sem_turmas() {
         professorId = professorRepositorio.proximoId();
         professorRepositorio.salvar(new Professor(professorId, "Prof. Sem Conflito"));
     }
 
-    @Quando("a coordenacao adiciona o horario e vincula o professor a turma")
+    @Quando("a coordenação adiciona o horário e vincula o professor à turma")
     public void vincular_professor_sem_conflito() {
         try {
             ofertaTurmaServico.vincularProfessor(turma.getId(), professorId);
         } catch (RuntimeException e) {
-            excecao = e;
+            excecaoLocal = e;
         }
     }
 
-    @Entao("o professor e vinculado com sucesso")
+    @Entao("o professor é vinculado com sucesso")
     public void professor_vinculado_com_sucesso() {
-        assertNull(excecao, "Nao deveria ter lancado excecao");
+        assertNull(excecaoLocal, "Não deveria ter lançado exceção");
         var turmaAtualizada = turmaRepositorio.obter(turma.getId());
         assertEquals(professorId, turmaAtualizada.getProfessorId());
     }
 
-    // -----------------------------------------------------------------------
-    // Scenario 2 — conflito de horario do professor
-    // -----------------------------------------------------------------------
-
-    @Dado("o professor ja tem turma com horario segunda 09h as 11h no mesmo periodo")
+    @Dado("o professor já tem turma com horário segunda 09h às 11h no mesmo período")
     public void professor_com_turma_conflitante() {
         professorId = professorRepositorio.proximoId();
         professorRepositorio.salvar(new Professor(professorId, "Prof. Ocupado"));
 
-        // Cria outra turma com horario conflitante e vincula o professor diretamente
         var outraId = turmaRepositorio.proximoId();
         var outra = new Turma(outraId, periodoId, new DisciplinaId(2), ModalidadeTurma.PRESENCIAL, 30);
         outra.adicionarHorario(new HorarioAula(DayOfWeek.MONDAY, LocalTime.of(9, 0), LocalTime.of(11, 0)));
@@ -79,33 +66,27 @@ public class DefinirProfessorHorarioSalaFuncionalidade extends OfertaTurmasFunci
         turmaRepositorio.salvar(outra);
     }
 
-    @Quando("a coordenacao tenta vincular o professor com conflito")
+    @Quando("a coordenação tenta vincular o professor com conflito")
     public void tentar_vincular_professor_com_conflito() {
         try {
             ofertaTurmaServico.vincularProfessor(turma.getId(), professorId);
         } catch (RuntimeException e) {
-            excecao = e;
+            excecaoLocal = e;
         }
     }
 
-    @Entao("o sistema rejeita a vinculacao informando conflito de horario do professor")
+    @Entao("o sistema deve rejeitar informando conflito de horário do professor")
     public void rejeitar_conflito_professor() {
-        assertNotNull(excecao);
-        assertInstanceOf(IllegalStateException.class, excecao);
-        assertTrue(excecao.getMessage().contains("RN6"),
-                "Mensagem esperada conter RN6, mas foi: " + excecao.getMessage());
+        assertNotNull(excecaoLocal);
+        assertTrue(excecaoLocal.getMessage().contains("conflito de horário do professor"),
+                "Mensagem obtida: " + excecaoLocal.getMessage());
     }
 
-    // -----------------------------------------------------------------------
-    // Scenario 3 — conflito de horario da sala
-    // -----------------------------------------------------------------------
-
-    @Dado("a sala ja esta alocada em turma com horario segunda 09h as 11h no mesmo periodo")
+    @Dado("a sala já está alocada em turma com horário segunda 09h às 11h no mesmo período")
     public void sala_com_turma_conflitante() {
         salaId = salaRepositorio.proximoId();
         salaRepositorio.salvar(new Sala(salaId, "Sala Ocupada", 40));
 
-        // Cria outra turma com horario conflitante e vincula a sala diretamente
         var outraId = turmaRepositorio.proximoId();
         var outra = new Turma(outraId, periodoId, new DisciplinaId(2), ModalidadeTurma.PRESENCIAL, 30);
         outra.adicionarHorario(new HorarioAula(DayOfWeek.MONDAY, LocalTime.of(9, 0), LocalTime.of(11, 0)));
@@ -113,20 +94,19 @@ public class DefinirProfessorHorarioSalaFuncionalidade extends OfertaTurmasFunci
         turmaRepositorio.salvar(outra);
     }
 
-    @Quando("a coordenacao tenta vincular a sala com conflito")
+    @Quando("a coordenação tenta vincular a sala com conflito")
     public void tentar_vincular_sala_com_conflito() {
         try {
             ofertaTurmaServico.vincularSala(turma.getId(), salaId);
         } catch (RuntimeException e) {
-            excecao = e;
+            excecaoLocal = e;
         }
     }
 
-    @Entao("o sistema rejeita a vinculacao informando conflito de horario da sala")
+    @Entao("o sistema deve rejeitar informando conflito de horário da sala")
     public void rejeitar_conflito_sala() {
-        assertNotNull(excecao);
-        assertInstanceOf(IllegalStateException.class, excecao);
-        assertTrue(excecao.getMessage().contains("RN7"),
-                "Mensagem esperada conter RN7, mas foi: " + excecao.getMessage());
+        assertNotNull(excecaoLocal);
+        assertTrue(excecaoLocal.getMessage().contains("conflito de horário da sala"),
+                "Mensagem obtida: " + excecaoLocal.getMessage());
     }
 }

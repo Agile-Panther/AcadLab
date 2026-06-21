@@ -14,36 +14,39 @@ import school.cesar.acadlab.dominio.ofertaturmas.professor.ProfessorId;
 import school.cesar.acadlab.dominio.ofertaturmas.sala.Sala;
 import school.cesar.acadlab.dominio.ofertaturmas.sala.SalaId;
 
-public class OfertarTurmaFuncionalidade extends OfertaTurmasFuncionalidade {
+public class OfertarTurmaFuncionalidade {
 
+    private final OfertaTurmasFuncionalidade ctx;
     private final PeriodoLetivoId periodoId = new PeriodoLetivoId(1);
     private final DisciplinaId disciplinaId = new DisciplinaId(1);
     private Turma turmaCriada;
-    private RuntimeException excecao;
     private SalaId salaId;
     private ProfessorId professorId;
 
+    public OfertarTurmaFuncionalidade(OfertaTurmasFuncionalidade ctx) {
+        this.ctx = ctx;
+    }
+
     @Dado("um período letivo e uma disciplina disponíveis")
     public void periodo_e_disciplina_disponiveis() {
-        // período e disciplina existem externamente — apenas IDs usados
-        salaId = salaRepositorio.proximoId();
-        salaRepositorio.salvar(new Sala(salaId, "Sala 101", 40));
-        professorId = professorRepositorio.proximoId();
-        professorRepositorio.salvar(new Professor(professorId, "Prof. Silva"));
+        salaId = ctx.salaRepositorio.proximoId();
+        ctx.salaRepositorio.salvar(new Sala(salaId, "Sala 101", 40));
+        professorId = ctx.professorRepositorio.proximoId();
+        ctx.professorRepositorio.salvar(new Professor(professorId, "Prof. Silva"));
     }
 
     @Quando("a coordenação oferta uma turma para a disciplina")
     public void coordenacao_oferta_turma() {
         try {
-            turmaCriada = ofertaTurmaServico.ofertar(periodoId, disciplinaId, ModalidadeTurma.PRESENCIAL, 30);
+            turmaCriada = ctx.ofertaTurmaServico.ofertar(periodoId, disciplinaId, ModalidadeTurma.PRESENCIAL, 30);
         } catch (RuntimeException e) {
-            excecao = e;
+            ctx.excecao = e;
         }
     }
 
     @Entao("a turma é criada com status planejada")
     public void turma_criada_planejada() {
-        assertNull(excecao, "Não deveria ter lançado exceção");
+        assertNull(ctx.excecao, "Não deveria ter lançado exceção");
         assertNotNull(turmaCriada);
         assertEquals(StatusTurma.PLANEJADA, turmaCriada.getStatus());
     }
@@ -51,37 +54,31 @@ public class OfertarTurmaFuncionalidade extends OfertaTurmasFuncionalidade {
     @Quando("a coordenação vincula professor, sala e horário à turma e confirma a oferta")
     public void configurar_e_ofertar_turma() {
         try {
-            turmaCriada = ofertaTurmaServico.ofertar(periodoId, disciplinaId, ModalidadeTurma.PRESENCIAL, 30);
-            ofertaTurmaServico.vincularProfessor(turmaCriada.getId(), professorId);
-            ofertaTurmaServico.vincularSala(turmaCriada.getId(), salaId);
-            ofertaTurmaServico.adicionarHorario(turmaCriada.getId(),
+            turmaCriada = ctx.ofertaTurmaServico.ofertar(periodoId, disciplinaId, ModalidadeTurma.PRESENCIAL, 30);
+            ctx.ofertaTurmaServico.vincularProfessor(turmaCriada.getId(), professorId);
+            ctx.ofertaTurmaServico.vincularSala(turmaCriada.getId(), salaId);
+            ctx.ofertaTurmaServico.adicionarHorario(turmaCriada.getId(),
                     DayOfWeek.MONDAY, LocalTime.of(8, 0), LocalTime.of(10, 0));
-            ofertaTurmaServico.confirmarOferta(turmaCriada.getId());
-            turmaCriada = consultaTurmaServico.buscar(turmaCriada.getId());
+            ctx.ofertaTurmaServico.confirmarOferta(turmaCriada.getId());
+            turmaCriada = ctx.consultaTurmaServico.buscar(turmaCriada.getId());
         } catch (RuntimeException e) {
-            excecao = e;
+            ctx.excecao = e;
         }
     }
 
     @Entao("a turma é ofertada com status ofertada")
     public void turma_com_status_ofertada() {
-        assertNull(excecao, "Não deveria ter lançado exceção");
+        assertNull(ctx.excecao, "Não deveria ter lançado exceção");
         assertEquals(StatusTurma.OFERTADA, turmaCriada.getStatus());
     }
 
     @Quando("a coordenação vincula uma sala com capacidade insuficiente à turma")
     public void vincular_sala_insuficiente() {
         try {
-            turmaCriada = ofertaTurmaServico.ofertar(periodoId, disciplinaId, ModalidadeTurma.PRESENCIAL, 50);
-            ofertaTurmaServico.vincularSala(turmaCriada.getId(), salaId);
+            turmaCriada = ctx.ofertaTurmaServico.ofertar(periodoId, disciplinaId, ModalidadeTurma.PRESENCIAL, 50);
+            ctx.ofertaTurmaServico.vincularSala(turmaCriada.getId(), salaId);
         } catch (RuntimeException e) {
-            excecao = e;
+            ctx.excecao = e;
         }
-    }
-
-    @Entao("o sistema rejeita a vinculação informando capacidade insuficiente")
-    public void rejeitar_sala_insuficiente() {
-        assertNotNull(excecao);
-        assertInstanceOf(IllegalStateException.class, excecao);
     }
 }

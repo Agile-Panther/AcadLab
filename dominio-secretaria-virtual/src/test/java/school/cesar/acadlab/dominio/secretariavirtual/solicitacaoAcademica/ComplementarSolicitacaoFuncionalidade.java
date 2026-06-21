@@ -11,16 +11,20 @@ import school.cesar.acadlab.dominio.secretariavirtual.documento.Documento;
 import school.cesar.acadlab.dominio.secretariavirtual.estudante.EstudanteId;
 import school.cesar.acadlab.dominio.secretariavirtual.periodo.PeriodoLetivoId;
 
-public class ComplementarSolicitacaoFuncionalidade extends SecretariaVirtualFuncionalidade {
+public class ComplementarSolicitacaoFuncionalidade {
+    private final SecretariaVirtualFuncionalidade ctx;
     private final EstudanteId estudanteId = new EstudanteId(20);
     private final PeriodoLetivoId periodoLetivoId = new PeriodoLetivoId(20);
     private final SecretariaId secretariaId = new SecretariaId(2);
     private SolicitacaoAcademicaId solicitacaoId;
-    private RuntimeException excecao;
+
+    public ComplementarSolicitacaoFuncionalidade(SecretariaVirtualFuncionalidade ctx) {
+        this.ctx = ctx;
+    }
 
     private SolicitacaoAcademica criarSolicitacaoBase() {
-        calendarioDentroDoPrazo = true;
-        return solicitacaoServico.abrirSolicitacao(
+        ctx.calendarioDentroDoPrazo = true;
+        return ctx.solicitacaoServico.abrirSolicitacao(
                 estudanteId, periodoLetivoId, TipoSolicitacao.SEGUNDA_VIA_DOCUMENTO,
                 "Solicitação para complementação", List.of());
     }
@@ -32,17 +36,17 @@ public class ComplementarSolicitacaoFuncionalidade extends SecretariaVirtualFunc
 
         switch (StatusSolicitacao.valueOf(status)) {
             case PENDENTE_COMPLEMENTACAO:
-                analiseServico.iniciarAnalise(solicitacaoId, secretariaId);
-                analiseServico.solicitarComplementacao(solicitacaoId, secretariaId);
+                ctx.analiseServico.iniciarAnalise(solicitacaoId, secretariaId);
+                ctx.analiseServico.solicitarComplementacao(solicitacaoId, secretariaId);
                 break;
             case CONCLUIDA:
-                analiseServico.iniciarAnalise(solicitacaoId, secretariaId);
-                analiseServico.deferir(solicitacaoId, secretariaId, "Ok", false);
-                analiseServico.concluir(solicitacaoId);
+                ctx.analiseServico.iniciarAnalise(solicitacaoId, secretariaId);
+                ctx.analiseServico.deferir(solicitacaoId, secretariaId, "Ok", false);
+                ctx.analiseServico.concluir(solicitacaoId);
                 break;
             case INDEFERIDA:
-                analiseServico.iniciarAnalise(solicitacaoId, secretariaId);
-                analiseServico.indeferir(solicitacaoId, secretariaId, "Insuficiente");
+                ctx.analiseServico.iniciarAnalise(solicitacaoId, secretariaId);
+                ctx.analiseServico.indeferir(solicitacaoId, secretariaId, "Insuficiente");
                 break;
             default:
                 break;
@@ -53,9 +57,9 @@ public class ComplementarSolicitacaoFuncionalidade extends SecretariaVirtualFunc
     public void o_estudante_complementa() {
         try {
             var documento = new Documento("complemento", "complemento.pdf");
-            solicitacaoServico.complementarSolicitacao(solicitacaoId, documento);
+            ctx.solicitacaoServico.complementarSolicitacao(solicitacaoId, documento);
         } catch (RuntimeException e) {
-            excecao = e;
+            ctx.excecao = e;
         }
     }
 
@@ -63,22 +67,16 @@ public class ComplementarSolicitacaoFuncionalidade extends SecretariaVirtualFunc
     public void o_estudante_tenta_complementar() {
         try {
             var documento = new Documento("complemento", "complemento.pdf");
-            solicitacaoServico.complementarSolicitacao(solicitacaoId, documento);
+            ctx.solicitacaoServico.complementarSolicitacao(solicitacaoId, documento);
         } catch (RuntimeException e) {
-            excecao = e;
+            ctx.excecao = e;
         }
     }
 
     @Entao("a solicitação volta para status {string}")
     public void a_solicitacao_volta_para_status(String statusEsperado) {
-        assertNull(excecao, "Não deveria ter lançado exceção");
-        var solicitacao = consultaServico.obterPorId(solicitacaoId);
+        assertNull(ctx.excecao, "Não deveria ter lançado exceção");
+        var solicitacao = ctx.consultaServico.obterPorId(solicitacaoId);
         assertEquals(StatusSolicitacao.valueOf(statusEsperado), solicitacao.getStatus());
-    }
-
-    @Entao("o sistema rejeita a complementação")
-    public void o_sistema_rejeita_complementacao() {
-        assertNotNull(excecao);
-        assertInstanceOf(IllegalStateException.class, excecao);
     }
 }

@@ -39,7 +39,7 @@ public class AtividadeComplementar {
 
     public DeferidaEvento deferir(int horasAprovadas) {
         if (status != StatusAtividade.PENDENTE && status != StatusAtividade.REVISAO_SOLICITADA)
-            throw new IllegalStateException("Apenas atividades pendentes ou em revisão podem ser deferidas");
+            throw new IllegalStateException("apenas atividades pendentes ou em revisão podem ser deferidas");
         isTrue(horasAprovadas > 0, "horasAprovadas devem ser positivas");
         isTrue(horasAprovadas <= horasSubmetidas, "horasAprovadas não podem exceder as submetidas");
         this.horasAprovadas = horasAprovadas;
@@ -51,7 +51,7 @@ public class AtividadeComplementar {
         notNull(justificativa, "justificativa obrigatória");
         isTrue(!justificativa.isBlank(), "justificativa não pode ser vazia");
         if (status != StatusAtividade.PENDENTE && status != StatusAtividade.REVISAO_SOLICITADA)
-            throw new IllegalStateException("Apenas atividades pendentes ou em revisão podem ser indeferidas");
+            throw new IllegalStateException("apenas atividades pendentes ou em revisão podem ser indeferidas");
         this.status = StatusAtividade.INDEFERIDA;
         return new IndeferidaEvento(this);
     }
@@ -60,14 +60,14 @@ public class AtividadeComplementar {
         notNull(justificativa, "justificativa obrigatória");
         isTrue(!justificativa.isBlank(), "justificativa não pode ser vazia");
         if (status != StatusAtividade.INDEFERIDA)
-            throw new IllegalStateException("Revisão só pode ser solicitada para atividades indeferidas");
+            throw new IllegalStateException("revisão só pode ser solicitada para atividades indeferidas");
         this.status = StatusAtividade.REVISAO_SOLICITADA;
         return new RevisaoSolicitadaEvento(this);
     }
 
     public CanceladaEvento cancelar() {
         if (status != StatusAtividade.PENDENTE)
-            throw new IllegalStateException("RN7: Cancelamento permitido apenas para atividades com status pendente de análise");
+            throw new IllegalStateException("atividade já analisada não pode ser cancelada");
         this.status = StatusAtividade.CANCELADA;
         return new CanceladaEvento(this);
     }
@@ -99,15 +99,15 @@ public class AtividadeComplementar {
         public AtividadeComplementar getAtividade() { return atividade; }
     }
     public static class DeferidaEvento extends AtividadeComplementarEvento {
-        public DeferidaEvento(AtividadeComplementar a) { super(a); }
+        private DeferidaEvento(AtividadeComplementar a) { super(a); }
     }
     public static class IndeferidaEvento extends AtividadeComplementarEvento {
-        public IndeferidaEvento(AtividadeComplementar a) { super(a); }
+        private IndeferidaEvento(AtividadeComplementar a) { super(a); }
     }
     public static class RevisaoSolicitadaEvento extends AtividadeComplementarEvento {
-        public RevisaoSolicitadaEvento(AtividadeComplementar a) { super(a); }
+        private RevisaoSolicitadaEvento(AtividadeComplementar a) { super(a); }
     }
     public static class CanceladaEvento extends AtividadeComplementarEvento {
-        public CanceladaEvento(AtividadeComplementar a) { super(a); }
+        private CanceladaEvento(AtividadeComplementar a) { super(a); }
     }
 }

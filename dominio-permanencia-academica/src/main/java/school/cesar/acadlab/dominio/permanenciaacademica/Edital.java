@@ -67,8 +67,7 @@ public class Edital {
     public ResultadoPublicadoEvento publicarResultado(LocalDate hoje) {
         notNull(hoje, "A data não pode ser nula");
         if (!hoje.isAfter(prazoRecursoFim)) {
-            throw new IllegalStateException(
-                    "O resultado final só pode ser publicado após o encerramento do prazo de recursos");
+            throw new IllegalStateException("prazo de recursos ainda não encerrou");
         }
         this.status = StatusEdital.RESULTADO_PUBLICADO;
         return new ResultadoPublicadoEvento(this);
@@ -77,8 +76,7 @@ public class Edital {
     // RN12: encerrar somente após resultado publicado
     public EditalEncerradoEvento encerrar() {
         if (status != StatusEdital.RESULTADO_PUBLICADO) {
-            throw new IllegalStateException(
-                    "O edital só pode ser encerrado após a publicação do resultado final");
+            throw new IllegalStateException("resultado final ainda não foi publicado");
         }
         this.status = StatusEdital.ENCERRADO;
         return new EditalEncerradoEvento(this);

@@ -4,11 +4,12 @@ import school.cesar.acadlab.dominio.secretariavirtual.periodo.PeriodoLetivoId;
 import school.cesar.acadlab.dominio.secretariavirtual.solicitacaoAcademica.TipoSolicitacao;
 
 public class SecretariaVirtualFuncionalidade {
-    protected Repositorio repositorio;
-    protected SolicitacaoServico solicitacaoServico;
-    protected AnaliseServico analiseServico;
-    protected ConsultaServico consultaServico;
-    protected boolean calendarioDentroDoPrazo = true;
+    public Repositorio repositorio;
+    public SolicitacaoServico solicitacaoServico;
+    public AnaliseServico analiseServico;
+    public ConsultaServico consultaServico;
+    public boolean calendarioDentroDoPrazo = true;
+    public RuntimeException excecao;
 
     public SecretariaVirtualFuncionalidade() {
         repositorio = new Repositorio();

@@ -11,7 +11,7 @@
 | Vinicius | F-12 <br>F-04      |
 | Bernado  | F-07 <br>F-08      |
 | Clara    | F-14 <br>F-03      |
-| Neto     | F-02 <br>F-05      |
+| Claudia     | F-02 <br>F-05      |
 | Jera     | F-09 <br>F-13      |
 
 ---
@@ -23,7 +23,7 @@ Cada integrante deve implementar o padrão de projeto designado em ao menos uma 
 | Integrante | Features | Padrão de Projeto | Contexto de Aplicação |
 |------------|----------|-------------------|-----------------------|
 | Julia | F-01, F-06 | **Iterator** | Percorrer disciplinas da matriz curricular (incluindo grafo de pré-requisitos) e registros do histórico acadêmico sem expor a estrutura interna das coleções |
-| Neto | F-02, F-05 | **Template Method** | Definir o esqueleto do fluxo de gestão pedagógica (abertura de período → registro de aulas → frequência → avaliações → resultado final), permitindo que subclasses especializem etapas específicas |
+| Claudia | F-02, F-05 | **Template Method** | Definir o esqueleto do fluxo de gestão pedagógica (abertura de período → registro de aulas → frequência → avaliações → resultado final), permitindo que subclasses especializem etapas específicas |
 | Vinicius | F-04, F-12 | **Strategy** | Trocar estratégias de validação de elegibilidade para matrícula (regular, por exceção, por mobilidade externa) sem alterar o código do serviço principal |
 | Bernardo | F-07, F-08 | **Proxy** | Controlar o acesso às operações de solicitação acadêmica e de integralização curricular, delegando a execução somente após validar permissões e pré-condições do estado atual |
 | Clara | F-03, F-14 | **Decorator** | Adicionar comportamentos dinâmicos à oferta de turmas (ex.: `TurmaComListaEspera`, `TurmaOnline`) e a oportunidades de estágio sem modificar a classe base |
@@ -1328,6 +1328,29 @@ Cada integrante deve implementar o padrão de projeto designado em ao menos uma 
 | Consultas | Verificar se o resultado final do edital já foi publicado antes de permitir o encerramento. |
 | Complexidade | Baixa |
 
+---
+
+#### US09 — Registrar ações de permanência com base em indicadores agregados
+*Como Coordenação, quero registrar ações institucionais de permanência acadêmica com base em indicadores agregados dos atendimentos, para atuar sobre problemas recorrentes sem acessar dados sigilosos individuais dos estudantes.*
+
+**RN 13 — Ação de permanência sem identificação de estudantes individuais**
+
+| | |
+|---|---|
+| Título | Ação de permanência sem identificação de estudantes individuais |
+| Descrição | A ação de permanência não pode conter identificação de estudantes ou dados individuais de atendimento; deve basear-se apenas em indicadores agregados. |
+| Consultas | Verificar se os indicadores utilizados são dados agregados, sem referência a identificadores individuais de estudantes ou atendimentos. |
+| Complexidade | Média |
+
+**RN 14 — Ação de permanência registrada apenas pela Coordenação**
+
+| | |
+|---|---|
+| Título | Ação de permanência registrada apenas pela Coordenação |
+| Descrição | A ação de permanência só pode ser registrada por usuário com perfil de Coordenação. |
+| Consultas | Verificar o perfil do usuário logado antes de permitir o registro da ação de permanência. |
+| Complexidade | Baixa |
+
 ### Protótipos da Interface com o Usuário
 
 *(A preencher)*
@@ -1395,33 +1418,10 @@ Cada integrante deve implementar o padrão de projeto designado em ao menos uma 
 
 ---
 
-#### US04 — Registrar ações de permanência baseadas em indicadores agregados
-*Como Coordenação, quero registrar ações institucionais de permanência acadêmica com base em indicadores agregados dos atendimentos, para atuar sobre problemas recorrentes sem acessar dados sigilosos individuais dos estudantes.*
-
-**RN 5 — Ação de permanência sem identificação de estudantes individuais**
-
-| | |
-|---|---|
-| Título | Ação de permanência sem identificação de estudantes individuais |
-| Descrição | A ação de permanência não pode conter identificação de estudantes ou dados individuais de atendimento; deve basear-se apenas em indicadores agregados. |
-| Consultas | Verificar se os indicadores utilizados são dados agregados, sem referência a identificadores individuais de estudantes ou atendimentos. |
-| Complexidade | Média |
-
-**RN 6 — Ação de permanência registrada apenas pela Coordenação**
-
-| | |
-|---|---|
-| Título | Ação de permanência registrada apenas pela Coordenação |
-| Descrição | A ação de permanência só pode ser registrada por usuário com perfil de Coordenação. |
-| Consultas | Verificar o perfil do usuário logado antes de permitir o registro da ação de permanência. |
-| Complexidade | Baixa |
-
----
-
-#### US05 — Encerrar caso psicopedagógico
+#### US04 — Encerrar caso psicopedagógico
 *Como Psicopedagogo, quero registrar o encerramento formal de um caso de acompanhamento psicopedagógico, para documentar a conclusão do processo e liberar o estudante do acompanhamento ativo.*
 
-**RN 7 — Encerramento exige registro de conclusão ou encaminhamento final**
+**RN 5 — Encerramento exige registro de conclusão ou encaminhamento final**
 
 | | |
 |---|---|
@@ -1432,10 +1432,10 @@ Cada integrante deve implementar o padrão de projeto designado em ao menos uma 
 
 ---
 
-#### US06 — Consultar histórico de casos acompanhados
+#### US05 — Consultar histórico de casos acompanhados
 *Como Psicopedagogo, quero consultar o histórico de casos que estou acompanhando ou que acompanhei, para ter uma visão consolidada das demandas atendidas e apoiar a continuidade e qualidade dos atendimentos.*
 
-**RN 8 — Consulta restrita ao profissional responsável pelo caso**
+**RN 6 — Consulta restrita ao profissional responsável pelo caso**
 
 | | |
 |---|---|

@@ -1,13 +1,14 @@
-#language: pt
+# language: pt
+
 Funcionalidade: Gerenciar status da matriz curricular
 
-  Cenário: Activating a matrix when no active matrix exists for the course
-    Dado a curricular matrix with sufficient workload for course 20
-    Quando the coordinator activates the matrix
-    Então the matrix status should be ATIVA
+  Cenário: Ativar matriz quando não existe matriz ativa para o curso
+    Dado uma matriz curricular com carga horária suficiente para o curso 20
+    Quando o coordenador ativa a matriz
+    Então o status da matriz deve ser ATIVA
 
-  Cenário: Activating a matrix when one already exists is rejected
-    Dado a curricular matrix already active for course 20
-    E a second curricular matrix with sufficient workload for course 20
-    Quando the coordinator tries to activate the second matrix
-    Então the system rejects the activation with message containing "RN-5"
+  Cenário: Ativar matriz quando já existe uma ativa é rejeitado
+    Dado uma matriz curricular já ativa para o curso 20
+    E uma segunda matriz curricular com carga horária suficiente para o curso 20
+    Quando o coordenador tenta ativar a segunda matriz
+    Então o sistema deve rejeitar informando "já existe uma matriz curricular ativa para este curso"

@@ -1,11 +1,12 @@
 package school.cesar.acadlab.dominio.integralizacao;
 
 public class IntegralizacaoFuncionalidade {
-    protected IntegralizacaoRepositorioTest integralizacaoRepositorio;
-    protected ColacaoRepositorioTest colacaoRepositorio;
-    protected IntegralizacaoServico integralizacaoServico;
-    protected ColacaoServico colacaoServico;
-    protected ConsultaIntegralizacaoServico consultaServico;
+    public IntegralizacaoRepositorioTest integralizacaoRepositorio;
+    public ColacaoRepositorioTest colacaoRepositorio;
+    public IntegralizacaoServico integralizacaoServico;
+    public ColacaoServico colacaoServico;
+    public ConsultaIntegralizacaoServico consultaServico;
+    public RuntimeException excecao;
 
     public IntegralizacaoFuncionalidade() {
         integralizacaoRepositorio = new IntegralizacaoRepositorioTest();

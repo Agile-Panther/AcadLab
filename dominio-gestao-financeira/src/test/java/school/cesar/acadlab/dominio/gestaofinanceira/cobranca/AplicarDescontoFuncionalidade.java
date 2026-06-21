@@ -1,54 +1,55 @@
 package school.cesar.acadlab.dominio.gestaofinanceira.cobranca;
 
-import io.cucumber.java.en.*;
+import io.cucumber.java.pt.Dado;
+import io.cucumber.java.pt.Quando;
+import io.cucumber.java.pt.Entao;
+import io.cucumber.java.pt.E;
 import org.junit.jupiter.api.Assertions;
 import school.cesar.acadlab.dominio.gestaofinanceira.*;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
 
-public class AplicarDescontoFuncionalidade extends GestaoFinanceiraFuncionalidade {
+public class AplicarDescontoFuncionalidade {
+    private final GestaoFinanceiraFuncionalidade ctx;
     private CobrancaId cobrancaId;
-    private Exception excecao;
 
-    @Given("uma cobrança aberta de {double} para o estudante {int}")
+    public AplicarDescontoFuncionalidade(GestaoFinanceiraFuncionalidade ctx) {
+        this.ctx = ctx;
+    }
+
+    @Dado("uma cobrança aberta de {double} para o estudante {int}")
     public void cobrancaAbertaDeValor(double valor, int estudanteId) {
-        verificadorMatricula.setMatricula(true);
-        var cobranca = servico.gerarCobranca(new ContratoId(estudanteId * 10), new EstudanteId(estudanteId),
+        ctx.verificadorMatricula.setMatricula(true);
+        var cobranca = ctx.servico.gerarCobranca(new ContratoId(estudanteId * 10), new EstudanteId(estudanteId),
                 new PeriodoLetivoId(1), BigDecimal.valueOf(valor).setScale(2, RoundingMode.HALF_UP),
                 LocalDate.of(2025, 2, 10));
         cobrancaId = cobranca.getId();
     }
 
-    @Given("a autorização {string} é válida")
+    @E("a autorização {string} é válida")
     public void autorizacaoEValida(String autorizacaoId) {
-        verificadorAutorizacao.marcarValida(autorizacaoId);
+        ctx.verificadorAutorizacao.marcarValida(autorizacaoId);
     }
 
-    @When("aplico um desconto de {int} por cento com autorização {string}")
+    @Quando("aplico um desconto de {int} por cento com autorização {string}")
     public void aplicoDesconto(int percentual, String autorizacaoId) {
-        servico.aplicarDesconto(cobrancaId, new BigDecimal(percentual), autorizacaoId);
+        ctx.servico.aplicarDesconto(cobrancaId, new BigDecimal(percentual), autorizacaoId);
     }
 
-    @When("tento aplicar um desconto de {int} por cento com autorização {string}")
+    @Quando("tento aplicar um desconto de {int} por cento com autorização {string}")
     public void tentoAplicarDesconto(int percentual, String autorizacaoId) {
         try {
-            servico.aplicarDesconto(cobrancaId, new BigDecimal(percentual), autorizacaoId);
-        } catch (Exception e) {
-            excecao = e;
+            ctx.servico.aplicarDesconto(cobrancaId, new BigDecimal(percentual), autorizacaoId);
+        } catch (RuntimeException e) {
+            ctx.excecao = e;
         }
     }
 
-    @Then("o valor atual da cobrança deve ser {double}")
+    @Entao("o valor atual da cobrança deve ser {double}")
     public void valorAtualDeveSerIgualA(double valor) {
-        var cobranca = repositorio.obter(cobrancaId);
+        var cobranca = ctx.repositorio.obter(cobrancaId);
         Assertions.assertEquals(0,
                 BigDecimal.valueOf(valor).setScale(2, RoundingMode.HALF_UP).compareTo(cobranca.getValorAtual()));
-    }
-
-    @Then("deve ser lançada uma exceção de autorização inválida")
-    public void deveSerLancadaExcecaoAutorizacaoInvalida() {
-        Assertions.assertNotNull(excecao);
-        Assertions.assertInstanceOf(IllegalStateException.class, excecao);
     }
 }

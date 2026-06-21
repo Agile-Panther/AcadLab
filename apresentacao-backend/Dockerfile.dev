@@ -1,6 +1,6 @@
-FROM maven:3.9-eclipse-temurin-17
+FROM maven:3.9-eclipse-temurin-21
 WORKDIR /app
 EXPOSE 8080
-# Monta o projeto inteiro via volume no docker-compose.
-# DevTools detecta mudanças nas classes compiladas pelo IDE (auto-compile habilitado).
-CMD ["sh", "-c", "mvn install -DskipTests -q && mvn -pl apresentacao-backend spring-boot:run"]
+COPY apresentacao-backend/start.sh /start.sh
+RUN chmod +x /start.sh
+CMD ["/start.sh"]

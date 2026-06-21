@@ -1,4 +1,5 @@
-#language: pt
+# language: pt
+
 Funcionalidade: Registrar cerimônia de colação de grau
 
   Cenário: Secretaria registra colação para estudante com aptidão aprovada
@@ -9,4 +10,4 @@ Funcionalidade: Registrar cerimônia de colação de grau
   Cenário: Secretaria tenta registrar colação sem aptidão aprovada
     Dado um estudante sem aptidão aprovada
     Quando a secretaria tenta registrar colação sem aptidão aprovada
-    Então o sistema rejeita o registro da colação por ausência de aptidão
+    Então o sistema deve rejeitar informando "estudante não possui aptidão aprovada para colação de grau"

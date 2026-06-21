@@ -32,7 +32,7 @@ public class CobrancaServico {
         notNull(estudanteId, "estudanteId obrigatório");
         notNull(periodoLetivoId, "periodoLetivoId obrigatório");
         if (!verificadorMatricula.possuiMatricula(estudanteId, periodoLetivoId))
-            throw new IllegalStateException("RN3: Cobrança só pode ser gerada para estudante com matrícula confirmada no período");
+            throw new IllegalStateException("estudante não possui matrícula confirmada no período");
         var id = repositorio.proximoId();
         var cobranca = new Cobranca(id, contratoId, estudanteId, periodoLetivoId, valor, vencimento);
         repositorio.salvar(cobranca);
@@ -50,7 +50,7 @@ public class CobrancaServico {
     public void aplicarDesconto(CobrancaId id, BigDecimal percentual, String autorizacaoId) {
         notNull(id, "id obrigatório");
         if (!verificadorAutorizacao.autorizacaoValida(autorizacaoId))
-            throw new IllegalStateException("RN5: Desconto requer autorização válida do responsável financeiro");
+            throw new IllegalStateException("autorização inválida para aplicação de desconto");
         var cobranca = repositorio.obter(id);
         var evento = cobranca.aplicarDesconto(percentual, autorizacaoId, LocalDate.now());
         repositorio.salvar(cobranca);
@@ -89,12 +89,20 @@ public class CobrancaServico {
         barramento.postar(evento);
     }
 
+    public void cancelarCobranca(CobrancaId id, String motivo) {
+        notNull(id, "id obrigatório");
+        var cobranca = repositorio.obter(id);
+        var evento = cobranca.cancelar(motivo);
+        repositorio.salvar(cobranca);
+        barramento.postar(evento);
+    }
+
     public Pagamento emitirComprovante(CobrancaId id) {
         notNull(id, "id obrigatório");
         var cobranca = repositorio.obter(id);
         var pagamento = cobranca.getPagamento();
         if (pagamento == null || pagamento.getStatus() != StatusPagamento.CONFIRMADO)
-            throw new IllegalStateException("RN9: Comprovante disponível apenas para cobranças com pagamento confirmado");
+            throw new IllegalStateException("comprovante indisponível sem pagamento confirmado");
         return pagamento;
     }
 

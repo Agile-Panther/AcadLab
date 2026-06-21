@@ -12,9 +12,13 @@ export default defineConfig({
   },
   vite: {
     server: {
+      watch: {
+        usePolling: true,
+        interval: 1000,
+      },
       proxy: {
         "/backend": {
-          target: "http://localhost:8080",
+          target: process.env.VITE_API_TARGET || "http://localhost:8080",
           changeOrigin: true,
         },
       },

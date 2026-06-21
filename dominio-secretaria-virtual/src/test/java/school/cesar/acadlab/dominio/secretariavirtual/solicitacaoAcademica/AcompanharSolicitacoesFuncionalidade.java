@@ -6,22 +6,28 @@ import io.cucumber.java.pt.Dado;
 import io.cucumber.java.pt.Entao;
 import io.cucumber.java.pt.Quando;
 import school.cesar.acadlab.dominio.secretariavirtual.SecretariaVirtualFuncionalidade;
+import school.cesar.acadlab.dominio.secretariavirtual.documento.Documento;
 import school.cesar.acadlab.dominio.secretariavirtual.estudante.EstudanteId;
 import school.cesar.acadlab.dominio.secretariavirtual.periodo.PeriodoLetivoId;
 
-public class AcompanharSolicitacoesFuncionalidade extends SecretariaVirtualFuncionalidade {
+public class AcompanharSolicitacoesFuncionalidade {
+    private final SecretariaVirtualFuncionalidade ctx;
     private final EstudanteId estudanteId = new EstudanteId(30);
     private final PeriodoLetivoId periodoLetivoId = new PeriodoLetivoId(30);
     private List<SolicitacaoAcademica> resultado;
 
+    public AcompanharSolicitacoesFuncionalidade(SecretariaVirtualFuncionalidade ctx) {
+        this.ctx = ctx;
+    }
+
     @Dado("um estudante com solicitações cadastradas")
     public void um_estudante_com_solicitacoes() {
-        calendarioDentroDoPrazo = true;
-        solicitacaoServico.abrirSolicitacao(estudanteId, periodoLetivoId,
+        ctx.calendarioDentroDoPrazo = true;
+        ctx.solicitacaoServico.abrirSolicitacao(estudanteId, periodoLetivoId,
                 TipoSolicitacao.SEGUNDA_VIA_DOCUMENTO, "Solicitação 1", List.of());
-        solicitacaoServico.abrirSolicitacao(estudanteId, periodoLetivoId,
+        ctx.solicitacaoServico.abrirSolicitacao(estudanteId, periodoLetivoId,
                 TipoSolicitacao.REVISAO_DE_NOTA,
-                "Solicitação 2", List.of(new school.cesar.acadlab.dominio.secretariavirtual.documento.Documento("comprovante_avaliacao", "prova.pdf")));
+                "Solicitação 2", List.of(new Documento("comprovante_avaliacao", "prova.pdf")));
     }
 
     @Dado("um estudante sem solicitações cadastradas")
@@ -31,7 +37,7 @@ public class AcompanharSolicitacoesFuncionalidade extends SecretariaVirtualFunci
 
     @Quando("o estudante consulta suas solicitações")
     public void o_estudante_consulta() {
-        resultado = consultaServico.listarPorEstudante(estudanteId);
+        resultado = ctx.consultaServico.listarPorEstudante(estudanteId);
     }
 
     @Entao("o sistema retorna a lista de solicitações do estudante")

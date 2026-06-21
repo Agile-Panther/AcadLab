@@ -108,10 +108,10 @@ public class DiarioTurma {
         notNull(professorId, "O professor não pode ser nulo");
         notNull(data, "A data não pode ser nula");
         if (!professorId.equals(professorResponsavel)) {
-            throw new IllegalStateException("RN-1: Apenas o professor responsável pode registrar aulas");
+            throw new IllegalStateException("professor não é o responsável pelo diário");
         }
         if (data.isBefore(dataInicioPeriodo) || data.isAfter(dataFimPeriodo)) {
-            throw new IllegalStateException("RN-2: Aula deve ser registrada dentro do período letivo");
+            throw new IllegalStateException("aula deve ser registrada dentro do período letivo");
         }
         aulas.add(new RegistroAula(aulaId, professorId, data, conteudo));
     }
@@ -134,10 +134,10 @@ public class DiarioTurma {
         notNull(aulaId, "O id da aula não pode ser nulo");
         notNull(estudanteId, "O estudante não pode ser nulo");
         if (!professorId.equals(professorResponsavel)) {
-            throw new IllegalStateException("RN-4: Apenas o professor responsável pode registrar frequência");
+            throw new IllegalStateException("professor não é o responsável pelo diário");
         }
         if (!estudantesAtivos.contains(estudanteId)) {
-            throw new IllegalStateException("RN-3: Estudante não possui matrícula ativa na turma");
+            throw new IllegalStateException("estudante não está matriculado na turma");
         }
         frequencias.add(new LancamentoFrequencia(aulaId, estudanteId, presente));
     }
@@ -158,11 +158,11 @@ public class DiarioTurma {
         notNull(nome, "O nome da avaliação não pode ser nulo");
         notNull(prazo, "O prazo da avaliação não pode ser nulo");
         if (prazo.isBefore(dataInicioPeriodo) || prazo.isAfter(dataFimPeriodo)) {
-            throw new IllegalStateException("RN-6: Prazo da avaliação fora do período letivo");
+            throw new IllegalStateException("prazo da avaliação está fora do período letivo");
         }
         double somaAtual = avaliacoes.stream().mapToDouble(Avaliacao::getPeso).sum();
         if (somaAtual + peso > 100.0) {
-            throw new IllegalStateException("RN-5: Soma dos pesos das avaliações excede 100%");
+            throw new IllegalStateException("soma dos pesos das avaliações ultrapassa 100%");
         }
         avaliacoes.add(new Avaliacao(avaliacaoId, nome, peso, prazo));
     }
@@ -204,7 +204,7 @@ public class DiarioTurma {
         notNull(hoje, "A data atual não pode ser nula");
         notNull(fimJanelaRevisao, "A data fim da janela de revisão não pode ser nula");
         if (hoje.isAfter(fimJanelaRevisao)) {
-            throw new IllegalStateException("RN-9: Revisão de nota fora da janela de revisão");
+            throw new IllegalStateException("janela de revisão de nota encerrada");
         }
         obterResultado(estudanteId).solicitarRevisao();
     }
@@ -215,11 +215,11 @@ public class DiarioTurma {
         notNull(estudanteId, "O estudante não pode ser nulo");
         notNull(hoje, "A data atual não pode ser nula");
         if (hoje.isAfter(dataFimPeriodo)) {
-            throw new IllegalStateException("RN-13: Nota de recuperação fora do período letivo");
+            throw new IllegalStateException("período letivo já encerrado");
         }
         var resultado = obterResultado(estudanteId);
         if (resultado.getSituacao() != SituacaoResultado.RECUPERACAO) {
-            throw new IllegalStateException("RN-12: Estudante não está em situação de recuperação");
+            throw new IllegalStateException("estudante não está em situação de recuperação");
         }
         resultado.lancarRecuperacao(nota);
         resultado.atualizarSituacaoRecuperacao(nota >= mediaMinima ? SituacaoResultado.APROVADO : SituacaoResultado.REPROVADO_NOTA);

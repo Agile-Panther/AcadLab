@@ -48,9 +48,9 @@ public class Cobranca {
     public ContestacaoRegistradaEvento contestar(EstudanteId requerente, String justificativa, LocalDate data) {
         notNull(requerente, "requerente obrigatório");
         if (!this.estudanteId.equals(requerente))
-            throw new IllegalStateException("RN1: Apenas o estudante titular do contrato pode contestar a cobrança");
+            throw new IllegalStateException("estudante não é titular desta cobrança");
         if (contestacao != null && contestacao.getStatus() == StatusContestacao.PENDENTE)
-            throw new IllegalStateException("RN2: Não pode haver duas contestações pendentes para a mesma cobrança");
+            throw new IllegalStateException("já existe uma contestação em aberto para esta cobrança");
         this.contestacao = new Contestacao(requerente, justificativa, data);
         this.status = StatusCobranca.CONTESTADA;
         return new ContestacaoRegistradaEvento(this);
@@ -58,7 +58,7 @@ public class Cobranca {
 
     public ContestacaoResolvidaEvento resolverContestacao(String parecer) {
         if (contestacao == null)
-            throw new IllegalStateException("Não há contestação registrada");
+            throw new IllegalStateException("não há contestação registrada");
         contestacao.resolver(parecer);
         this.status = StatusCobranca.ABERTA;
         return new ContestacaoResolvidaEvento(this);
@@ -76,7 +76,7 @@ public class Cobranca {
 
     public PagamentoRegistradoEvento registrarPagamento(BigDecimal valor, LocalDate data, String referencia) {
         if (status == StatusCobranca.CANCELADA || status == StatusCobranca.PAGA)
-            throw new IllegalStateException("RN6: Pagamento não permitido para cobrança com status " + status);
+            throw new IllegalStateException("pagamento não permitido para cobrança com status " + status);
         this.pagamento = new Pagamento(valor, data, referencia);
         this.status = StatusCobranca.PAGA;
         return new PagamentoRegistradoEvento(this);
@@ -84,7 +84,7 @@ public class Cobranca {
 
     public PagamentoCanceladoEvento cancelarPagamento(String justificativa, String responsavel) {
         if (pagamento == null)
-            throw new IllegalStateException("RN10: Não há pagamento registrado");
+            throw new IllegalStateException("não há pagamento registrado");
         pagamento.cancelar(justificativa, responsavel);
         this.status = StatusCobranca.ABERTA;
         return new PagamentoCanceladoEvento(this);
@@ -115,10 +115,11 @@ public class Cobranca {
         return c;
     }
 
-    public void cancelar(String motivo) {
+    public CobrancaCanceladaEvento cancelar(String motivo) {
         if (status == StatusCobranca.PAGA)
-            throw new IllegalStateException("Não é possível cancelar uma cobrança já paga");
+            throw new IllegalStateException("não é possível cancelar uma cobrança já paga");
         this.status = StatusCobranca.CANCELADA;
+        return new CobrancaCanceladaEvento(this);
     }
 
     public CobrancaId getId() { return id; }
@@ -141,21 +142,24 @@ public class Cobranca {
         public Cobranca getCobranca() { return cobranca; }
     }
     public static class ContestacaoRegistradaEvento extends CobrancaEvento {
-        public ContestacaoRegistradaEvento(Cobranca c) { super(c); }
+        private ContestacaoRegistradaEvento(Cobranca c) { super(c); }
     }
     public static class ContestacaoResolvidaEvento extends CobrancaEvento {
-        public ContestacaoResolvidaEvento(Cobranca c) { super(c); }
+        private ContestacaoResolvidaEvento(Cobranca c) { super(c); }
     }
     public static class DescontoAplicadoEvento extends CobrancaEvento {
-        public DescontoAplicadoEvento(Cobranca c) { super(c); }
+        private DescontoAplicadoEvento(Cobranca c) { super(c); }
     }
     public static class PagamentoRegistradoEvento extends CobrancaEvento {
-        public PagamentoRegistradoEvento(Cobranca c) { super(c); }
+        private PagamentoRegistradoEvento(Cobranca c) { super(c); }
     }
     public static class PagamentoCanceladoEvento extends CobrancaEvento {
-        public PagamentoCanceladoEvento(Cobranca c) { super(c); }
+        private PagamentoCanceladoEvento(Cobranca c) { super(c); }
     }
     public static class NovaVersaoGeradaEvento extends CobrancaEvento {
-        public NovaVersaoGeradaEvento(Cobranca c) { super(c); }
+        private NovaVersaoGeradaEvento(Cobranca c) { super(c); }
+    }
+    public static class CobrancaCanceladaEvento extends CobrancaEvento {
+        private CobrancaCanceladaEvento(Cobranca c) { super(c); }
     }
 }

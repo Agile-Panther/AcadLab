@@ -7,9 +7,13 @@ import io.cucumber.java.pt.Quando;
 import school.cesar.acadlab.dominio.apoiopsicopedagogico.ApoioPsicopedagogicoFuncionalidade;
 import school.cesar.acadlab.dominio.apoiopsicopedagogico.profissional.CoordenadorId;
 
-public class RegistrarAcaoPermanenciaFuncionalidade extends ApoioPsicopedagogicoFuncionalidade {
+public class RegistrarAcaoPermanenciaFuncionalidade {
+    private final ApoioPsicopedagogicoFuncionalidade ctx;
     private final CoordenadorId coordenadorId = new CoordenadorId(1);
-    private RuntimeException excecao;
+
+    public RegistrarAcaoPermanenciaFuncionalidade(ApoioPsicopedagogicoFuncionalidade ctx) {
+        this.ctx = ctx;
+    }
 
     @Dado("um coordenador autorizado")
     public void um_coordenador_autorizado() {
@@ -23,7 +27,7 @@ public class RegistrarAcaoPermanenciaFuncionalidade extends ApoioPsicopedagogico
 
     @Quando("o coordenador registra uma ação de permanência com indicadores agregados")
     public void o_coordenador_registra_acao() {
-        acaoPermanenciaServico.registrar(
+        ctx.acaoPermanenciaServico.registrar(
                 coordenadorId,
                 "Oficina de técnicas de estudo",
                 "30% dos atendimentos relataram dificuldades com organização acadêmica");
@@ -32,21 +36,21 @@ public class RegistrarAcaoPermanenciaFuncionalidade extends ApoioPsicopedagogico
     @Quando("alguém tenta registrar uma ação de permanência sem identificação de coordenador")
     public void registrar_acao_sem_coordenador() {
         try {
-            acaoPermanenciaServico.registrar(null, "Ação", "Indicadores");
+            ctx.acaoPermanenciaServico.registrar(null, "Ação", "Indicadores");
         } catch (RuntimeException e) {
-            excecao = e;
+            ctx.excecao = e;
         }
     }
 
     @Entao("o sistema registra a ação de permanência com sucesso")
     public void o_sistema_registra_acao() {
-        var acao = repositorio.obter(new AcaoPermanenciaId(1));
+        var acao = ctx.repositorio.obter(new AcaoPermanenciaId(1));
         assertNotNull(acao);
         assertEquals(coordenadorId, acao.getCoordenadorId());
     }
 
     @Entao("o sistema informa que o coordenador é obrigatório para registrar ações de permanência")
     public void o_sistema_informa_coordenador_obrigatorio() {
-        assertNotNull(excecao);
+        assertNotNull(ctx.excecao);
     }
 }

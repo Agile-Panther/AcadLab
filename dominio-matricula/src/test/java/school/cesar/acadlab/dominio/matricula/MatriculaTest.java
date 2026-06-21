@@ -163,6 +163,34 @@ class MatriculaTest {
                         List.of(), false, false, true, DENTRO_JANELA, INICIO_JANELA, FIM_JANELA));
     }
 
+    @Test
+    void rn11_deveTrancarPeriodoDentroJanela() {
+        adicionarTurmaSimples(1);
+        matricula.confirmar(Map.of(new TurmaId(1), 30));
+        matricula.trancarPeriodo(LocalDate.of(2025, 3, 10),
+                INICIO_TRANCAMENTO, FIM_TRANCAMENTO, 0, 3);
+        assertEquals(StatusMatricula.TRANCADA_PERIODO, matricula.getStatus());
+        assertEquals(StatusItemMatricula.TRANCADO, matricula.getItens().get(0).getStatus());
+    }
+
+    @Test
+    void rn11_deveLancarErroTrancamentoPeriodoForaJanela() {
+        adicionarTurmaSimples(1);
+        matricula.confirmar(Map.of(new TurmaId(1), 30));
+        assertThrows(IllegalArgumentException.class, () ->
+                matricula.trancarPeriodo(LocalDate.of(2025, 4, 1),
+                        INICIO_TRANCAMENTO, FIM_TRANCAMENTO, 0, 3));
+    }
+
+    @Test
+    void rn12_deveLancarErroComLimiteAtingido() {
+        adicionarTurmaSimples(1);
+        matricula.confirmar(Map.of(new TurmaId(1), 30));
+        assertThrows(IllegalArgumentException.class, () ->
+                matricula.trancarPeriodo(LocalDate.of(2025, 3, 10),
+                        INICIO_TRANCAMENTO, FIM_TRANCAMENTO, 3, 3));
+    }
+
     private void adicionarTurmaSimples(int id) {
         matricula.adicionarItem(new TurmaId(id), new DisciplinaId(id), 4,
                 List.of(), true, true, false, DENTRO_JANELA, INICIO_JANELA, FIM_JANELA);

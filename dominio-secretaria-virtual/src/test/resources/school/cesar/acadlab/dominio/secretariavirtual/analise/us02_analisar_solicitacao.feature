@@ -1,4 +1,5 @@
-#language: pt
+# language: pt
+
 Funcionalidade: Analisar solicitações acadêmicas
 
   Cenário: Secretaria defere solicitação sem impacto acadêmico e conclui
@@ -13,7 +14,7 @@ Funcionalidade: Analisar solicitações acadêmicas
     Quando a secretaria inicia a análise da solicitação
     E a secretaria defere a solicitação com impacto acadêmico
     E a secretaria tenta concluir a solicitação
-    Então o sistema rejeita a conclusão por falta de vinculação de alterações
+    Então o sistema deve rejeitar informando "solicitação deferida com impacto acadêmico requer vinculação de alterações"
 
   Cenário: Secretaria defere solicitação com impacto e vincula alterações antes de concluir
     Dado uma solicitação pendente de análise

@@ -82,7 +82,7 @@ function Lista() {
           { key: "cat", header: "Categoria" },
           { key: "ch", header: "CH", align: "right" },
           { key: "data", header: "Enviada em" },
-          { key: "status", header: "Status", render: (r) => <StatusBadge tone={tone(r.status)}>{r.status}</StatusBadge> },
+          { key: "status", header: "Status", render: (r) => <StatusBadge tone={atTone(r.status)}>{r.status}</StatusBadge> },
           { key: "acoes", header: "", render: () => <div className="flex justify-end gap-1.5"><RowActionButton>Ver</RowActionButton><RowActionButton tone="danger">Cancelar</RowActionButton></div>, align: "right" },
         ]}
         rows={[

@@ -14,7 +14,6 @@ import jakarta.persistence.Table;
 import school.cesar.acadlab.aplicacao.estagios.OportunidadeRepositorioAplicacao;
 import school.cesar.acadlab.aplicacao.estagios.OportunidadeResumo;
 import school.cesar.acadlab.dominio.estagios.oportunidade.EmpresaId;
-import school.cesar.acadlab.dominio.estagios.oportunidade.EstudanteId;
 import school.cesar.acadlab.dominio.estagios.oportunidade.Oportunidade;
 import school.cesar.acadlab.dominio.estagios.oportunidade.OportunidadeId;
 import school.cesar.acadlab.dominio.estagios.oportunidade.OportunidadeRepositorio;
@@ -30,7 +29,6 @@ class OportunidadeJpa {
     int cargaHorariaTotal;
     @Enumerated(EnumType.STRING)
     StatusOportunidade status;
-    Integer candidatoId;
 }
 
 interface OportunidadeJpaRepository extends JpaRepository<OportunidadeJpa, Integer> {
@@ -68,7 +66,7 @@ class OportunidadeRepositorioImpl implements OportunidadeRepositorio, Oportunida
 
     @Override
     public List<OportunidadeResumo> listarAbertas() {
-        return repository.findByStatus(StatusOportunidade.ABERTA).stream()
+        return repository.findByStatus(StatusOportunidade.PUBLICADA).stream()
                 .map(this::toResumo)
                 .toList();
     }
@@ -80,7 +78,6 @@ class OportunidadeRepositorioImpl implements OportunidadeRepositorio, Oportunida
         jpa.descricao = o.getDescricao();
         jpa.cargaHorariaTotal = o.getCargaHorariaTotal();
         jpa.status = o.getStatus();
-        jpa.candidatoId = o.getCandidato() != null ? o.getCandidato().getValor() : null;
         return jpa;
     }
 
@@ -91,7 +88,7 @@ class OportunidadeRepositorioImpl implements OportunidadeRepositorio, Oportunida
                 jpa.descricao,
                 jpa.cargaHorariaTotal,
                 jpa.status,
-                jpa.candidatoId != null ? new EstudanteId(jpa.candidatoId) : null);
+                null);
     }
 
     private OportunidadeResumo toResumo(OportunidadeJpa jpa) {

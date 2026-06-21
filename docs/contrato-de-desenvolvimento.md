@@ -25,10 +25,10 @@
 | Feature | Título | Dono | Módulo Maven |
 |---------|--------|------|--------------|
 | **F-01** | Gestão Curricular do Curso | Julia | `dominio-curriculo` |
-| **F-02** | Planejamento Acadêmico do Período Letivo | Neto | `dominio-oferta-academica` ¹ |
+| **F-02** | Planejamento Acadêmico do Período Letivo | Claudia | `dominio-oferta-academica` ¹ |
 | **F-03** | Planejamento e Oferta de Turmas | Clara | `dominio-oferta-academica` ¹ |
 | **F-04** | Montagem e Ajuste de Matrícula | Vinicius | `dominio-matricula` |
-| **F-05** | Gestão Pedagógica da Turma | Neto | `dominio-gestao-pedagogica` |
+| **F-05** | Gestão Pedagógica da Turma | Claudia | `dominio-gestao-pedagogica` |
 | **F-06** | Gestão do Histórico Acadêmico | Julia | `dominio-historico-academico` |
 | **F-07** | Secretaria Virtual Acadêmica | Bernardo | `dominio-secretaria-virtual` |
 | **F-08** | Validação de Integralização e Colação | Bernardo | `dominio-integralizacao-curricular` ² |
@@ -52,9 +52,9 @@ acadlab-pai/                          ← POM pai (groupId: school.cesar)
 │
 ├── dominio-compartilhado/            ← IDs, exceções base, eventos de domínio base
 ├── dominio-curriculo/                ← F-01 (Julia)
-├── dominio-oferta-academica/         ← F-02 (Neto) + F-03 (Clara)
+├── dominio-oferta-academica/         ← F-02 (Claudia) + F-03 (Clara)
 ├── dominio-matricula/                ← F-04 (Vinicius)
-├── dominio-gestao-pedagogica/        ← F-05 (Neto)
+├── dominio-gestao-pedagogica/        ← F-05 (Claudia)
 ├── dominio-historico-academico/      ← F-06 (Julia)
 ├── dominio-secretaria-virtual/       ← F-07 (Bernardo)
 ├── dominio-integralizacao-curricular/← F-08 (Bernardo) — CRIAR ²
@@ -157,9 +157,9 @@ dominio-permanencia-academica/
 
 ## 4. Módulos com Features Pendentes de Criação
 
-### F-02 e F-03 — `dominio-oferta-academica` (Neto + Clara)
+### F-02 e F-03 — `dominio-oferta-academica` (Claudia + Clara)
 
-Este módulo é compartilhado. F-02 (Neto) implementa `PeriodoLetivo` e `JanelaAcademica`. F-03 (Clara) implementa `Turma`, `Sala` e `Professor`. **Separação obrigatória por sub-pacotes:**
+Este módulo é compartilhado. F-02 (Claudia) implementa `PeriodoLetivo` e `JanelaAcademica`. F-03 (Clara) implementa `Turma`, `Sala` e `Professor`. **Separação obrigatória por sub-pacotes:**
 
 ```
 dominio-oferta-academica/
@@ -189,9 +189,9 @@ dominio-oferta-academica/
         └── OfertaTurmaServico.java
 ```
 
-**Regra crítica:** Neto implementa `PeriodoLetivo` primeiro, pois `Turma` (Clara) depende de `PeriodoLetivoId`. Clara não cria `PeriodoLetivo` — apenas consome o ID como valor.
+**Regra crítica:** Claudia implementa `PeriodoLetivo` primeiro, pois `Turma` (Clara) depende de `PeriodoLetivoId`. Clara não cria `PeriodoLetivo` — apenas consome o ID como valor.
 
-**Neto deve entregar antes de Clara iniciar a implementação de `Turma`.**
+**Claudia deve entregar antes de Clara iniciar a implementação de `Turma`.**
 
 ---
 
@@ -232,7 +232,7 @@ Esta seção define **quem cria** cada entidade compartilhada e **quem apenas co
 | Entidade | Módulo | Dono | Consumidores |
 |----------|--------|------|--------------|
 | `EstudanteId` | `dominio-compartilhado` | **Todos (já existe como VO)** | Todos os módulos |
-| `PeriodoLetivo` / `JanelaAcademica` | `dominio-oferta-academica` | **Neto (F-02)** | F-03, F-04, F-05, F-06, F-07, F-13 |
+| `PeriodoLetivo` / `JanelaAcademica` | `dominio-oferta-academica` | **Claudia (F-02)** | F-03, F-04, F-05, F-06, F-07, F-13 |
 | `MatrizCurricular` / `Disciplina` | `dominio-curriculo` | **Julia (F-01)** | F-03, F-04, F-06, F-08, F-09, F-12 |
 | `Turma` | `dominio-oferta-academica` | **Clara (F-03)** | F-04, F-05, F-06 |
 | `Matricula` | `dominio-matricula` | **Vinicius (F-04)** | F-05, F-06, F-13, F-14 |
@@ -725,13 +725,13 @@ Algumas features dependem de entidades criadas por outras. Respeite esta ordem:
 ```
 F-01 (Julia) — MatrizCurricular, Disciplina
    ↓ depende de
-F-02 (Neto) — PeriodoLetivo, JanelaAcademica
+F-02 (Claudia) — PeriodoLetivo, JanelaAcademica
    ↓ depende de
 F-03 (Clara) — Turma (precisa de PeriodoLetivoId + DisciplinaId)
    ↓ depende de
 F-04 (Vinicius) — Matricula (precisa de TurmaId + MatrizCurricularId)
    ↓ depende de
-F-05 (Neto) — Aula, Frequencia, Nota (precisa de MatriculaId + TurmaId)
+F-05 (Claudia) — Aula, Frequencia, Nota (precisa de MatriculaId + TurmaId)
 F-06 (Julia) — HistoricoAcademico (precisa de MatriculaId consolidada)
    ↓ depende de
 F-08 (Bernardo) — IntegralizacaoCurricular (precisa de HistoricoAcademico + AtividadeComplementar)

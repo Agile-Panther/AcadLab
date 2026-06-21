@@ -1,4 +1,5 @@
-#language: pt
+# language: pt
+
 Funcionalidade: Publicar resultado e encerrar edital
 
   Cenário: Resultado publicado com sucesso após prazo de recursos encerrado
@@ -9,7 +10,7 @@ Funcionalidade: Publicar resultado e encerrar edital
   Cenário: Publicação falha quando prazo de recursos ainda não encerrou
     Dado existe um edital com inscrições encerradas e prazo de recurso ainda aberto
     Quando a assistência estudantil tenta publicar o resultado final
-    Então o sistema informa que o prazo de recursos ainda não encerrou
+    Então o sistema deve rejeitar informando "prazo de recursos ainda não encerrou"
 
   Cenário: Edital encerrado com sucesso após publicação do resultado
     Dado existe um edital com resultado final publicado
@@ -19,4 +20,4 @@ Funcionalidade: Publicar resultado e encerrar edital
   Cenário: Encerramento falha quando resultado ainda não foi publicado
     Dado existe um edital com inscrições abertas
     Quando a secretaria tenta encerrar o edital
-    Então o sistema informa que o resultado final ainda não foi publicado
+    Então o sistema deve rejeitar informando "resultado final ainda não foi publicado"
