@@ -17,6 +17,7 @@ import {
   EXIGENCIA_TOTAL_HORAS,
   type AtividadeComplementarResumo, type CategoriaHorasResumo, type StatusAtividade,
 } from "@/lib/atividades";
+import { validarSubmissaoAtividade } from "@/lib/atividade-form";
 
 export const Route = createFileRoute("/atividades-complementares")({
   head: () => ({ meta: [{ title: "Atividades Complementares — AcadLab" }] }),
@@ -171,11 +172,26 @@ function SubmeterWizard({ step, onStep, onDone }: { step: 0 | 1 | 2; onStep: (s:
       {step === 0 && (
         <div className="rounded-xl border bg-card p-6 shadow-card">
           <SectionTitle title="Categoria da atividade" />
-          <div className="mt-4 grid grid-cols-2 gap-2">
-            {categorias.map((c) => (
-              <button key={c.id} onClick={() => setCatId(c.id)} className={`rounded-lg border p-3 text-left text-[13px] transition-colors ${catId === c.id ? "border-primary bg-primary-soft text-primary" : "border-border hover:bg-primary/5"}`}>{c.nome}</button>
-            ))}
-          </div>
+          {categoriasQuery.isPending && (
+            <p className="mt-4 text-[13px] text-muted-foreground">Carregando categorias...</p>
+          )}
+          {categoriasQuery.isError && (
+            <ValidationCallout tone="danger">
+              Não foi possível carregar as categorias. Tente novamente.
+            </ValidationCallout>
+          )}
+          {categoriasQuery.isSuccess && categorias.length === 0 && (
+            <ValidationCallout tone="warning">
+              Nenhuma categoria de atividade foi cadastrada.
+            </ValidationCallout>
+          )}
+          {categorias.length > 0 && (
+            <div className="mt-4 grid grid-cols-2 gap-2">
+              {categorias.map((c) => (
+                <button key={c.id} onClick={() => setCatId(c.id)} className={`rounded-lg border p-3 text-left text-[13px] transition-colors ${catId === c.id ? "border-primary bg-primary-soft text-primary" : "border-border hover:bg-primary/5"}`}>{c.nome}</button>
+              ))}
+            </div>
+          )}
           <div className="mt-4 flex justify-end"><Button disabled={catId == null} onClick={() => onStep(1)}>Avançar</Button></div>
         </div>
       )}
@@ -191,13 +207,37 @@ function SubmeterWizard({ step, onStep, onDone }: { step: 0 | 1 | 2; onStep: (s:
           <ValidationCallout className="mt-3" tone="info">O mesmo comprovante não pode ser usado em duas atividades diferentes.</ValidationCallout>
           <div className="mt-4 flex justify-end gap-2">
             <Button variant="outline" onClick={() => onStep(0)}>Voltar</Button>
-            <Button onClick={() => {
-              if (catId == null) return;
-              submeter.mutate(
-                { categoriaId: catId, horas, dataRealizacao: data, identificadorCertificado: certificado, descricao },
-                { onSuccess: () => onStep(2) },
-              );
-            }}>Submeter</Button>
+            <Button
+              disabled={submeter.isPending}
+              onClick={() => {
+                const erro = validarSubmissaoAtividade({
+                  categoriaId: catId,
+                  descricao,
+                  horas,
+                  dataRealizacao: data,
+                  identificadorCertificado: certificado,
+                });
+                if (erro) {
+                  toast.error(erro);
+                  return;
+                }
+                submeter.mutate(
+                  {
+                    categoriaId: catId!,
+                    horas,
+                    dataRealizacao: data,
+                    identificadorCertificado: certificado,
+                    descricao,
+                  },
+                  {
+                    onSuccess: () => onStep(2),
+                    onError: (falha) => toast.error(falha.message),
+                  },
+                );
+              }}
+            >
+              {submeter.isPending ? "Enviando..." : "Submeter"}
+            </Button>
           </div>
         </div>
       )}

@@ -109,6 +109,11 @@ public class MatriculaControlador {
                 new CoordenadorId(coordenadorId));
     }
 
+    @PutMapping("/{id}/bloquear")
+    public void bloquear(@PathVariable int id) {
+        servico.bloquear(new MatriculaId(id));
+    }
+
     @PutMapping("/{id}/trancar-periodo")
     public void trancarPeriodo(@PathVariable int id,
                                 @RequestBody TrancarPeriodoRequest req) {

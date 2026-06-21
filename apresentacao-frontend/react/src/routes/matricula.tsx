@@ -11,6 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Printer, Pencil, Lock, Plus, ArrowLeft, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
+import { useMatriculaAtual, isMatriculaBloqueada } from "@/lib/matricula";
 
 type PedidoStatus = "Em análise" | "Deferida" | "Indeferida";
 type Pedido = { id: string; aluno: string; tipo: string; aberta: string; status: PedidoStatus };
@@ -60,6 +61,8 @@ function Page() {
   ]);
   const [view, setView] = useState<View>({ kind: "overview" });
   const [ofertas, setOfertas] = useState(ofertasIniciais);
+  const matriculasQuery = useMatriculaAtual();
+  const bloqueada = isMatriculaBloqueada(matriculasQuery.data);
   const selecionadas = ofertas.filter((o) => o.status === "Selecionada");
   const creditos = selecionadas.reduce((s, o) => s + o.creditos, 0);
   const temConflito = selecionadas.some((o) => o.codigo === "ES401") && selecionadas.some((o) => o.codigo === "IA401");
@@ -84,6 +87,7 @@ function Page() {
 
       {perfil === "estudante" && view.kind === "overview" && (
         <Overview
+          bloqueada={bloqueada}
           onNova={() => setView({ kind: "wizard", step: 0 })}
           onAjuste={() => setView({ kind: "ajuste" })}
           onTrancarDisc={() => setView({ kind: "trancarDisc" })}
@@ -163,8 +167,8 @@ function SecretariaView() {
 }
 
 function Overview({
-  onNova, onAjuste, onTrancarDisc, onTrancarPer,
-}: { onNova: () => void; onAjuste: () => void; onTrancarDisc: () => void; onTrancarPer: () => void }) {
+  bloqueada, onNova, onAjuste, onTrancarDisc, onTrancarPer,
+}: { bloqueada: boolean; onNova: () => void; onAjuste: () => void; onTrancarDisc: () => void; onTrancarPer: () => void }) {
   return (
     <div className="space-y-5">
       <SuccessBanner
@@ -178,11 +182,17 @@ function Overview({
         { label: "Pendências", value: 0, tone: "success" },
       ]} />
 
+      {bloqueada && (
+        <ValidationCallout tone="error">
+          Matrícula bloqueada por pendência financeira. Regularize sua situação junto ao Setor Financeiro.
+        </ValidationCallout>
+      )}
+
       <div className="flex flex-wrap gap-2">
-        <Button onClick={onNova}><Plus className="mr-2 h-4 w-4" /> Iniciar Matrícula 2026.1</Button>
-        <Button variant="outline" className="border-primary text-primary" onClick={onAjuste}><Pencil className="mr-2 h-4 w-4" /> Solicitar Ajuste</Button>
-        <Button variant="outline" className="border-warning text-warning" onClick={onTrancarDisc}><Lock className="mr-2 h-4 w-4" /> Trancar Disciplina</Button>
-        <Button variant="outline" className="border-destructive text-destructive" onClick={onTrancarPer}>Trancar Período</Button>
+        <Button disabled={bloqueada} onClick={onNova}><Plus className="mr-2 h-4 w-4" /> Iniciar Matrícula 2026.1</Button>
+        <Button disabled={bloqueada} variant="outline" className="border-primary text-primary" onClick={onAjuste}><Pencil className="mr-2 h-4 w-4" /> Solicitar Ajuste</Button>
+        <Button disabled={bloqueada} variant="outline" className="border-warning text-warning" onClick={onTrancarDisc}><Lock className="mr-2 h-4 w-4" /> Trancar Disciplina</Button>
+        <Button disabled={bloqueada} variant="outline" className="border-destructive text-destructive" onClick={onTrancarPer}>Trancar Período</Button>
         <Button variant="secondary" onClick={() => toast.success("Grade impressa (PDF gerado).")}><Printer className="mr-2 h-4 w-4" /> Imprimir grade</Button>
       </div>
 

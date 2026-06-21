@@ -60,6 +60,12 @@ import school.cesar.acadlab.dominio.apoiopsicopedagogico.AtendimentoServico;
 import school.cesar.acadlab.dominio.apoiopsicopedagogico.TriagemServico;
 import school.cesar.acadlab.dominio.apoiopsicopedagogico.caso.CasoRepositorio;
 import school.cesar.acadlab.dominio.apoiopsicopedagogico.solicitacao.SolicitacaoApoioRepositorio;
+import school.cesar.acadlab.dominio.atividadescomplementares.AtividadeComplementarServico;
+import school.cesar.acadlab.dominio.atividadescomplementares.VerificadorCertificadoDuplicado;
+import school.cesar.acadlab.dominio.atividadescomplementares.VerificadorContabilizacaoIntegralizacao;
+import school.cesar.acadlab.dominio.atividadescomplementares.VerificadorLimiteCategoria;
+import school.cesar.acadlab.dominio.atividadescomplementares.VerificadorVinculoEstudante;
+import school.cesar.acadlab.dominio.atividadescomplementares.atividade.AtividadeComplementarRepositorio;
 import school.cesar.acadlab.dominio.estagios.EstagioServico;
 import school.cesar.acadlab.dominio.periodoletivo.PeriodoLetivoServico;
 import school.cesar.acadlab.dominio.periodoletivo.VerificadorMatriculasPeriodo;
@@ -116,6 +122,23 @@ public class BackendAplicacao {
     AtividadeComplementarServicoAplicacao atividadeComplementarServicoAplicacao(
             AtividadeComplementarRepositorioAplicacao repositorio) {
         return new AtividadeComplementarServicoAplicacao(repositorio);
+    }
+
+    @Bean
+    AtividadeComplementarServico atividadeComplementarServico(
+            AtividadeComplementarRepositorio repositorio,
+            VerificadorVinculoEstudante verificadorVinculo,
+            VerificadorCertificadoDuplicado verificadorCertificado,
+            VerificadorLimiteCategoria verificadorLimite,
+            VerificadorContabilizacaoIntegralizacao verificadorContabilizacao,
+            EventoBarramento barramento) {
+        return new AtividadeComplementarServico(
+                repositorio,
+                verificadorVinculo,
+                verificadorCertificado,
+                verificadorLimite,
+                verificadorContabilizacao,
+                barramento);
     }
 
     @Bean

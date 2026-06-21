@@ -8,12 +8,13 @@ import {
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft, Download, CreditCard, AlertCircle, Send, FileText, Plus } from "lucide-react";
+import { ArrowLeft, Download, CreditCard, AlertCircle, FileText, Plus } from "lucide-react";
 import { toast } from "sonner";
 import {
   useExtrato, useRegistrarPagamento, useContestar,
   useContestacoesAbertas, useDeferirContestacao, useIndeferirContestacao, type ModoAjuste,
   useBolsas, useConcederBolsa, useSuspenderBolsa, useReativarBolsa, useRenovarBolsa,
+  useInadimplentes, useBloqueioMatricula, useRegistrarAcordo,
   type CobrancaResumo, type StatusCobranca, type BolsaResumo, type TipoBolsa, type StatusBolsa,
 } from "@/lib/financeiro";
 import { formatData, formatMoeda, formatValidade } from "@/lib/format";
@@ -201,7 +202,6 @@ function Page() {
   );
 }
 
-type Inadimplente = { matricula: string; aluno: string; curso: string; emAtraso: string; diasAtraso: number; status: "Notificado" | "Negociar" | "Bloqueado" };
 type Lancamento = { id: string; data: string; descricao: string; metodo: "PIX" | "Boleto" | "Cartão"; valor: string; status: "Conciliado" | "Pendente" | "Divergente" };
 
 function FinanceiroView() {
@@ -219,12 +219,15 @@ function FinanceiroView() {
   const cobrancaResolver = contestacoesAbertas.find((c) => c.id === resolverId) ?? null;
   const fecharResolver = () => { setResolverId(null); setValorAjuste(""); setParecerResol(""); setDecisao("DEFERIR"); setModoAjuste("PERCENTUAL"); };
 
-  const [inadimp, setInadimp] = useState<Inadimplente[]>([
-    { matricula: "2021.0451", aluno: "Lucas Pereira", curso: "Eng. Civil", emAtraso: "R$ 2.840,00", diasAtraso: 47, status: "Notificado" },
-    { matricula: "2022.0188", aluno: "Carla Mendes", curso: "Direito", emAtraso: "R$ 4.260,00", diasAtraso: 92, status: "Negociar" },
-    { matricula: "2020.0712", aluno: "Rafael Lima", curso: "Medicina", emAtraso: "R$ 9.120,00", diasAtraso: 121, status: "Bloqueado" },
-    { matricula: "2023.0034", aluno: "Beatriz Souza", curso: "Psicologia", emAtraso: "R$ 1.420,00", diasAtraso: 18, status: "Notificado" },
-  ]);
+  const inadimplentesQuery = useInadimplentes();
+  const inadimplentes = inadimplentesQuery.data ?? [];
+  const bloqueioMatricula = useBloqueioMatricula();
+  const registrarAcordo = useRegistrarAcordo();
+  const [acordoAbertoId, setAcordoAbertoId] = useState<number | null>(null);
+  const [acordoPrazo, setAcordoPrazo] = useState("");
+  const [acordoDesconto, setAcordoDesconto] = useState("");
+  const [acordoObs, setAcordoObs] = useState("");
+  const fecharAcordo = () => { setAcordoAbertoId(null); setAcordoPrazo(""); setAcordoDesconto(""); setAcordoObs(""); };
   const bolsasQuery = useBolsas();
   const bolsas = bolsasQuery.data ?? [];
   const concederBolsa = useConcederBolsa();
@@ -246,33 +249,21 @@ function FinanceiroView() {
   const [novoPercentual, setNovoPercentual] = useState("");
   const [novaValidade, setNovaValidade] = useState("");
 
-  const notificar = (m: string) => {
-    setInadimp((p) => p.map((i) => i.matricula === m ? { ...i, status: "Notificado" } : i));
-    toast.success(`Notificação enviada para ${m}.`);
-  };
-  const negociar = (m: string) => {
-    setInadimp((p) => p.map((i) => i.matricula === m ? { ...i, status: "Negociar" } : i));
-    toast.success("Proposta de acordo registrada.");
-  };
-  const bloquear = (m: string) => {
-    setInadimp((p) => p.map((i) => i.matricula === m ? { ...i, status: "Bloqueado" } : i));
-    toast.warning(`Matrícula ${m} bloqueada para novas operações.`);
-  };
   const conciliar = (id: string) => {
     setLancs((p) => p.map((l) => l.id === id ? { ...l, status: "Conciliado" } : l));
     toast.success(`Lançamento ${id} conciliado.`);
   };
 
   const inadimpFiltrada = useMemo(
-    () => inadimp.filter((i) => (i.aluno + i.matricula + i.curso).toLowerCase().includes(filtroInad.toLowerCase())),
-    [inadimp, filtroInad],
+    () => inadimplentes.filter((i) => String(i.estudanteId).includes(filtroInad)),
+    [inadimplentes, filtroInad],
   );
 
   return (
     <div className="space-y-5">
       <StatsRow stats={[
         { label: "Arrecadação no mês", value: "R$ 1,82M", tone: "success" },
-        { label: "Inadimplência", value: `${inadimp.length} alunos`, tone: "warning" },
+        { label: "Inadimplência", value: `${inadimplentes.length} alunos`, tone: "warning" },
         { label: "Contestações abertas", value: contestacoesAbertas.length, tone: "info" },
         { label: "Bolsas ativas", value: bolsas.filter((b) => b.status === "ATIVA").length, tone: "info" },
       ]} />
@@ -282,7 +273,7 @@ function FinanceiroView() {
         onChange={setTab}
         items={[
           { value: "contestacoes", label: "Contestações", count: contestacoesAbertas.length },
-          { value: "inadimplencia", label: "Inadimplência", count: inadimp.filter((i) => i.status !== "Bloqueado").length },
+          { value: "inadimplencia", label: "Inadimplência", count: inadimplentes.filter((i) => i.statusMatricula !== "BLOQUEADA").length },
           { value: "bolsas", label: "Bolsas & Descontos", count: bolsas.length },
           { value: "conciliacao", label: "Conciliação", count: lancs.filter((l) => l.status !== "Conciliado").length },
           { value: "relatorios", label: "Relatórios" },
@@ -371,44 +362,72 @@ function FinanceiroView() {
 
       {tab === "inadimplencia" && (
         <>
-          <SectionTitle title="Carteira de inadimplência" subtitle="Acompanhe atrasos, envie notificações e abra acordos." />
+          <SectionTitle title="Carteira de inadimplência" subtitle="Acompanhe atrasos e abra acordos." />
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
             <Input
-              placeholder="Buscar por aluno, matrícula ou curso…"
+              placeholder="Buscar por ID do estudante…"
               value={filtroInad}
               onChange={(e) => setFiltroInad(e.target.value)}
               className="max-w-sm"
             />
-            <Button variant="outline" onClick={() => toast.success("Régua de cobrança disparada para todos os atrasados.")}>
-              <Send className="mr-2 h-4 w-4" /> Disparar régua
-            </Button>
           </div>
           <DataTable
             columns={[
-              { key: "matricula", header: "Matrícula" },
-              { key: "aluno", header: "Estudante" },
-              { key: "curso", header: "Curso" },
-              { key: "emAtraso", header: "Em atraso", align: "right" },
+              { key: "estudanteId", header: "Estudante", render: (r) => `Estudante #${r.estudanteId}` },
+              { key: "valorEmAtraso", header: "Em atraso", align: "right", render: (r) => formatMoeda(r.valorEmAtraso) },
               { key: "diasAtraso", header: "Dias", align: "right", render: (r) => (
                 <span className={r.diasAtraso > 90 ? "font-semibold text-destructive" : r.diasAtraso > 30 ? "font-semibold text-amber-600" : ""}>
                   {r.diasAtraso}
                 </span>
               )},
               { key: "status", header: "Status", render: (r) => (
-                <StatusBadge tone={r.status === "Bloqueado" ? "danger" : r.status === "Negociar" ? "warning" : "info"}>{r.status}</StatusBadge>
+                <StatusBadge tone={r.statusMatricula === "BLOQUEADA" ? "danger" : "warning"}>
+                  {r.statusMatricula === "BLOQUEADA" ? "Bloqueado" : "Em atraso"}
+                </StatusBadge>
               )},
               { key: "acoes", header: "", align: "right", render: (r) => (
                 <div className="flex justify-end gap-2">
-                  <RowActionButton onClick={() => notificar(r.matricula)}>Notificar</RowActionButton>
-                  <RowActionButton tone="info" onClick={() => negociar(r.matricula)}>Acordo</RowActionButton>
-                  {r.status !== "Bloqueado" && (
-                    <RowActionButton tone="danger" onClick={() => bloquear(r.matricula)}>Bloquear</RowActionButton>
+                  <RowActionButton tone="info" onClick={() => { fecharAcordo(); setAcordoAbertoId(r.estudanteId); }}>Acordo</RowActionButton>
+                  {r.statusMatricula !== "BLOQUEADA" && r.matriculaId > 0 && (
+                    <RowActionButton tone="danger" onClick={() =>
+                      bloqueioMatricula.mutate(r.matriculaId, {
+                        onSuccess: () => toast.warning(`Matrícula de Estudante #${r.estudanteId} bloqueada.`),
+                      })
+                    }>Bloquear</RowActionButton>
                   )}
                 </div>
               )},
             ]}
             rows={inadimpFiltrada}
           />
+          {acordoAbertoId !== null && (
+            <div className="rounded-xl border bg-card p-5 shadow-card">
+              <SectionTitle title={`Registrar acordo — Estudante #${acordoAbertoId}`} subtitle="Formalize a proposta de negociação da dívida." />
+              <div className="mt-3 grid grid-cols-2 gap-3">
+                <FormField label="Prazo de quitação" required>
+                  <Input type="date" value={acordoPrazo} onChange={(e) => setAcordoPrazo(e.target.value)} />
+                </FormField>
+                <FormField label="Desconto (%)" required>
+                  <Input type="number" min={0} max={50} placeholder="0–50" value={acordoDesconto} onChange={(e) => setAcordoDesconto(e.target.value)} />
+                </FormField>
+                <FormField label="Observações" full>
+                  <Textarea rows={3} value={acordoObs} onChange={(e) => setAcordoObs(e.target.value)} />
+                </FormField>
+              </div>
+              <div className="mt-4 flex justify-end gap-2">
+                <Button variant="outline" onClick={fecharAcordo}>Cancelar</Button>
+                <Button onClick={() => {
+                  if (!acordoPrazo) { toast.error("Informe o prazo de quitação."); return; }
+                  const desc = Number(acordoDesconto);
+                  if (Number.isNaN(desc) || desc < 0 || desc > 50) { toast.error("Desconto deve ser entre 0 e 50%."); return; }
+                  registrarAcordo.mutate(
+                    { estudanteId: acordoAbertoId, prazo: acordoPrazo, descontoPercentual: desc, observacoes: acordoObs },
+                    { onSuccess: () => { fecharAcordo(); toast.success("Acordo registrado com sucesso."); } },
+                  );
+                }}>Confirmar acordo</Button>
+              </div>
+            </div>
+          )}
         </>
       )}
 

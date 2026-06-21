@@ -151,13 +151,13 @@ INSERT INTO item_checklist_integralizacao (integralizacao_id, tipo, descricao, c
 
 -- ─── ATIVIDADES COMPLEMENTARES ───────────────────────────────────────────────
 INSERT INTO atividade_complementar (id, estudante_id, categoria_id, descricao,
-                                     horas_submetidas, horas_aprovadas, data_realizacao, status) VALUES
-  (1, 1, 1, 'Hackathon CESAR 2025 — 1.º lugar na trilha de IA',                    40, 40, '2025-04-12', 'DEFERIDA'),
-  (2, 1, 2, 'Monitoria em Algoritmos e Estruturas de Dados — semestre 2025.1',     60, 60, '2025-06-30', 'DEFERIDA'),
-  (3, 1, 3, 'Curso Machine Learning Specialization — Coursera (certificado)',       30,  0, '2025-05-20', 'PENDENTE'),
-  (4, 1, 4, 'Publicação em anais do SBES 2025 — coautora',                         20, 20, '2025-03-10', 'DEFERIDA'),
-  (5, 2, 1, 'Maratona de Programação ICPC 2025 — 3.º lugar regional',              20, 20, '2025-04-05', 'DEFERIDA'),
-  (6, 2, 3, 'Curso Docker e Kubernetes — Udemy',                                   20,  0, '2025-06-01', 'INDEFERIDA')
+                                     horas_submetidas, horas_aprovadas, data_realizacao, status, contabilizada_integralizacao) VALUES
+  (1, 1, 1, 'Hackathon CESAR 2025 — 1.º lugar na trilha de IA',                    40, 40, '2025-04-12', 'DEFERIDA',    false),
+  (2, 1, 2, 'Monitoria em Algoritmos e Estruturas de Dados — semestre 2025.1',     60, 60, '2025-06-30', 'DEFERIDA',    false),
+  (3, 1, 3, 'Curso Machine Learning Specialization — Coursera (certificado)',       30,  0, '2025-05-20', 'PENDENTE',    false),
+  (4, 1, 4, 'Publicação em anais do SBES 2025 — coautora',                         20, 20, '2025-03-10', 'DEFERIDA',    false),
+  (5, 2, 1, 'Maratona de Programação ICPC 2025 — 3.º lugar regional',              20, 20, '2025-04-05', 'DEFERIDA',    false),
+  (6, 2, 3, 'Curso Docker e Kubernetes — Udemy',                                   20,  0, '2025-06-01', 'INDEFERIDA',  false)
 ON CONFLICT (id) DO NOTHING;
 
 -- ─── PERMANÊNCIA ACADÊMICA — EDITAIS ─────────────────────────────────────────
