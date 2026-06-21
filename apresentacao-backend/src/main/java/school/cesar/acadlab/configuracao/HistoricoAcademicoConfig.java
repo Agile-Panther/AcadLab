@@ -7,6 +7,7 @@ import school.cesar.acadlab.aplicacao.historicoacademico.HistoricoAcademicoRepos
 import school.cesar.acadlab.aplicacao.historicoacademico.HistoricoAcademicoServicoAplicacao;
 import school.cesar.acadlab.dominio.historicoacademico.ConsultaHistoricoServico;
 import school.cesar.acadlab.dominio.historicoacademico.HistoricoAcademicoServico;
+import school.cesar.acadlab.dominio.historicoacademico.historico.ConsultaPeriodoEncerradoPorta;
 import school.cesar.acadlab.dominio.historicoacademico.historico.HistoricoAcademicoRepositorio;
 
 /* F-06: Histórico Acadêmico */
@@ -19,8 +20,9 @@ public class HistoricoAcademicoConfig {
     }
 
     @Bean
-    ConsultaHistoricoServico consultaHistoricoServico(HistoricoAcademicoRepositorio repositorio) {
-        return new ConsultaHistoricoServico(repositorio);
+    ConsultaHistoricoServico consultaHistoricoServico(HistoricoAcademicoRepositorio repositorio,
+            ConsultaPeriodoEncerradoPorta consultaPeriodoEncerrado) {
+        return new ConsultaHistoricoServico(repositorio, consultaPeriodoEncerrado);
     }
 
     @Bean

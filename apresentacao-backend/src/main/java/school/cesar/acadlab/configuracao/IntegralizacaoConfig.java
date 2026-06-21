@@ -35,20 +35,8 @@ public class IntegralizacaoConfig {
                 periodoLetivoPorta, pendenciasPorta, requisitosPorta);
     }
 
-    @Bean
-    ConsultaPeriodoLetivoPorta consultaPeriodoLetivoPorta() {
-        return e -> true;
-    }
-
-    @Bean
-    ConsultaPendenciasPorta consultaPendenciasPorta() {
-        return e -> false;
-    }
-
-    @Bean
-    ConsultaRequisitosIntegralizacaoPorta consultaRequisitosPorta() {
-        return (e, m) -> true;
-    }
+    // As portas de consulta da F-08 (período letivo, pendências, requisitos e checklist)
+    // são providas por adaptadores JPA reais (@Component) em infraestrutura.persistencia.jpa.
 
     @Bean
     ColacaoServico colacaoServico(ColacaoRepositorio colacaoRepositorio,

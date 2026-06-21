@@ -3,6 +3,8 @@ package school.cesar.acadlab.configuracao;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import school.cesar.acadlab.aplicacao.estagios.CandidaturaRepositorioAplicacao;
+import school.cesar.acadlab.aplicacao.estagios.CandidaturaServicoAplicacao;
 import school.cesar.acadlab.aplicacao.estagios.EstagioRepositorioAplicacao;
 import school.cesar.acadlab.aplicacao.estagios.EstagioServicoAplicacao;
 import school.cesar.acadlab.aplicacao.estagios.OportunidadeRepositorioAplicacao;
@@ -40,5 +42,10 @@ public class EstagiosConfig {
     @Bean
     EstagioServicoAplicacao estagioServicoAplicacao(EstagioRepositorioAplicacao repositorio) {
         return new EstagioServicoAplicacao(repositorio);
+    }
+
+    @Bean
+    CandidaturaServicoAplicacao candidaturaServicoAplicacao(CandidaturaRepositorioAplicacao repositorio) {
+        return new CandidaturaServicoAplicacao(repositorio);
     }
 }
