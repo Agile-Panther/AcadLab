@@ -85,6 +85,19 @@ class MatrizCurricularControlador {
         repositorio.salvar(matriz);
     }
 
+    @RequestMapping(method = PUT, path = "{id}/disciplinas/{disciplinaId}")
+    void editarDisciplina(@PathVariable int id, @PathVariable int disciplinaId,
+                          @RequestBody EditarDisciplinaRequest request) {
+        MatrizCurricular matriz = repositorio.buscarPorId(new MatrizCurricularId(id))
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Matriz não encontrada"));
+        matriz.editarDisciplina(
+                new DisciplinaId(disciplinaId),
+                TipoDisciplina.valueOf(request.tipo()),
+                request.cargaHoraria(),
+                request.creditos());
+        repositorio.salvar(matriz);
+    }
+
     @RequestMapping(method = DELETE, path = "{id}/disciplinas/{disciplinaId}")
     void removerDisciplina(@PathVariable int id, @PathVariable int disciplinaId) {
         MatrizCurricular matriz = repositorio.buscarPorId(new MatrizCurricularId(id))
@@ -132,5 +145,6 @@ class MatrizCurricularControlador {
     record CriarMatrizRequest(int cursoId, String nome, int cargaHorariaMinima,
                               int creditosExigidos, int maximoTrancamentos) {}
     record AdicionarDisciplinaRequest(int disciplinaId, String tipo, int cargaHoraria, int creditos) {}
+    record EditarDisciplinaRequest(String tipo, int cargaHoraria, int creditos) {}
     record DependenciaRequest(int disciplinaId, int dependenciaId) {}
 }
