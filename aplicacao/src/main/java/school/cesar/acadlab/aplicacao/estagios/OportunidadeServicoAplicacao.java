@@ -20,4 +20,8 @@ public class OportunidadeServicoAplicacao {
     public List<OportunidadeResumo> listarAbertas() {
         return repositorio.listarAbertas();
     }
+
+    public void excluir(int id) {
+        repositorio.excluir(id);
+    }
 }

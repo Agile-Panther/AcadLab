@@ -39,6 +39,11 @@ class HistoricoAcademicoControlador {
     @Autowired
     private HistoricoAcademicoServicoAplicacao servicoAplicacao;
 
+    @RequestMapping(method = GET)
+    java.util.List<HistoricoAcademicoResumo> listarTodos() {
+        return servicoAplicacao.buscarTodos();
+    }
+
     @RequestMapping(method = GET, path = "{id}")
     HistoricoAcademicoResumo buscarPorId(@PathVariable int id) {
         return servicoAplicacao.buscarPorId(id)

@@ -26,17 +26,18 @@ ON CONFLICT (id) DO NOTHING;
 
 -- ─── PERÍODO LETIVO ──────────────────────────────────────────────────────────
 INSERT INTO periodo_letivo (id, curso_id, ano, semestre, data_inicio, data_fim, status) VALUES
-  (1, 1, 2025, 2, '2025-07-14', '2025-11-30', 'EM_ANDAMENTO'),
+  (1, 1, 2025, 2, '2025-07-14', '2026-12-31', 'EM_ANDAMENTO'),
   (2, 1, 2025, 1, '2025-02-10', '2025-06-30', 'ENCERRADO')
 ON CONFLICT (id) DO NOTHING;
 
--- janelas do período em andamento
+-- janelas do período em andamento (TRANCAMENTO e REVISAO_NOTAS estendidas para
+-- permanecerem abertas no ambiente de demonstração, atendendo à RN1 do proxy)
 INSERT INTO janela_academica (periodo_letivo_id, tipo, data_inicio, data_fim) VALUES
   (1, 'MATRICULA',       '2025-07-14', '2025-07-25'),
   (1, 'AJUSTE',          '2025-07-28', '2025-08-01'),
-  (1, 'TRANCAMENTO',     '2025-07-14', '2025-09-15'),
+  (1, 'TRANCAMENTO',     '2025-07-14', '2026-12-31'),
   (1, 'LANCAMENTO_NOTAS','2025-10-01', '2025-11-30'),
-  (1, 'REVISAO_NOTAS',   '2025-11-01', '2025-11-30');
+  (1, 'REVISAO_NOTAS',   '2025-11-01', '2026-12-31');
 
 -- ─── TURMAS ──────────────────────────────────────────────────────────────────
 INSERT INTO turma (id, periodo_letivo_id, disciplina_id, professor_id, sala_id, modalidade, capacidade, status) VALUES
@@ -119,7 +120,7 @@ INSERT INTO acompanhamento_academico (historico_id, acompanhamento_id, observaca
 INSERT INTO solicitacao_academica (id, estudante_id, periodo_letivo_id, tipo, protocolo_id,
                                     descricao, data_abertura, status,
                                     possui_impacto_academico, alteracoes_vinculadas) VALUES
-  (1, 1, 1, 'REVISAO_DE_NOTA',           1001,
+  (1, 1, 1, 'REVISAO_DE_NOTA',         1001,
    'Solicito revisão da nota da Prova 1 de BD302 — discordância no critério da questão 3.',
    '2025-09-10', 'PENDENTE_ANALISE', false, false),
   (2, 2, 1, 'TRANCAMENTO_DISCIPLINA',    1002,
@@ -128,7 +129,7 @@ INSERT INTO solicitacao_academica (id, estudante_id, periodo_letivo_id, tipo, pr
   (3, 3, 1, 'APROVEITAMENTO_DISCIPLINA', 1003,
    'Solicito aproveitamento da disciplina Algoritmos cursada na UFPE (histórico em anexo).',
    '2025-09-05', 'EM_ANALISE',       false, false),
-  (4, 1, 1, 'REVISAO_DE_NOTA',           1004,
+  (4, 1, 1, 'REVISAO_DE_NOTA',         1004,
    'Revisão da nota de Cálculo Diferencial — Prova 2.',
    '2025-09-08', 'DEFERIDA',         false, false)
 ON CONFLICT (id) DO NOTHING;
@@ -140,14 +141,14 @@ INSERT INTO integralizacao_curricular (id, estudante_id, matriz_curricular_id, s
 ON CONFLICT (id) DO NOTHING;
 
 INSERT INTO item_checklist_integralizacao (integralizacao_id, tipo, descricao, cumprido) VALUES
-  (1, 'DISCIPLINAS_OBRIGATORIAS', 'Todas as disciplinas obrigatórias cursadas e aprovadas', false),
-  (1, 'CARGA_OPTATIVA',           'Carga horária optativa mínima cumprida',                false),
-  (1, 'HORAS_COMPLEMENTARES',     'Mínimo de 200 h de atividades complementares aprovadas', true),
-  (1, 'SITUACAO_DISCENTE',        'Situação discente regular (sem pendências)',            false),
-  (2, 'DISCIPLINAS_OBRIGATORIAS', 'Todas as disciplinas obrigatórias cursadas e aprovadas', true),
-  (2, 'CARGA_OPTATIVA',           'Carga horária optativa mínima cumprida',                true),
-  (2, 'HORAS_COMPLEMENTARES',     'Mínimo de 200 h de atividades complementares aprovadas', true),
-  (2, 'SITUACAO_DISCENTE',        'Situação discente regular (sem pendências)',            true);
+  (1, 'DISCIPLINAS_OBRIGATORIAS', 'Todas as disciplinas obrigatórias cursadas e aprovadas',  false),
+  (1, 'CARGA_OPTATIVA',           'Carga horária mínima de disciplinas optativas cumprida',   false),
+  (1, 'HORAS_COMPLEMENTARES',     'Mínimo de 200 h de atividades complementares aprovadas',    true),
+  (1, 'SITUACAO_DISCENTE',        'Situação discente regular e apta à colação de grau',       false),
+  (2, 'DISCIPLINAS_OBRIGATORIAS', 'Todas as disciplinas obrigatórias cursadas e aprovadas',    true),
+  (2, 'CARGA_OPTATIVA',           'Carga horária mínima de disciplinas optativas cumprida',     true),
+  (2, 'HORAS_COMPLEMENTARES',     'Mínimo de 200 h de atividades complementares aprovadas',     true),
+  (2, 'SITUACAO_DISCENTE',        'Situação discente regular e apta à colação de grau',         true);
 
 -- ─── ATIVIDADES COMPLEMENTARES ───────────────────────────────────────────────
 INSERT INTO atividade_complementar (id, estudante_id, categoria_id, descricao,
