@@ -14,6 +14,6 @@ class TratadorDeExcecoes {
     ResponseEntity<Map<String, String>> handleIllegalState(IllegalStateException ex) {
         return ResponseEntity
                 .status(HttpStatus.CONFLICT)
-                .body(Map.of("mensagem", ex.getMessage()));
+                .body(Map.of("message", ex.getMessage()));
     }
 }
