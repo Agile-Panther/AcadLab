@@ -40,7 +40,8 @@ public class SolicitacaoServicoProxy implements SolicitacaoServico {
             var existente = repositorio.pesquisarAbertaPorEstudanteTipoPeriodo(
                     estudanteId, tipo, periodoLetivoId);
             if (existente.isPresent()) {
-                throw new IllegalStateException("já existe uma solicitação aberta deste tipo no período");
+                throw new IllegalStateException(
+                        "Não é possível abrir múltiplas solicitações desse tipo no mesmo período letivo caso a primeira ainda não ter sido encerrada.");
             }
         }
 

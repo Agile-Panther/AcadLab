@@ -12,6 +12,10 @@ export default defineConfig({
     // nitro/vite builds from this
     server: { entry: "server" },
   },
+  // Proxy every /backend/* call to the Spring Boot API. The target comes from
+  // VITE_API_TARGET (http://backend:8080 in docker-compose) and falls back to
+  // localhost:8080 for plain local dev. No path rewrite: the controllers are
+  // already mapped under "backend/..." (e.g. backend/solicitacoes).
   vite: {
     server: {
       proxy: {
