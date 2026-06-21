@@ -228,8 +228,8 @@ BoundedContext MatriculaContext implements AcademicoSubdomain {
     type FEATURE
 
     Aggregate Matricula {
-        enum StatusMatricula { EM_MONTAGEM, CONFIRMADA, TRANCADA, CANCELADA }
-        enum StatusItem { ATIVO, TRANCADO, CANCELADO }
+        enum StatusMatricula { EM_MONTAGEM, CONFIRMADA, TRANCADA_PERIODO, BLOQUEADA }
+        enum StatusItemMatricula { SELECIONADO, CONFIRMADO, CANCELADO, TRANCADO }
 
         // Padrão Strategy de elegibilidade (EstrategiaMatricula): a Matrícula seleciona
         // ValidacaoRegular (aplica todas as RNs) ou ValidacaoExcecao (ignora pré-requisitos,
@@ -249,14 +249,19 @@ BoundedContext MatriculaContext implements AcademicoSubdomain {
         Entity ItemMatricula {
             int turmaId
             int disciplinaId
-            - StatusItem status
+            - StatusItemMatricula status
         }
         Service MatriculaServico {
-            @Matricula montarPlano(@EstudanteId estudanteId, int periodoLetivoId);
-            void adicionarItem(int matriculaId, int turmaId);
-            void confirmar(int matriculaId);
-            void trancarDisciplina(int matriculaId, int turmaId);
+            @Matricula iniciarMatricula(@EstudanteId estudanteId, int periodoLetivoId, @EstrategiaMatricula estrategia);
+            void adicionarItem(int matriculaId, int turmaId, int disciplinaId, boolean cumpriuPreRequisitos, boolean correquisitosNoPlano, boolean temPendencias, int limiteCreditos, java.time.LocalDate hoje, java.time.LocalDate inicioJanela, java.time.LocalDate fimJanela);
+            void removerItem(int matriculaId, int turmaId);
+            void confirmar(int matriculaId, Map<Integer, Integer> vagasPorTurma);
+            void cancelarItem(int matriculaId, int turmaId, java.time.LocalDate hoje, java.time.LocalDate inicioJanela, java.time.LocalDate fimJanela);
+            void trancarDisciplina(int matriculaId, int turmaId, java.time.LocalDate hoje, java.time.LocalDate inicioJanela, java.time.LocalDate fimJanela);
             void solicitarExcecao(int matriculaId, int disciplinaId, String justificativa);
+            void deferir(int matriculaId, int disciplinaId, java.time.LocalDate hoje, java.time.LocalDate inicioJanela, java.time.LocalDate fimJanela);
+            void bloquear(int matriculaId);
+            void trancarPeriodo(int matriculaId, java.time.LocalDate hoje, java.time.LocalDate inicioJanela, java.time.LocalDate fimJanela);
         }
     }
 }
@@ -268,7 +273,10 @@ BoundedContext GestaoPedagogicaContext implements AcademicoSubdomain {
     type FEATURE
 
     Aggregate DiarioTurma {
-        enum SituacaoFinal { APROVADO, REPROVADO, REPROVADO_POR_FREQUENCIA, EM_ANDAMENTO }
+        // RegimeApuracao é o enum que seleciona a implementação concreta do Template Method:
+        // PONDERADA → ApuracaoMediaPonderada, ARITMETICA → ApuracaoMediaAritmetica
+        enum RegimeApuracao { PONDERADA, ARITMETICA }
+        enum SituacaoResultado { APROVADO, RECUPERACAO, REPROVADO_NOTA, REPROVADO_FALTA }
 
         // Padrão Template Method de apuração do resultado (ApuracaoResultado):
         // o método-template apurar() fixa a ordem das etapas — contar aulas,
@@ -303,7 +311,7 @@ BoundedContext GestaoPedagogicaContext implements AcademicoSubdomain {
             - EstudanteId estudanteId
             double frequencia
             double media
-            - SituacaoFinal situacao
+            - SituacaoResultado situacao
         }
         Service DiarioTurmaServico {
             void registrarAula(int diarioId, @RegistroAula aula);
@@ -321,8 +329,8 @@ BoundedContext HistoricoAcademicoContext implements AcademicoSubdomain {
     type FEATURE
 
     Aggregate HistoricoAcademico {
-        enum SituacaoDiscente { ATIVO, TRANCADO, DESLIGADO, FORMADO }
-        enum SituacaoAcademica { APROVADO, REPROVADO, REPROVADO_POR_FREQUENCIA, APROVADO_POR_APROVEITAMENTO }
+        enum SituacaoDiscente { ATIVO, TRANCADO, EVADIDO, FORMANDO, FORMADO }
+        enum SituacaoAcademica { APROVADO, REPROVADO_NOTA, REPROVADO_FALTA, TRANCADO, APROVEITADO }
 
         Entity HistoricoAcademico {
             aggregateRoot
@@ -394,15 +402,27 @@ BoundedContext SecretariaVirtualContext implements ServicosAcademicosSubdomain {
     type FEATURE
 
     Aggregate SolicitacaoAcademica {
-        enum TipoSolicitacao { HISTORICO, DECLARACAO_MATRICULA, DECLARACAO_FREQUENCIA, REVISAO_NOTA, REAPROVEITAMENTO, OUTROS }
-        enum EstadoSolicitacao { ABERTA, EM_ANALISE, AGUARDANDO_COMPLEMENTACAO, DEFERIDA, INDEFERIDA, CANCELADA, CONCLUIDA }
+        // Tipos refletem os processos formais integrados com o wizard de matrícula (F-04):
+        enum TipoSolicitacao {
+            TRANCAMENTO_DISCIPLINA,   // documentosObrigatorios: comprovante_matricula
+            TRANCAMENTO_PERIODO,      // documentosObrigatorios: comprovante_matricula, justificativa_formal
+            REVISAO_DE_NOTA,          // documentosObrigatorios: comprovante_avaliacao — permite múltiplas por período
+            APROVEITAMENTO_DISCIPLINA,// documentosObrigatorios: historico_origem, ementa_disciplina
+            SEGUNDA_VIA_DOCUMENTO,
+            CORRECAO_HISTORICO,       // documentosObrigatorios: documento_comprobatorio
+            DECLARACAO_VINCULO,
+            OUTROS
+        }
+        // StatusSolicitacao: ciclo de vida real da entidade
+        enum StatusSolicitacao { PENDENTE_ANALISE, EM_ANALISE, PENDENTE_COMPLEMENTACAO, DEFERIDA, INDEFERIDA, CONCLUIDA, CANCELADA }
 
         Entity SolicitacaoAcademica {
             aggregateRoot
             int id
             - EstudanteId estudanteId
+            int periodoLetivoId
             - TipoSolicitacao tipo
-            - EstadoSolicitacao estado
+            - StatusSolicitacao status
             String descricao
             - List<Documento> documentos
         }
@@ -411,10 +431,14 @@ BoundedContext SecretariaVirtualContext implements ServicosAcademicosSubdomain {
             String nome
             String url
         }
+        // SolicitacaoServicoProxy (Proxy) interpõe verificação de prazo (CalendarioAcademicoPorta)
+        // e duplicidade antes de delegar ao SolicitacaoServicoReal.
         Service SolicitacaoServico {
-            @SolicitacaoAcademica abrir(@EstudanteId estudanteId, @TipoSolicitacao tipo, String descricao);
-            void complementar(int solicitacaoId, @Documento documento);
-            void cancelar(int solicitacaoId);
+            @SolicitacaoAcademica abrirSolicitacao(@EstudanteId estudanteId, int periodoLetivoId, @TipoSolicitacao tipo, String descricao, List<@Documento> documentos);
+            void complementarSolicitacao(int solicitacaoId, @Documento documento);
+            void cancelarSolicitacao(int solicitacaoId);
+        }
+        Service SolicitacaoAnaliseServico {
             void iniciarAnalise(int solicitacaoId);
             void deferir(int solicitacaoId, String parecer);
             void indeferir(int solicitacaoId, String justificativa);
@@ -522,7 +546,7 @@ BoundedContext PermanenciaAcademicaContext implements PermanenciaSubdomain {
     }
 
     Aggregate Inscricao {
-        enum StatusInscricao { PENDENTE, DEFERIDA, INDEFERIDA, EM_RECURSO }
+        enum StatusInscricao { PENDENTE, DEFERIDA, INDEFERIDA, RECURSO_INTERPOSTO, RECURSO_ANALISADO }
 
         Entity Inscricao {
             aggregateRoot
@@ -706,7 +730,7 @@ BoundedContext EstagiosContext implements ServicosAcademicosSubdomain {
     type FEATURE
 
     Aggregate Oportunidade {
-        enum StatusOportunidade { ABERTA, ENCERRADA, CANCELADA }
+        enum StatusOportunidade { CADASTRADA, PUBLICADA, ENCERRADA }
 
         Entity Oportunidade {
             aggregateRoot
@@ -727,7 +751,7 @@ BoundedContext EstagiosContext implements ServicosAcademicosSubdomain {
     }
 
     Aggregate Estagio {
-        enum StatusEstagio { EM_ANDAMENTO, ENCERRADO, CANCELADO }
+        enum StatusEstagio { EM_ANDAMENTO, ENCERRAMENTO_SOLICITADO, ENCERRADO }
 
         Entity Estagio {
             aggregateRoot

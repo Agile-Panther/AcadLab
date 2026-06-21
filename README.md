@@ -1,6 +1,6 @@
 # AcadLab — Sistema de Gerenciamento Universitário
 
-> Sistema acadêmico completo para Instituições de Ensino Superior — da estrutura curricular à conclusão formal do estudante — construído com Domain-Driven Design, Arquitetura Limpa, persistência JPA, API REST e testes BDD em Cucumber.
+> Sistema acadêmico completo para Instituições de Ensino Superior — da estrutura curricular à conclusão formal do estudante — construído com Domain-Driven Design, Arquitetura Limpa, persistência JPA, API REST, testes BDD em Cucumber e frontend React completamente integrado ao backend.
 
 ---
 
@@ -107,7 +107,9 @@ O prefixo `src/main/java/school/cesar/acadlab/` é omitido nos caminhos abaixo p
 
 ### Strategy — Vinicius
 
-**Intenção:** encapsular as regras de elegibilidade para adicionar itens ao plano de matrícula em estratégias intercambiáveis, permitindo trocar a política de validação (regular vs. por exceção) sem modificar o serviço principal.
+**Intenção:** encapsular as regras de elegibilidade para adicionar itens ao plano de matrícula em estratégias intercambiáveis, permitindo trocar a política de validação (regular vs. por exceção) sem modificar o serviço principal. O mesmo padrão governa o fluxo de solicitação de mobilidade acadêmica.
+
+#### Contexto A — Matrícula (F-04)
 
 | Papel no padrão | Arquivo `.java` |
 |---|---|
@@ -118,6 +120,20 @@ O prefixo `src/main/java/school/cesar/acadlab/` é omitido nos caminhos abaixo p
 | Agregado que armazena a estratégia ativa | `dominio-matricula/dominio/matricula/matricula/Matricula.java` |
 
 **Como aparece no código:** `EstrategiaMatricula` declara `validarAdicao(...)`. `ValidacaoRegular` exige pré-requisitos cumpridos e ausência de pendências; `ValidacaoExcecao` ignora essas restrições (exceção aprovada pela coordenação). `Matricula` guarda a estratégia e a chama em `adicionarItem(...)`.
+
+#### Contexto B — Mobilidade Acadêmica (F-12)
+
+| Papel no padrão | Arquivo `.java` |
+|---|---|
+| Serviço de domínio (orquestra a estratégia) | `dominio-mobilidade-academica/dominio/mobilidadeacademica/MobilidadeAcademicaServico.java` |
+| Agregado principal | `dominio-mobilidade-academica/dominio/mobilidadeacademica/mobilidade/MobilidadeAcademica.java` |
+| Item do plano de estudos | `dominio-mobilidade-academica/dominio/mobilidadeacademica/mobilidade/ItemPlanoEstudos.java` |
+| Repositório do domínio | `dominio-mobilidade-academica/dominio/mobilidadeacademica/mobilidade/MobilidadeAcademicaRepositorio.java` |
+| Serviço de aplicação | `aplicacao/aplicacao/mobilidadeacademica/MobilidadeAcademicaServicoAplicacao.java` |
+| DTO de resumo | `aplicacao/aplicacao/mobilidadeacademica/MobilidadeAcademicaResumo.java` |
+| DTO de item do plano | `aplicacao/aplicacao/mobilidadeacademica/ItemPlanoResumo.java` |
+
+**Como aparece no código:** `MobilidadeAcademica` encapsula o ciclo de vida da solicitação (solicitada → aprovada → em andamento → concluída / cancelada). `MobilidadeAcademicaServico` orquestra as transições de estado e valida pré-condições; o controlador REST expõe os endpoints de solicitação e cancelamento conectados ao frontend via `api.mobilidade`.
 
 ---
 
@@ -142,6 +158,8 @@ O prefixo `src/main/java/school/cesar/acadlab/` é omitido nos caminhos abaixo p
 | Sujeito real | `dominio-integralizacao-curricular/dominio/integralizacao/IntegralizacaoServico.java` |
 
 **Como aparece no código:** `SolicitacaoServicoProxy` verifica `CalendarioAcademicoPorta.estaDentroDoPrazo(...)` e a ausência de duplicidade antes de chamar `servicoReal.abrirSolicitacao(...)`. `IntegralizacaoServicoProxy` consulta `ConsultaPeriodoLetivoPorta`, `ConsultaPendenciasPorta` e `ConsultaRequisitosIntegralizacaoPorta` antes de delegar ao `IntegralizacaoServico`. Ambos os proxies são registrados como `@Bean` em `BackendAplicacao.java` e injetados nos respectivos controladores REST no lugar do sujeito real.
+
+Erros lançados pelos proxies (e por qualquer serviço de domínio) são capturados centralmente por `apresentacao-backend/apresentacao/GlobalExceptionHandler.java`, que mapeia `IllegalArgumentException` → HTTP 400 e `IllegalStateException` → HTTP 409 antes de retornar ao frontend.
 
 ---
 
@@ -186,7 +204,7 @@ O prefixo `src/main/java/school/cesar/acadlab/` é omitido nos caminhos abaixo p
 | **F-01** | Gestão Curricular do Curso | Julia Torres | Iterator | Criar e versionar matriz curricular com disciplinas, pré-requisitos, correquisitos e ciclo de vida ativo/inativo |
 | **F-02** | Planejamento do Período Letivo | Maria Claudia | Template Method | Definir semestre acadêmico com janelas que habilitam ou bloqueiam operações por intervalo de datas |
 | **F-03** | Oferta de Turmas | Maria Clara | Decorator | Configurar turmas com professor, sala e horário; adicionar comportamentos dinâmicos sem alterar a classe base |
-| **F-04** | Montagem e Ajuste de Matrícula | Vinicius | Strategy | Plano de matrícula, confirmação, ajustes e trancamento com validação de elegibilidade por estratégia intercambiável |
+| **F-04** | Montagem e Ajuste de Matrícula | Vinicius | Strategy | Plano de matrícula, confirmação, ajustes e trancamento via wizard integrado ao backend; validação de elegibilidade por estratégia intercambiável (regular / por exceção) |
 | **F-05** | Gestão Pedagógica da Turma | Maria Claudia | Template Method | Diário de turma: registro de aulas, frequência, avaliações, notas e resultado final com recuperação |
 | **F-06** | Gestão do Histórico Acadêmico | Julia Torres | Iterator | Consolidação de resultados, aproveitamentos externos, retificações e acompanhamentos; histórico oficial via Iterator |
 | **F-07** | Secretaria Virtual Acadêmica | Bernardo | Proxy | Abertura e tramitação de protocolos acadêmicos com controle de permissões via Proxy |
@@ -194,7 +212,7 @@ O prefixo `src/main/java/school/cesar/acadlab/` é omitido nos caminhos abaixo p
 | **F-09** | Atividades Complementares | Jera | Observer | Submissão e análise de horas extracurriculares; eventos de deferimento notificam outros contextos |
 | **F-10** | Permanência Acadêmica e Bolsas | Matheus | Observer | Editais, inscrições, análise, gestão de benefícios e registro de ações de permanência com notificação automática de mudanças de estado |
 | **F-11** | Apoio Psicopedagógico | Matheus | Observer | Solicitação, triagem, atendimentos e encerramento de caso com sigilo de atendimento |
-| **F-12** | Mobilidade Acadêmica | Vinicius | Strategy | Intercâmbio externo com plano de estudos, equivalências e registro de resultados no histórico |
+| **F-12** | Mobilidade Acadêmica | Vinicius | Strategy | Solicitação de intercâmbio, plano de estudos com equivalências, aprovação pela coordenação e registro de resultados no histórico; frontend integrado ao backend via `api.mobilidade` |
 | **F-13** | Gestão Financeira Acadêmica | Jera | Observer | Cobranças, pagamentos, descontos, contestações e comprovantes; eventos de pagamento notificam outros contextos |
 | **F-14** | Centro de Estágios e Oportunidades | Maria Clara | Decorator | Publicação de vagas, candidatura, formalização do estágio e entrega de relatórios |
 
@@ -237,25 +255,27 @@ O prefixo `src/main/java/school/cesar/acadlab/` é omitido nos caminhos abaixo p
 ```
 acadlab-pai/
 │
-├── dominio-compartilhado/            ← Shared Kernel — EstudanteId, CursoId, eventos de domínio
-├── dominio-curriculo/                ← F-01 (Julia Torres)
+├── dominio-compartilhado/            ← Shared Kernel — EstudanteId, CursoId, EventoBarramento
+├── dominio-curriculo/                ← F-01 (Julia Torres) — Iterator pattern
 ├── dominio-oferta-academica/         ← F-02 (Maria Claudia) + F-03 (Maria Clara) — sub-pacotes separados
-├── dominio-matricula/                ← F-04 (Vinicius)
-├── dominio-gestao-pedagogica/        ← F-05 (Maria Claudia)
-├── dominio-historico-academico/      ← F-06 (Julia Torres)
-├── dominio-secretaria-virtual/       ← F-07 (Bernardo)
-├── dominio-integralizacao-curricular/← F-08 (Bernardo)
-├── dominio-atividades-complementares/← F-09 (Jera)
-├── dominio-permanencia-academica/    ← F-10 (Matheus)
-├── dominio-apoio-psicopedagogico/    ← F-11 (Matheus)
-├── dominio-mobilidade-academica/     ← F-12 (Vinicius)
-├── dominio-gestao-financeira/        ← F-13 (Jera)
-├── dominio-estagios/                 ← F-14 (Maria Clara)
+├── dominio-matricula/                ← F-04 (Vinicius) — Strategy pattern
+├── dominio-gestao-pedagogica/        ← F-05 (Maria Claudia) — Template Method
+├── dominio-historico-academico/      ← F-06 (Julia Torres) — Iterator pattern
+├── dominio-secretaria-virtual/       ← F-07 (Bernardo) — Proxy pattern
+├── dominio-integralizacao-curricular/← F-08 (Bernardo) — Proxy pattern
+├── dominio-atividades-complementares/← F-09 (Jera) — Observer pattern
+├── dominio-permanencia-academica/    ← F-10 (Matheus) — Observer pattern
+├── dominio-apoio-psicopedagogico/    ← F-11 (Matheus) — Observer pattern
+├── dominio-mobilidade-academica/     ← F-12 (Vinicius) — Strategy pattern
+├── dominio-gestao-financeira/        ← F-13 (Jera) — Observer pattern
+├── dominio-estagios/                 ← F-14 (Maria Clara) — Decorator pattern
 │
-├── aplicacao/                        ← Orquestração cross-domínio e DTOs (*Resumo)
-├── infraestrutura/                   ← JPA, adaptadores de persistência
-├── apresentacao-backend/             ← Controllers REST (Spring Boot)
-└── apresentacao-frontend/            ← React + Vite
+├── aplicacao/                        ← Orquestração cross-domínio e DTOs (*Resumo, *Detalhe)
+│     ├── matricula/                  ← MatriculaServicoAplicacao, MatriculaResumo, ItemResumo
+│     └── mobilidadeacademica/        ← MobilidadeAcademicaServicoAplicacao, MobilidadeAcademicaResumo, ItemPlanoResumo
+├── infraestrutura/                   ← JPA, @Entity, *RepositorioImpl
+├── apresentacao-backend/             ← 21 Controllers REST (Spring Boot) + GlobalExceptionHandler
+└── apresentacao-frontend/            ← React + Vite (17 telas integradas ao backend)
 ```
 
 > Os módulos `dominio-*` não possuem dependências de framework — apenas Java puro. Nenhum módulo de domínio importa outro: comunicação cross-domínio ocorre exclusivamente via camada `aplicacao`.
@@ -306,6 +326,52 @@ mvn test
 
 ---
 
+## Telas do Frontend
+
+O frontend React (Vite + TanStack Router + React Query) possui **17 rotas**, todas conectadas ao backend via cliente de API tipado (`src/lib/api.ts`).
+
+| Rota | Funcionalidade |
+|---|---|
+| `/` | Home — visão geral do estudante |
+| `/gestao-curricular` | F-01 · Matrizes curriculares e disciplinas |
+| `/periodo-letivo` | F-02 · Períodos letivos e janelas acadêmicas |
+| `/oferta-turmas` | F-03 · Turmas, professores e salas |
+| `/matricula` | F-04 · Wizard de montagem, ajuste e trancamento de matrícula |
+| `/gestao-pedagogica` | F-05 · Diário de turma, frequência e notas |
+| `/historico-academico` | F-06 · Histórico oficial e situação discente |
+| `/secretaria-virtual` | F-07 · Protocolos acadêmicos |
+| `/integralizacao` | F-08 · Análise de integralização e colação |
+| `/atividades-complementares` | F-09 · Submissão e análise de horas extracurriculares |
+| `/permanencia` | F-10 · Editais, bolsas e ações de permanência |
+| `/psicopedagogico` | F-11 · Triagem, atendimentos e encerramento de caso |
+| `/mobilidade` | F-12 · Solicitação de mobilidade e plano de estudos |
+| `/financeiro` | F-13 · Cobranças, pagamentos e extratos |
+| `/estagios` | F-14 · Oportunidades, candidaturas e relatórios |
+| `/perfil` | Perfil do estudante |
+
+---
+
+## Migrações de Banco de Dados
+
+O Flyway gerencia o schema PostgreSQL com **12 versões** em `apresentacao-backend/src/main/resources/db/migration/`:
+
+| Versão | Arquivo | Descrição |
+|---|---|---|
+| V1 | `V1__seed.sql` | Seed inicial — cursos, disciplinas, períodos, turmas e estudante demo |
+| V2 | `V2__dados_permanencia_apoio.sql` | Dados de editais, benefícios e casos psicopedagógicos |
+| V3 | `V3__ajusta_caso_estudante_demo.sql` | Correção de vínculo estudante × caso |
+| V4 | `V4__categorias_atividade.sql` | Categorias de atividades complementares |
+| V5 | `V5__bolsas.sql` | Bolsas vinculadas a benefícios |
+| V6 | `V6__contestacao_seed.sql` | Contestação de cobrança demo |
+| V7 | `V7__contabilizacao_atividade_complementar.sql` | Contabilização de horas complementares |
+| V8 | `V8__acordo.sql` | Acordo de pagamento demo |
+| V9 | `V9__descricao_edital.sql` | Campo descrição no edital |
+| V10 | `V10__prazos_permanencia_relativos.sql` | Prazos de permanência baseados em data relativa |
+| V11 | `V11__seed_itens_matriz_curricular.sql` | Itens da matriz curricular para demo |
+| V12 | `V12__corrige_solicitacoes_secretaria.sql` | Correção de solicitações acadêmicas do estudante demo |
+
+---
+
 ## Arquitetura
 
 O projeto segue **Arquitetura Limpa** com módulos Maven separados por camada:
@@ -313,7 +379,9 @@ O projeto segue **Arquitetura Limpa** com módulos Maven separados por camada:
 ```
 ┌──────────────────────────────────────────────────────────┐
 │  apresentacao-backend (Spring Boot REST)                 │
-│  apresentacao-frontend (React + Vite)                    │
+│    *Controlador.java (21 controllers)                    │
+│    GlobalExceptionHandler.java (400/409 → frontend)      │
+│  apresentacao-frontend (React + Vite — 17 telas)         │
 └────────────────────────┬─────────────────────────────────┘
                          │
 ┌────────────────────────▼─────────────────────────────────┐
