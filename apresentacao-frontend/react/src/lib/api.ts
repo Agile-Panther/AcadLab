@@ -163,6 +163,18 @@ export interface IntegralizacaoResumo {
   itensChecklist: { tipo: string; descricao: string; cumprido: boolean }[];
 }
 
+export interface ColacaoResumo {
+  id: number;
+  estudanteId: number;
+  integralizacaoId: number;
+  dataAptidaoAprovada: string | null;
+  dataCerimonia: string | null;
+  horario: string | null;
+  local: string | null;
+  modalidade: string | null;
+  observacoes: string | null;
+}
+
 export interface AtividadeComplementarResumo {
   id: number;
   estudanteId: number;
@@ -294,8 +306,29 @@ export const api = {
   },
   integralizacao: {
     listAll: () => get<IntegralizacaoResumo[]>(`integralizacoes`).then(r => r ?? []),
-    getByEstudante: (estudanteId: number) =>
-      get<IntegralizacaoResumo>(`integralizacoes/estudante/${estudanteId}`),
+    listByEstudante: (estudanteId: number) =>
+      get<IntegralizacaoResumo[]>(`integralizacoes/estudante/${estudanteId}`).then(r => r ?? []),
+    getById: (id: number) => get<IntegralizacaoResumo>(`integralizacoes/${id}`),
+    iniciarAnalise: (body: { estudanteId: number; matrizCurricularId: number }) =>
+      post<number>(`integralizacoes`, body),
+    // RN3: o checklist é gerado no servidor a partir dos registros consolidados.
+    gerarChecklist: (id: number) => put<void>(`integralizacoes/${id}/checklist`),
+    registrarResultado: (id: number, resultado: string) =>
+      put<void>(`integralizacoes/${id}/resultado`, { resultado }),
+    aprovarAptidao: (id: number, coordenadorId: number) =>
+      put<void>(`integralizacoes/${id}/aptidao`, { coordenadorId }),
+    getColacaoByEstudante: (estudanteId: number) =>
+      get<ColacaoResumo>(`integralizacoes/colacao/estudante/${estudanteId}`),
+    registrarColacao: (
+      id: number,
+      body: {
+        dataCerimonia: string;
+        horario?: string;
+        local: string;
+        modalidade?: string;
+        observacoes?: string;
+      },
+    ) => post<number>(`integralizacoes/${id}/colacao`, body),
   },
   atividades: {
     listByEstudante: (estudanteId: number) =>

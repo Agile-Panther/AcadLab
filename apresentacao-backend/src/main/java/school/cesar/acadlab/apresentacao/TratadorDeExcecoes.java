@@ -16,4 +16,11 @@ class TratadorDeExcecoes {
                 .status(HttpStatus.CONFLICT)
                 .body(Map.of("mensagem", ex.getMessage()));
     }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    ResponseEntity<Map<String, String>> handleIllegalArgument(IllegalArgumentException ex) {
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(Map.of("mensagem", ex.getMessage()));
+    }
 }
