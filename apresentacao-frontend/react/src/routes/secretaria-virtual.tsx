@@ -3,7 +3,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   FeaturePage, StatsRow, DataTable, StatusBadge, RowActionButton, FormField,
-  SuccessBanner, SectionTitle,
+  SuccessBanner, SectionTitle, useProfileSwitcher,
 } from "@/components/acadlab";
 import type { StatusTone } from "@/components/acadlab/atoms/StatusBadge";
 import { Input } from "@/components/ui/input";
@@ -16,8 +16,6 @@ import {
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
 } from "@/components/ui/dialog";
-import { GraduationCap, Building2 } from "lucide-react";
-import { cn } from "@/lib/utils";
 import { api, type SolicitacaoAcademicaResumo } from "@/lib/api";
 
 export const Route = createFileRoute("/secretaria-virtual")({
@@ -464,42 +462,17 @@ function DetalheDialog({ solicitacao, onClose }: { solicitacao: SolicitacaoAcade
   );
 }
 
-// ═══════════════════════════════ PÁGINA + SWITCHER ═════════════════════════════
-
-type Visao = "aluno" | "secretaria";
-
-function ViewSwitcher({ value, onChange }: { value: Visao; onChange: (v: Visao) => void }) {
-  const opts: { value: Visao; label: string; icon: typeof GraduationCap }[] = [
-    { value: "aluno", label: "Aluno", icon: GraduationCap },
-    { value: "secretaria", label: "Secretaria", icon: Building2 },
-  ];
-  return (
-    <div className="flex items-center gap-1 rounded-full border bg-card p-0.5">
-      {opts.map((o) => {
-        const Icon = o.icon;
-        const active = o.value === value;
-        return (
-          <button
-            key={o.value}
-            onClick={() => onChange(o.value)}
-            className={cn(
-              "inline-flex h-8 items-center gap-1.5 rounded-full px-3 text-[12.5px] transition-colors",
-              active ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground",
-            )}
-          >
-            <Icon className="h-3.5 w-3.5" />
-            {o.label}
-          </button>
-        );
-      })}
-    </div>
-  );
-}
+// ═══════════════════════════════ PÁGINA ═══════════════════════════════════════
 
 function Page() {
-  const [visao, setVisao] = useState<Visao>("aluno");
+  const { active: perfil } = useProfileSwitcher([
+    { value: "estudante", label: "Estudante", description: "Abre e acompanha protocolos" },
+    { value: "secretaria", label: "Secretaria Acadêmica", description: "Tria, defere e indefere" },
+  ]);
 
-  const sections = visao === "aluno"
+  const isAluno = perfil === "estudante";
+
+  const sections = isAluno
     ? [
         { value: "list", label: "Minhas Solicitações", content: <MinhasSolicitacoes /> },
         { value: "nova", label: "Nova Solicitação", content: <NovaSolicitacao /> },
@@ -511,10 +484,9 @@ function Page() {
 
   return (
     <FeaturePage
-      key={visao}
+      key={perfil}
       title="Secretaria Virtual Acadêmica"
-      subtitle={visao === "aluno" ? "Suas solicitações e requerimentos" : "Análise de solicitações dos estudantes"}
-      topRight={<ViewSwitcher value={visao} onChange={setVisao} />}
+      subtitle={isAluno ? "Suas solicitações e requerimentos" : "Análise de solicitações dos estudantes"}
       sections={sections}
     />
   );
