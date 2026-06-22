@@ -34,6 +34,7 @@ export type BeneficioResumo = {
   status: "ATIVO" | "SUSPENSO" | "CANCELADO";
   dataAtivacao: string | null;
   prazoRenovacao: string | null;
+  solicitouRenovacao: boolean;
 };
 
 /* ===== Query keys ===== */
@@ -42,6 +43,7 @@ const keys = {
   editais: ["permanencia", "editais"] as const,
   inscricoes: ["permanencia", "inscricoes"] as const,
   inscricoesEstudante: (id: number) => ["permanencia", "inscricoes", "estudante", id] as const,
+  beneficios: ["permanencia", "beneficios"] as const,
   beneficiosEstudante: (id: number) => ["permanencia", "beneficios", "estudante", id] as const,
 };
 
@@ -60,6 +62,10 @@ export function useInscricoesEstudante(estudanteId = USUARIO_ATUAL.estudanteId) 
     queryKey: keys.inscricoesEstudante(estudanteId),
     queryFn: () => api.get<InscricaoResumo[]>(`permanencia/estudantes/${estudanteId}/inscricoes`),
   });
+}
+
+export function useTodosBeneficios() {
+  return useQuery({ queryKey: keys.beneficios, queryFn: () => api.get<BeneficioResumo[]>("permanencia/beneficios") });
 }
 
 export function useBeneficiosEstudante(estudanteId = USUARIO_ATUAL.estudanteId) {
@@ -123,6 +129,15 @@ export function useCriarEdital() {
       prazoRecursoFim: string;
       prazoRenovacao: string | null;
     }) => api.post<number>("permanencia/editais", vars),
+    onSuccess: invalidate,
+  });
+}
+
+export function usePublicarResultado() {
+  const invalidate = useInvalidate();
+  return useMutation({
+    mutationFn: (editalId: number) =>
+      api.put(`permanencia/editais/${editalId}/resultado`, { hoje: hojeIso() }),
     onSuccess: invalidate,
   });
 }
