@@ -60,7 +60,10 @@ export function useCasosResponsavel(responsavelId = USUARIO_ATUAL.psicopedagogoI
 }
 
 export function useCasosAbertos() {
-  return useQuery({ queryKey: keys.casosAbertos, queryFn: () => api.get<CasoResumo[]>("apoio/casos/abertos") });
+  return useQuery({
+    queryKey: keys.casosAbertos,
+    queryFn: () => api.get<CasoResumo[]>("apoio/casos/abertos"),
+  });
 }
 
 /* ===== Mutações ===== */

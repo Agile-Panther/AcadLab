@@ -27,7 +27,8 @@ export function ProgressRow({
       <div className="flex items-center justify-between text-[12px]">
         <span className="font-medium text-foreground">{label}</span>
         <span className="tabular-nums text-muted-foreground">
-          {current}/{total} {unit} <span className="ml-1 font-semibold text-foreground">{pct}%</span>
+          {current}/{total} {unit}{" "}
+          <span className="ml-1 font-semibold text-foreground">{pct}%</span>
         </span>
       </div>
       <div className="h-2 w-full overflow-hidden rounded-full bg-muted">

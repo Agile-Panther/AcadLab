@@ -2,18 +2,11 @@ import { useMemo, useState } from "react";
 import { Bell, HelpCircle, Check, UserCog, ChevronDown } from "lucide-react";
 import { useProfileSwitcherContext } from "../context/ProfileSwitcher";
 import { useRouterState } from "@tanstack/react-router";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { getPageHelp } from "../data/pageHelp";
-import {
-  notifications as seedNotifications,
-  type NotificationTone,
-} from "../data/notifications";
+import { notifications as seedNotifications, type NotificationTone } from "../data/notifications";
 
 const toneStyles: Record<NotificationTone, string> = {
   info: "bg-primary/10 text-primary",
@@ -39,12 +32,9 @@ export function TopBar({
 
   const [items, setItems] = useState(seedNotifications);
   const unreadCount = items.filter((n) => n.unread).length;
-  const markAllRead = () =>
-    setItems((prev) => prev.map((n) => ({ ...n, unread: false })));
+  const markAllRead = () => setItems((prev) => prev.map((n) => ({ ...n, unread: false })));
   const markRead = (id: string) =>
-    setItems((prev) =>
-      prev.map((n) => (n.id === id ? { ...n, unread: false } : n)),
-    );
+    setItems((prev) => prev.map((n) => (n.id === id ? { ...n, unread: false } : n)));
 
   return (
     <header className="sticky top-0 z-20 flex h-[72px] items-center justify-between gap-4 border-b border-border bg-card/70 px-6 backdrop-blur-xl supports-[backdrop-filter]:bg-card/60 lg:px-8">
@@ -61,9 +51,7 @@ export function TopBar({
         <h1 className="truncate text-[20px] font-semibold leading-tight tracking-tight text-foreground">
           {title}
         </h1>
-        {subtitle && (
-          <p className="truncate text-[12.5px] text-muted-foreground">{subtitle}</p>
-        )}
+        {subtitle && <p className="truncate text-[12.5px] text-muted-foreground">{subtitle}</p>}
       </div>
       <div className="flex items-center gap-2">
         {right}
@@ -118,9 +106,7 @@ export function TopBar({
                           {isActive && <Check className="h-3 w-3" />}
                         </span>
                         <div className="min-w-0 flex-1">
-                          <p className="text-[13px] font-medium text-foreground">
-                            {p.label}
-                          </p>
+                          <p className="text-[13px] font-medium text-foreground">{p.label}</p>
                           {p.description && (
                             <p className="mt-0.5 text-[11.5px] text-muted-foreground">
                               {p.description}
@@ -151,21 +137,14 @@ export function TopBar({
               <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
                 Sobre esta página
               </p>
-              <p className="mt-0.5 text-[14px] font-semibold text-foreground">
-                {help.title}
-              </p>
+              <p className="mt-0.5 text-[14px] font-semibold text-foreground">{help.title}</p>
             </div>
             <div className="space-y-3 px-4 py-3">
-              <p className="text-[13px] leading-relaxed text-muted-foreground">
-                {help.summary}
-              </p>
+              <p className="text-[13px] leading-relaxed text-muted-foreground">{help.summary}</p>
               {help.bullets && help.bullets.length > 0 && (
                 <ul className="space-y-1.5">
                   {help.bullets.map((b, i) => (
-                    <li
-                      key={i}
-                      className="flex items-start gap-2 text-[12.5px] text-foreground"
-                    >
+                    <li key={i} className="flex items-start gap-2 text-[12.5px] text-foreground">
                       <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-primary" />
                       <span>{b}</span>
                     </li>
@@ -197,9 +176,7 @@ export function TopBar({
           <PopoverContent align="end" className="w-[380px] p-0">
             <div className="flex items-center justify-between border-b border-border px-4 py-3">
               <div>
-                <p className="text-[14px] font-semibold text-foreground">
-                  Notificações
-                </p>
+                <p className="text-[14px] font-semibold text-foreground">Notificações</p>
                 <p className="text-[11.5px] text-muted-foreground">
                   {unreadCount > 0
                     ? `${unreadCount} não lida${unreadCount > 1 ? "s" : ""}`
@@ -256,9 +233,7 @@ export function TopBar({
                             <p className="mt-0.5 line-clamp-2 text-[12px] text-muted-foreground">
                               {n.description}
                             </p>
-                            <p className="mt-1 text-[11px] text-muted-foreground/80">
-                              {n.time}
-                            </p>
+                            <p className="mt-1 text-[11px] text-muted-foreground/80">{n.time}</p>
                           </div>
                         </button>
                       </li>

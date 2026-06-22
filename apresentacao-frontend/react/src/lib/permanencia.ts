@@ -50,11 +50,17 @@ const keys = {
 /* ===== Consultas ===== */
 
 export function useEditais() {
-  return useQuery({ queryKey: keys.editais, queryFn: () => api.get<EditalResumo[]>("permanencia/editais") });
+  return useQuery({
+    queryKey: keys.editais,
+    queryFn: () => api.get<EditalResumo[]>("permanencia/editais"),
+  });
 }
 
 export function useTodasInscricoes() {
-  return useQuery({ queryKey: keys.inscricoes, queryFn: () => api.get<InscricaoResumo[]>("permanencia/inscricoes") });
+  return useQuery({
+    queryKey: keys.inscricoes,
+    queryFn: () => api.get<InscricaoResumo[]>("permanencia/inscricoes"),
+  });
 }
 
 export function useInscricoesEstudante(estudanteId = USUARIO_ATUAL.estudanteId) {
@@ -65,7 +71,10 @@ export function useInscricoesEstudante(estudanteId = USUARIO_ATUAL.estudanteId) 
 }
 
 export function useTodosBeneficios() {
-  return useQuery({ queryKey: keys.beneficios, queryFn: () => api.get<BeneficioResumo[]>("permanencia/beneficios") });
+  return useQuery({
+    queryKey: keys.beneficios,
+    queryFn: () => api.get<BeneficioResumo[]>("permanencia/beneficios"),
+  });
 }
 
 export function useBeneficiosEstudante(estudanteId = USUARIO_ATUAL.estudanteId) {

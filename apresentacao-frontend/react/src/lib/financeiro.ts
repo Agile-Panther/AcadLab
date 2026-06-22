@@ -150,8 +150,12 @@ export function useBloqueioMatricula() {
 export function useRegistrarAcordo() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (vars: { estudanteId: number; prazo: string; descontoPercentual: number; observacoes: string }) =>
-      api.post("acordos", vars),
+    mutationFn: (vars: {
+      estudanteId: number;
+      prazo: string;
+      descontoPercentual: number;
+      observacoes: string;
+    }) => api.post("acordos", vars),
     onSuccess: () => qc.invalidateQueries({ queryKey: keys.inadimplentes }),
   });
 }
@@ -180,23 +184,36 @@ export function useBolsas() {
 export function useConcederBolsa() {
   const invalidate = useInvalidate();
   return useMutation({
-    mutationFn: (vars: { estudanteId: number; tipo: TipoBolsa; percentual: number; validade: string }) =>
-      api.post("bolsas/conceder", vars),
+    mutationFn: (vars: {
+      estudanteId: number;
+      tipo: TipoBolsa;
+      percentual: number;
+      validade: string;
+    }) => api.post("bolsas/conceder", vars),
     onSuccess: invalidate,
   });
 }
 
 export function useSuspenderBolsa() {
   const invalidate = useInvalidate();
-  return useMutation({ mutationFn: (id: number) => api.post(`bolsas/${id}/suspender`), onSuccess: invalidate });
+  return useMutation({
+    mutationFn: (id: number) => api.post(`bolsas/${id}/suspender`),
+    onSuccess: invalidate,
+  });
 }
 
 export function useReativarBolsa() {
   const invalidate = useInvalidate();
-  return useMutation({ mutationFn: (id: number) => api.post(`bolsas/${id}/reativar`), onSuccess: invalidate });
+  return useMutation({
+    mutationFn: (id: number) => api.post(`bolsas/${id}/reativar`),
+    onSuccess: invalidate,
+  });
 }
 
 export function useRenovarBolsa() {
   const invalidate = useInvalidate();
-  return useMutation({ mutationFn: (id: number) => api.post(`bolsas/${id}/renovar`), onSuccess: invalidate });
+  return useMutation({
+    mutationFn: (id: number) => api.post(`bolsas/${id}/renovar`),
+    onSuccess: invalidate,
+  });
 }

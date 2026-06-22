@@ -1,16 +1,40 @@
-import { useState, type ReactNode } from "react";
+import { useState, type ComponentType, type ReactNode } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import {
-  AppShell, SectionTitle, StatusBadge, StatCard, Avatar, FormField, GradientText, DotPattern,
+  AppShell,
+  SectionTitle,
+  StatusBadge,
+  StatCard,
+  Avatar,
+  FormField,
+  GradientText,
+  DotPattern,
+  type StatusTone,
 } from "@/components/acadlab";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
 import {
-  GraduationCap, BookOpen, Briefcase, ShieldCheck, Heart,
-  Mail, Phone, MapPin, Calendar, IdCard, Pencil, Camera,
-  BookMarked, Users, Building2, FileText, Award, Clock, Activity,
+  GraduationCap,
+  BookOpen,
+  Briefcase,
+  ShieldCheck,
+  Heart,
+  Mail,
+  Phone,
+  MapPin,
+  Calendar,
+  IdCard,
+  Pencil,
+  Camera,
+  BookMarked,
+  Users,
+  Building2,
+  FileText,
+  Award,
+  Clock,
+  Activity,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -74,7 +98,11 @@ function Page() {
 /* ---------- Shared building blocks ---------- */
 
 function ProfileHeader({
-  initials, name, role, tags, accent = "bg-primary",
+  initials,
+  name,
+  role,
+  tags,
+  accent = "bg-primary",
 }: {
   initials: string;
   name: string;
@@ -95,12 +123,17 @@ function ProfileHeader({
         <div
           aria-hidden
           className="absolute -left-10 top-0 h-40 w-40 rounded-full blur-3xl animate-[aurora-drift_12s_ease-in-out_infinite]"
-          style={{ background: "radial-gradient(circle, hsl(var(--primary-foreground) / 0.35), transparent 70%)" }}
+          style={{
+            background:
+              "radial-gradient(circle, hsl(var(--primary-foreground) / 0.35), transparent 70%)",
+          }}
         />
         <div
           aria-hidden
           className="absolute right-0 bottom-0 h-44 w-44 rounded-full blur-3xl animate-[aurora-drift_16s_ease-in-out_infinite_reverse]"
-          style={{ background: "radial-gradient(circle, hsl(var(--chart-5) / 0.4), transparent 70%)" }}
+          style={{
+            background: "radial-gradient(circle, hsl(var(--chart-5) / 0.4), transparent 70%)",
+          }}
         />
       </div>
       <div className="flex flex-col gap-4 px-6 pb-6 sm:flex-row sm:items-end sm:justify-between">
@@ -118,24 +151,42 @@ function ProfileHeader({
             </div>
           </div>
           <div className="pb-1">
-            <GradientText as="h2" className="text-[20px] font-semibold leading-tight">{name}</GradientText>
+            <GradientText as="h2" className="text-[20px] font-semibold leading-tight">
+              {name}
+            </GradientText>
             <p className="mt-0.5 text-[13px] text-muted-foreground">{role}</p>
             <div className="mt-2 flex flex-wrap gap-1.5">
               {tags.map((t, i) => (
-                <StatusBadge key={i} tone={(t.tone ?? "info") as any}>{t.label}</StatusBadge>
+                <StatusBadge key={i} tone={(t.tone ?? "info") as StatusTone}>
+                  {t.label}
+                </StatusBadge>
               ))}
             </div>
           </div>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={() => toast.info("Modo de edição completo do perfil aberto.")}><Pencil className="mr-1.5 h-3.5 w-3.5" /> Editar perfil</Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => toast.info("Modo de edição completo do perfil aberto.")}
+          >
+            <Pencil className="mr-1.5 h-3.5 w-3.5" /> Editar perfil
+          </Button>
         </div>
       </div>
     </div>
   );
 }
 
-function InfoRow({ icon: Icon, label, value }: { icon: any; label: string; value: ReactNode }) {
+function InfoRow({
+  icon: Icon,
+  label,
+  value,
+}: {
+  icon: ComponentType<{ className?: string }>;
+  label: string;
+  value: ReactNode;
+}) {
   return (
     <div className="flex items-start gap-3 py-2.5">
       <span className="mt-0.5 inline-flex h-7 w-7 items-center justify-center rounded-md bg-primary-soft text-primary">
@@ -149,7 +200,17 @@ function InfoRow({ icon: Icon, label, value }: { icon: any; label: string; value
   );
 }
 
-function Card({ title, subtitle, action, children }: { title: string; subtitle?: string; action?: ReactNode; children: ReactNode }) {
+function Card({
+  title,
+  subtitle,
+  action,
+  children,
+}: {
+  title: string;
+  subtitle?: string;
+  action?: ReactNode;
+  children: ReactNode;
+}) {
   return (
     <div className="rounded-xl border bg-card p-5 shadow-card">
       <div className="flex items-start justify-between gap-3">
@@ -221,21 +282,41 @@ function EstudanteProfile() {
               <div className="space-y-3">
                 <div className="grid gap-3 sm:grid-cols-2">
                   <FormField label="E-mail" full>
-                    <Input className="h-9" value={draft.email} onChange={(e) => setDraft((d) => ({ ...d, email: e.target.value }))} />
+                    <Input
+                      className="h-9"
+                      value={draft.email}
+                      onChange={(e) => setDraft((d) => ({ ...d, email: e.target.value }))}
+                    />
                   </FormField>
                   <FormField label="Telefone" full>
-                    <Input className="h-9" value={draft.telefone} onChange={(e) => setDraft((d) => ({ ...d, telefone: e.target.value }))} />
+                    <Input
+                      className="h-9"
+                      value={draft.telefone}
+                      onChange={(e) => setDraft((d) => ({ ...d, telefone: e.target.value }))}
+                    />
                   </FormField>
                   <FormField label="Data de nascimento" full>
-                    <Input className="h-9" value={draft.nascimento} onChange={(e) => setDraft((d) => ({ ...d, nascimento: e.target.value }))} />
+                    <Input
+                      className="h-9"
+                      value={draft.nascimento}
+                      onChange={(e) => setDraft((d) => ({ ...d, nascimento: e.target.value }))}
+                    />
                   </FormField>
                   <FormField label="Endereço" full>
-                    <Input className="h-9" value={draft.endereco} onChange={(e) => setDraft((d) => ({ ...d, endereco: e.target.value }))} />
+                    <Input
+                      className="h-9"
+                      value={draft.endereco}
+                      onChange={(e) => setDraft((d) => ({ ...d, endereco: e.target.value }))}
+                    />
                   </FormField>
                 </div>
                 <div className="flex justify-end gap-2 pt-1">
-                  <Button variant="outline" size="sm" onClick={cancelar}>Cancelar</Button>
-                  <Button size="sm" onClick={salvar}>Salvar</Button>
+                  <Button variant="outline" size="sm" onClick={cancelar}>
+                    Cancelar
+                  </Button>
+                  <Button size="sm" onClick={salvar}>
+                    Salvar
+                  </Button>
                 </div>
               </div>
             ) : (
@@ -245,7 +326,11 @@ function EstudanteProfile() {
                 <InfoRow icon={Mail} label="E-mail" value={dados.email} />
                 <InfoRow icon={Phone} label="Telefone" value={dados.telefone} />
                 <InfoRow icon={MapPin} label="Endereço" value={dados.endereco} />
-                <InfoRow icon={Activity} label="Status acadêmico" value={<StatusBadge tone="success">Regular</StatusBadge>} />
+                <InfoRow
+                  icon={Activity}
+                  label="Status acadêmico"
+                  value={<StatusBadge tone="success">Regular</StatusBadge>}
+                />
               </div>
             )}
           </Card>
@@ -289,11 +374,19 @@ function PreferenciasCard() {
   const [notif, setNotif] = useState("E-mail e Push");
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(notif);
-  const salvar = () => { setNotif(draft); setEditing(false); toast.success("Preferências salvas!"); };
+  const salvar = () => {
+    setNotif(draft);
+    setEditing(false);
+    toast.success("Preferências salvas!");
+  };
   return (
     <Card
       title="Acessibilidade & preferências"
-      action={<Button variant="ghost" size="sm" onClick={() => setEditing((e) => !e)}><Pencil className="h-3.5 w-3.5" /></Button>}
+      action={
+        <Button variant="ghost" size="sm" onClick={() => setEditing((e) => !e)}>
+          <Pencil className="h-3.5 w-3.5" />
+        </Button>
+      }
     >
       {editing ? (
         <div className="space-y-3">
@@ -301,8 +394,19 @@ function PreferenciasCard() {
             <Input className="h-9" value={draft} onChange={(e) => setDraft(e.target.value)} />
           </FormField>
           <div className="flex justify-end gap-2">
-            <Button variant="outline" size="sm" onClick={() => { setDraft(notif); setEditing(false); }}>Cancelar</Button>
-            <Button size="sm" onClick={salvar}>Salvar</Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setDraft(notif);
+                setEditing(false);
+              }}
+            >
+              Cancelar
+            </Button>
+            <Button size="sm" onClick={salvar}>
+              Salvar
+            </Button>
           </div>
         </div>
       ) : (
@@ -321,25 +425,66 @@ function SenhaCard() {
   const [confirmar, setConfirmar] = useState("");
   const [open, setOpen] = useState(false);
   const salvar = () => {
-    if (!senhaAtual || !novaSenha) { toast.error("Preencha todos os campos de senha."); return; }
-    if (novaSenha !== confirmar) { toast.error("A nova senha e a confirmação não coincidem."); return; }
-    if (novaSenha.length < 8) { toast.error("A senha deve ter pelo menos 8 caracteres."); return; }
-    setSenhaAtual(""); setNovaSenha(""); setConfirmar(""); setOpen(false);
+    if (!senhaAtual || !novaSenha) {
+      toast.error("Preencha todos os campos de senha.");
+      return;
+    }
+    if (novaSenha !== confirmar) {
+      toast.error("A nova senha e a confirmação não coincidem.");
+      return;
+    }
+    if (novaSenha.length < 8) {
+      toast.error("A senha deve ter pelo menos 8 caracteres.");
+      return;
+    }
+    setSenhaAtual("");
+    setNovaSenha("");
+    setConfirmar("");
+    setOpen(false);
     toast.success("Senha alterada com sucesso!");
   };
   return (
     <Card
       title="Segurança"
-      action={<Button variant="ghost" size="sm" onClick={() => setOpen((o) => !o)}><Pencil className="h-3.5 w-3.5" /></Button>}
+      action={
+        <Button variant="ghost" size="sm" onClick={() => setOpen((o) => !o)}>
+          <Pencil className="h-3.5 w-3.5" />
+        </Button>
+      }
     >
       {open ? (
         <div className="space-y-3">
-          <FormField label="Senha atual" full><Input type="password" className="h-9" value={senhaAtual} onChange={(e) => setSenhaAtual(e.target.value)} /></FormField>
-          <FormField label="Nova senha" full><Input type="password" className="h-9" value={novaSenha} onChange={(e) => setNovaSenha(e.target.value)} /></FormField>
-          <FormField label="Confirmar nova senha" full><Input type="password" className="h-9" value={confirmar} onChange={(e) => setConfirmar(e.target.value)} /></FormField>
+          <FormField label="Senha atual" full>
+            <Input
+              type="password"
+              className="h-9"
+              value={senhaAtual}
+              onChange={(e) => setSenhaAtual(e.target.value)}
+            />
+          </FormField>
+          <FormField label="Nova senha" full>
+            <Input
+              type="password"
+              className="h-9"
+              value={novaSenha}
+              onChange={(e) => setNovaSenha(e.target.value)}
+            />
+          </FormField>
+          <FormField label="Confirmar nova senha" full>
+            <Input
+              type="password"
+              className="h-9"
+              value={confirmar}
+              onChange={(e) => setConfirmar(e.target.value)}
+            />
+          </FormField>
           <div className="flex justify-end gap-2">
-            <Button variant="outline" size="sm" onClick={() => setOpen(false)}>Cancelar</Button>
-            <Button size="sm" onClick={salvar}>Alterar senha</Button>
+            <Button variant="outline" size="sm" onClick={() => setOpen(false)}>
+              Cancelar
+            </Button>
+            <Button size="sm" onClick={salvar}>
+              Alterar senha
+            </Button>
           </div>
         </div>
       ) : (
@@ -355,11 +500,19 @@ function SenhaCard() {
 /* ---------- Professor ---------- */
 
 function ProfessorProfile() {
-  const [contato, setContato] = useState({ email: "carlos.lima@acad.edu.br", ramal: "2341", sala: "B-204" });
+  const [contato, setContato] = useState({
+    email: "carlos.lima@acad.edu.br",
+    ramal: "2341",
+    sala: "B-204",
+  });
   const [editContato, setEditContato] = useState(false);
   const [draft, setDraft] = useState(contato);
 
-  const salvarContato = () => { setContato(draft); setEditContato(false); toast.success("Dados de contato atualizados!"); };
+  const salvarContato = () => {
+    setContato(draft);
+    setEditContato(false);
+    toast.success("Dados de contato atualizados!");
+  };
 
   return (
     <div className="space-y-6">
@@ -402,7 +555,10 @@ function ProfessorProfile() {
                 { d: "IA501 — Tópicos em IA", t: "T01 · 29 alunos", h: "Sex 14-18" },
                 { d: "PG901 — Orientação de TCC", t: "8 orientandos", h: "Quintas 16-18" },
               ].map((r) => (
-                <div key={r.d + r.t} className="flex items-center justify-between gap-3 py-2.5 text-[13px]">
+                <div
+                  key={r.d + r.t}
+                  className="flex items-center justify-between gap-3 py-2.5 text-[13px]"
+                >
                   <div>
                     <div className="font-medium">{r.d}</div>
                     <div className="text-[12px] text-muted-foreground">{r.t}</div>
@@ -415,8 +571,16 @@ function ProfessorProfile() {
 
           <Card title="Áreas de pesquisa">
             <div className="flex flex-wrap gap-1.5">
-              {["Algoritmos", "Otimização", "Aprendizado de Máquina", "Grafos", "Sistemas Distribuídos"].map((a) => (
-                <StatusBadge key={a} tone="info">{a}</StatusBadge>
+              {[
+                "Algoritmos",
+                "Otimização",
+                "Aprendizado de Máquina",
+                "Grafos",
+                "Sistemas Distribuídos",
+              ].map((a) => (
+                <StatusBadge key={a} tone="info">
+                  {a}
+                </StatusBadge>
               ))}
             </div>
           </Card>
@@ -425,16 +589,49 @@ function ProfessorProfile() {
         <div className="space-y-5">
           <Card
             title="Contato"
-            action={<Button variant="ghost" size="sm" onClick={() => { setDraft(contato); setEditContato((e) => !e); }}><Pencil className="h-3.5 w-3.5" /></Button>}
+            action={
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setDraft(contato);
+                  setEditContato((e) => !e);
+                }}
+              >
+                <Pencil className="h-3.5 w-3.5" />
+              </Button>
+            }
           >
             {editContato ? (
               <div className="space-y-3">
-                <FormField label="E-mail" full><Input className="h-9" value={draft.email} onChange={(e) => setDraft((d) => ({ ...d, email: e.target.value }))} /></FormField>
-                <FormField label="Ramal" full><Input className="h-9" value={draft.ramal} onChange={(e) => setDraft((d) => ({ ...d, ramal: e.target.value }))} /></FormField>
-                <FormField label="Sala" full><Input className="h-9" value={draft.sala} onChange={(e) => setDraft((d) => ({ ...d, sala: e.target.value }))} /></FormField>
+                <FormField label="E-mail" full>
+                  <Input
+                    className="h-9"
+                    value={draft.email}
+                    onChange={(e) => setDraft((d) => ({ ...d, email: e.target.value }))}
+                  />
+                </FormField>
+                <FormField label="Ramal" full>
+                  <Input
+                    className="h-9"
+                    value={draft.ramal}
+                    onChange={(e) => setDraft((d) => ({ ...d, ramal: e.target.value }))}
+                  />
+                </FormField>
+                <FormField label="Sala" full>
+                  <Input
+                    className="h-9"
+                    value={draft.sala}
+                    onChange={(e) => setDraft((d) => ({ ...d, sala: e.target.value }))}
+                  />
+                </FormField>
                 <div className="flex justify-end gap-2">
-                  <Button variant="outline" size="sm" onClick={() => setEditContato(false)}>Cancelar</Button>
-                  <Button size="sm" onClick={salvarContato}>Salvar</Button>
+                  <Button variant="outline" size="sm" onClick={() => setEditContato(false)}>
+                    Cancelar
+                  </Button>
+                  <Button size="sm" onClick={salvarContato}>
+                    Salvar
+                  </Button>
                 </div>
               </div>
             ) : (
@@ -522,9 +719,13 @@ function CoordenadorProfile() {
           </Card>
           <Card title="Permissões do sistema">
             <div className="flex flex-wrap gap-1.5">
-              {["Aprovar matrícula", "Oferta de turmas", "Gestão curricular", "Dashboards"].map((p) => (
-                <StatusBadge key={p} tone="success">{p}</StatusBadge>
-              ))}
+              {["Aprovar matrícula", "Oferta de turmas", "Gestão curricular", "Dashboards"].map(
+                (p) => (
+                  <StatusBadge key={p} tone="success">
+                    {p}
+                  </StatusBadge>
+                ),
+              )}
             </div>
           </Card>
         </div>
@@ -581,10 +782,14 @@ function SecretariaProfile() {
                 { g: "Administração", perms: ["Gestão de usuários", "Auditoria", "Configurações"] },
               ].map((b) => (
                 <div key={b.g}>
-                  <div className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">{b.g}</div>
+                  <div className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                    {b.g}
+                  </div>
                   <div className="flex flex-wrap gap-1.5">
                     {b.perms.map((p) => (
-                      <StatusBadge key={p} tone="info">{p}</StatusBadge>
+                      <StatusBadge key={p} tone="info">
+                        {p}
+                      </StatusBadge>
                     ))}
                   </div>
                 </div>
@@ -612,16 +817,42 @@ function SecretariaProfile() {
         <div className="space-y-5">
           <Card
             title="Segurança"
-            action={<Button variant="ghost" size="sm" onClick={() => { setDraftSeg(senha2FA); setEditSeg((e) => !e); }}><Pencil className="h-3.5 w-3.5" /></Button>}
+            action={
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setDraftSeg(senha2FA);
+                  setEditSeg((e) => !e);
+                }}
+              >
+                <Pencil className="h-3.5 w-3.5" />
+              </Button>
+            }
           >
             {editSeg ? (
               <div className="space-y-3">
                 <FormField label="Status 2FA" full>
-                  <Input className="h-9" value={draftSeg} onChange={(e) => setDraftSeg(e.target.value)} />
+                  <Input
+                    className="h-9"
+                    value={draftSeg}
+                    onChange={(e) => setDraftSeg(e.target.value)}
+                  />
                 </FormField>
                 <div className="flex justify-end gap-2">
-                  <Button variant="outline" size="sm" onClick={() => setEditSeg(false)}>Cancelar</Button>
-                  <Button size="sm" onClick={() => { setSenha2FA(draftSeg); setEditSeg(false); toast.success("Configurações de segurança salvas!"); }}>Salvar</Button>
+                  <Button variant="outline" size="sm" onClick={() => setEditSeg(false)}>
+                    Cancelar
+                  </Button>
+                  <Button
+                    size="sm"
+                    onClick={() => {
+                      setSenha2FA(draftSeg);
+                      setEditSeg(false);
+                      toast.success("Configurações de segurança salvas!");
+                    }}
+                  >
+                    Salvar
+                  </Button>
                 </div>
               </div>
             ) : (
@@ -635,7 +866,9 @@ function SecretariaProfile() {
           <Card title="Setores que atende">
             <div className="flex flex-wrap gap-1.5">
               {["Graduação", "Pós-Graduação", "Extensão"].map((s) => (
-                <StatusBadge key={s} tone="neutral">{s}</StatusBadge>
+                <StatusBadge key={s} tone="neutral">
+                  {s}
+                </StatusBadge>
               ))}
             </div>
           </Card>
@@ -650,7 +883,9 @@ function SecretariaProfile() {
 function PsicologoProfile() {
   const [bio, setBio] = useState("Atendimento humanizado, foco em saúde mental estudantil.");
   const [boasVindas, setBoasVindas] = useState("Você não está sozinho(a). Agende um horário.");
-  const [sobre, setSobre] = useState("Psicóloga com 12 anos de experiência em contexto universitário.");
+  const [sobre, setSobre] = useState(
+    "Psicóloga com 12 anos de experiência em contexto universitário.",
+  );
 
   const [draftBio, setDraftBio] = useState(bio);
   const [draftBoasVindas, setDraftBoasVindas] = useState(boasVindas);
@@ -705,8 +940,16 @@ function PsicologoProfile() {
 
           <Card title="Especialidades">
             <div className="flex flex-wrap gap-1.5">
-              {["Ansiedade acadêmica", "Orientação vocacional", "TDAH", "Acolhimento institucional", "Mediação de conflitos"].map((e) => (
-                <StatusBadge key={e} tone="info">{e}</StatusBadge>
+              {[
+                "Ansiedade acadêmica",
+                "Orientação vocacional",
+                "TDAH",
+                "Acolhimento institucional",
+                "Mediação de conflitos",
+              ].map((e) => (
+                <StatusBadge key={e} tone="info">
+                  {e}
+                </StatusBadge>
               ))}
             </div>
           </Card>
@@ -721,7 +964,9 @@ function PsicologoProfile() {
               ].map((s) => (
                 <div key={s.h} className="flex items-center justify-between py-2.5 text-[13px]">
                   <div className="flex items-center gap-3">
-                    <span className="w-12 font-mono text-[12.5px] text-muted-foreground">{s.h}</span>
+                    <span className="w-12 font-mono text-[12.5px] text-muted-foreground">
+                      {s.h}
+                    </span>
                     <span>{s.a}</span>
                   </div>
                   <StatusBadge tone="neutral">{s.t}</StatusBadge>
@@ -738,7 +983,8 @@ function PsicologoProfile() {
           </Card>
           <Card title="Confidencialidade">
             <p className="text-[12.5px] text-muted-foreground">
-              Todos os registros seguem o código de ética profissional. Dados clínicos não ficam visíveis a outros perfis.
+              Todos os registros seguem o código de ética profissional. Dados clínicos não ficam
+              visíveis a outros perfis.
             </p>
           </Card>
         </div>
@@ -747,10 +993,18 @@ function PsicologoProfile() {
       <Card title="Editar nota pública do perfil">
         <div className="grid gap-4 sm:grid-cols-2">
           <FormField label="Bio resumida">
-            <Input className="h-10" value={draftBio} onChange={(e) => setDraftBio(e.target.value)} />
+            <Input
+              className="h-10"
+              value={draftBio}
+              onChange={(e) => setDraftBio(e.target.value)}
+            />
           </FormField>
           <FormField label="Mensagem de boas-vindas">
-            <Input className="h-10" value={draftBoasVindas} onChange={(e) => setDraftBoasVindas(e.target.value)} />
+            <Input
+              className="h-10"
+              value={draftBoasVindas}
+              onChange={(e) => setDraftBoasVindas(e.target.value)}
+            />
           </FormField>
           <FormField label="Sobre" full>
             <Textarea rows={3} value={draftSobre} onChange={(e) => setDraftSobre(e.target.value)} />
@@ -758,7 +1012,9 @@ function PsicologoProfile() {
         </div>
         <Separator className="my-4" />
         <div className="flex justify-end gap-2">
-          <Button variant="outline" onClick={cancelar}>Cancelar</Button>
+          <Button variant="outline" onClick={cancelar}>
+            Cancelar
+          </Button>
           <Button onClick={salvar}>Salvar alterações</Button>
         </div>
       </Card>

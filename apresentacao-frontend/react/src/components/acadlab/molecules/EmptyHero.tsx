@@ -41,9 +41,7 @@ export function EmptyHero({
           <Icon className="h-7 w-7" />
         </div>
         <h3 className="text-lg font-semibold text-foreground">{title}</h3>
-        {description && (
-          <p className="text-sm text-muted-foreground">{description}</p>
-        )}
+        {description && <p className="text-sm text-muted-foreground">{description}</p>}
         <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
           {actionLabel && <Button onClick={onAction}>{actionLabel}</Button>}
           {secondaryLabel && (

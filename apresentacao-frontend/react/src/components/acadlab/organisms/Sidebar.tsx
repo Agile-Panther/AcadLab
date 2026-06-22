@@ -1,9 +1,24 @@
 import { useMemo, useState } from "react";
 import { Link, useRouterState } from "@tanstack/react-router";
 import {
-  BookOpen, CalendarDays, Layers, GraduationCap, BookMarked, FileText,
-  Building2, ListChecks, Briefcase, Wallet, BriefcaseBusiness, HandHeart,
-  Heart, Plane, Search, Settings, LogOut, GraduationCap as Logo,
+  BookOpen,
+  CalendarDays,
+  Layers,
+  GraduationCap,
+  BookMarked,
+  FileText,
+  Building2,
+  ListChecks,
+  Briefcase,
+  Wallet,
+  BriefcaseBusiness,
+  HandHeart,
+  Heart,
+  Plane,
+  Search,
+  Settings,
+  LogOut,
+  GraduationCap as Logo,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -65,11 +80,15 @@ export function Sidebar() {
       <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden opacity-60">
         <div
           className="absolute -left-12 top-10 h-40 w-40 rounded-full blur-3xl animate-[aurora-drift_14s_ease-in-out_infinite]"
-          style={{ background: "radial-gradient(circle, hsl(var(--primary) / 0.35), transparent 70%)" }}
+          style={{
+            background: "radial-gradient(circle, hsl(var(--primary) / 0.35), transparent 70%)",
+          }}
         />
         <div
           className="absolute -right-10 bottom-24 h-44 w-44 rounded-full blur-3xl animate-[aurora-drift_18s_ease-in-out_infinite_reverse]"
-          style={{ background: "radial-gradient(circle, hsl(var(--chart-5) / 0.25), transparent 70%)" }}
+          style={{
+            background: "radial-gradient(circle, hsl(var(--chart-5) / 0.25), transparent 70%)",
+          }}
         />
       </div>
 
@@ -135,7 +154,12 @@ export function Sidebar() {
                           />
                         </>
                       )}
-                      <Icon className={cn("h-[16px] w-[16px] shrink-0 transition-transform", active && "text-primary")} />
+                      <Icon
+                        className={cn(
+                          "h-[16px] w-[16px] shrink-0 transition-transform",
+                          active && "text-primary",
+                        )}
+                      />
                       <span className="relative truncate">{label}</span>
                     </Link>
                   </li>

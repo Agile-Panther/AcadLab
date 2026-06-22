@@ -37,8 +37,7 @@ export function StatCard({
           aria-hidden
           className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-500 group-hover/stat:opacity-100"
           style={{
-            background:
-              "linear-gradient(135deg, hsl(var(--primary) / 0.04), transparent 60%)",
+            background: "linear-gradient(135deg, hsl(var(--primary) / 0.04), transparent 60%)",
           }}
         />
         <div className="relative z-10 flex flex-col gap-1">
