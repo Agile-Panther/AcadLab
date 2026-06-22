@@ -61,6 +61,7 @@ import school.cesar.acadlab.aplicacao.periodoletivo.PeriodoLetivoServicoAplicaca
 import school.cesar.acadlab.dominio.apoiopsicopedagogico.AgendamentoServico;
 import school.cesar.acadlab.dominio.apoiopsicopedagogico.ApoioServico;
 import school.cesar.acadlab.dominio.apoiopsicopedagogico.AtendimentoServico;
+import school.cesar.acadlab.dominio.apoiopsicopedagogico.NotificacaoCasoObservador;
 import school.cesar.acadlab.dominio.apoiopsicopedagogico.TriagemServico;
 import school.cesar.acadlab.dominio.apoiopsicopedagogico.caso.CasoRepositorio;
 import school.cesar.acadlab.dominio.apoiopsicopedagogico.solicitacao.SolicitacaoApoioRepositorio;
@@ -419,6 +420,14 @@ public class BackendAplicacao {
     ApoioPsicopedagogicoServicoAplicacao apoioPsicopedagogicoServicoAplicacao(
             ApoioPsicopedagogicoRepositorioAplicacao repositorio) {
         return new ApoioPsicopedagogicoServicoAplicacao(repositorio);
+    }
+
+    @Bean
+    NotificacaoCasoObservador notificacaoCasoObservador(
+            EventoBarramento barramento, RegistroNotificacoes registroNotificacoes) {
+        var observador = new NotificacaoCasoObservador(registroNotificacoes);
+        barramento.adicionar(observador);
+        return observador;
     }
 
     /* ===== Histórico Acadêmico ===== */
