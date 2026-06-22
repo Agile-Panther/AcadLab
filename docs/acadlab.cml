@@ -128,8 +128,11 @@ BoundedContext OfertaAcademicaContext implements AcademicoSubdomain {
     }
 
     Aggregate OfertaTurmas {
-        enum EstadoTurma { ABERTA, ENCERRADA, CANCELADA }
+        enum StatusTurma { PLANEJADA, OFERTADA, CANCELADA, ENCERRADA }
+        enum ModalidadeTurma { PRESENCIAL, REMOTO, HIBRIDO, EAD }
 
+        // Turma implementa TurmaOferecida (interface do padrão Decorator:
+        // TurmaDecorador, TurmaOnline) para acrescentar comportamento de oferta.
         Entity Turma {
             aggregateRoot
             int id
@@ -137,25 +140,53 @@ BoundedContext OfertaAcademicaContext implements AcademicoSubdomain {
             int periodoLetivoId
             int professorId
             int salaId
-            int vagas
-            int vagasOcupadas
-            - EstadoTurma estado
+            - ModalidadeTurma modalidade
+            int capacidade
+            - List<HorarioAula> horarios
+            - StatusTurma status
         }
+        Entity HorarioAula {
+            String diaSemana
+            String horaInicio
+            String horaFim
+        }
+        Service OfertaTurmaServico {
+            @Turma ofertar(int periodoLetivoId, int disciplinaId, @ModalidadeTurma modalidade, int capacidade);
+            void vincularProfessor(int turmaId, int professorId);
+            void vincularSala(int turmaId, int salaId);
+            void adicionarHorario(int turmaId, String diaSemana, String horaInicio, String horaFim);
+            void confirmarOferta(int turmaId);
+            void cancelar(int turmaId);
+        }
+    }
+
+    Aggregate Sala {
         Entity Sala {
             aggregateRoot
             int id
-            String codigo
+            String nome
             int capacidade
+            boolean ativa
         }
+        Service SalaServico {
+            @Sala cadastrar(String nome, int capacidade);
+            void ativar(int salaId);
+            void inativar(int salaId);
+            void alterarCapacidade(int salaId, int novaCapacidade, int maiorCapacidadeTurmaVinculada);
+        }
+    }
+
+    Aggregate Professor {
         Entity Professor {
             aggregateRoot
             int id
             String nome
-            String matriculaDocente
+            boolean ativo
         }
-        Service OfertaTurmaServico {
-            @Turma ofertarTurma(@Turma turma);
-            void definirProfessorHorarioSala(int turmaId, int professorId, int salaId);
+        Service ProfessorServico {
+            @Professor cadastrar(String nome);
+            void ativar(int professorId);
+            void inativar(int professorId);
         }
     }
 }
