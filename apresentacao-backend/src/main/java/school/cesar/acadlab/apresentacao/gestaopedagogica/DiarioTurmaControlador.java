@@ -11,6 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import school.cesar.acadlab.aplicacao.gestaopedagogica.DiarioTurmaResumo;
@@ -23,6 +24,7 @@ import school.cesar.acadlab.dominio.gestaopedagogica.diario.PeriodoLetivoId;
 import school.cesar.acadlab.dominio.gestaopedagogica.diario.ProfessorId;
 import school.cesar.acadlab.dominio.gestaopedagogica.diario.RegistroAulaId;
 import school.cesar.acadlab.dominio.gestaopedagogica.diario.TurmaId;
+import school.cesar.acadlab.dominio.gestaopedagogica.diario.apuracao.RegimeApuracao;
 
 @RestController
 @RequestMapping("backend/diarios")
@@ -104,8 +106,9 @@ class DiarioTurmaControlador {
     }
 
     @RequestMapping(method = POST, path = "{id}/estudantes/{estudanteId}/fechar")
-    void fecharResultado(@PathVariable int id, @PathVariable int estudanteId) {
-        servico.fecharResultado(new DiarioTurmaId(id), new EstudanteId(estudanteId));
+    void fecharResultado(@PathVariable int id, @PathVariable int estudanteId,
+                         @RequestParam(name = "regime", defaultValue = "PONDERADA") RegimeApuracao regime) {
+        servico.fecharResultado(new DiarioTurmaId(id), new EstudanteId(estudanteId), regime);
     }
 
     @RequestMapping(method = POST, path = "{id}/estudantes/{estudanteId}/revisao")
