@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import {
   AppShell, SectionTitle, StatsRow, DataTable, StatusBadge, RowActionButton,
@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
-import { ArrowLeft, Send, MapPin } from "lucide-react";
+import { ArrowLeft, Send, MapPin, Ban, PowerOff } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/oferta-turmas")({
@@ -19,14 +19,17 @@ export const Route = createFileRoute("/oferta-turmas")({
 
 type Turma = {
   id: string; codigo: string; disciplina: string; turma: string; prof: string;
-  sala: string; horario: string; vagas: string; status: "Aberta" | "Lotada" | "Cancelada";
+  curso: string; periodo: string; sala: string; horario: string; vagas: string;
+  modalidade: "Presencial" | "Remoto" | "Híbrido" | "EAD";
+  listaEspera: boolean;
+  status: "Aberta" | "Lotada" | "Cancelada" | "Inativa";
 };
 
 const turmasIniciais: Turma[] = [
-  { id: "T1", codigo: "AED301", disciplina: "Algoritmos Avançados", turma: "T01", prof: "Carlos Lima", sala: "B-203", horario: "Seg/Qua 08-10", vagas: "28/30", status: "Aberta" },
-  { id: "T2", codigo: "BD302", disciplina: "Banco de Dados II", turma: "T01", prof: "Ana Souza", sala: "B-105", horario: "Seg 14 · Sex 16", vagas: "30/30", status: "Lotada" },
-  { id: "T3", codigo: "ES303", disciplina: "Testes de Software", turma: "T02", prof: "Marcos R.", sala: "B-301", horario: "Ter/Qui 10-12", vagas: "22/30", status: "Aberta" },
-  { id: "T4", codigo: "IA401", disciplina: "Inteligência Artificial", turma: "T01", prof: "Lia Mendes", sala: "Lab-IA", horario: "Ter/Qui 14-16", vagas: "8/25", status: "Aberta" },
+  { id: "T1", codigo: "AED301", disciplina: "Algoritmos Avançados", turma: "T01", curso: "Engenharia de Software", periodo: "2025.2", prof: "Carlos Lima", sala: "B-203", horario: "Seg/Qua 08-10", vagas: "28/30", modalidade: "Presencial", listaEspera: false, status: "Aberta" },
+  { id: "T2", codigo: "BD302", disciplina: "Banco de Dados II", turma: "T01", curso: "Engenharia de Software", periodo: "2025.2", prof: "Ana Souza", sala: "B-105", horario: "Seg 14 · Sex 16", vagas: "30/30", modalidade: "Presencial", listaEspera: true, status: "Lotada" },
+  { id: "T3", codigo: "ES303", disciplina: "Testes de Software", turma: "T02", curso: "Engenharia de Software", periodo: "2025.2", prof: "Marcos R.", sala: "B-301", horario: "Ter/Qui 10-12", vagas: "22/30", modalidade: "Híbrido", listaEspera: false, status: "Aberta" },
+  { id: "T4", codigo: "IA401", disciplina: "Inteligência Artificial", turma: "T01", curso: "Ciência da Computação", periodo: "2025.2", prof: "Lia Mendes", sala: "Lab-IA", horario: "Ter/Qui 14-16", vagas: "8/25", modalidade: "EAD", listaEspera: true, status: "Aberta" },
 ];
 
 const tabsCoord = [
@@ -47,6 +50,12 @@ function Page() {
   ]);
   const isSec = perfil === "secretaria";
   const [tab, setTab] = useState("turmas");
+  const [turmas, setTurmas] = useState<Turma[]>(turmasIniciais);
+  const [filtroPeriodo, setFiltroPeriodo] = useState("2025.2");
+  const [filtroCurso, setFiltroCurso] = useState("");
+  const [filtroDisciplina, setFiltroDisciplina] = useState("");
+  const [filtroProfessor, setFiltroProfessor] = useState("");
+  const [filtroStatus, setFiltroStatus] = useState("");
   const [selected, setSelected] = useState<Turma | null>(null);
   const [wizard, setWizard] = useState<null | 0 | 1 | 2>(null);
   const [publicada, setPublicada] = useState(false);
@@ -59,6 +68,13 @@ function Page() {
   const subtitle = isSec
     ? "Visão Secretaria · Alocação e publicação"
     : "Coordenador — Período 2025.2";
+  const turmasFiltradas = turmas.filter((turma) =>
+    (!filtroPeriodo || turma.periodo === filtroPeriodo) &&
+    (!filtroCurso || turma.curso.toLowerCase().includes(filtroCurso.toLowerCase())) &&
+    (!filtroDisciplina || `${turma.codigo} ${turma.disciplina}`.toLowerCase().includes(filtroDisciplina.toLowerCase())) &&
+    (!filtroProfessor || turma.prof.toLowerCase().includes(filtroProfessor.toLowerCase())) &&
+    (!filtroStatus || turma.status === filtroStatus)
+  );
 
   return (
     <AppShell title="Planejamento e Oferta de Turmas" subtitle={subtitle}>
@@ -68,13 +84,13 @@ function Page() {
         <div className="space-y-5">
           <StatsRow stats={isSec ? [
             { label: "Sem sala", value: 1, tone: "danger" },
-            { label: "Aguardando publicação", value: turmasIniciais.length, tone: "warning" },
+            { label: "Aguardando publicação", value: turmas.length, tone: "warning" },
             { label: "Salas disponíveis", value: 12, tone: "success" },
             { label: "Conflitos de alocação", value: 0, tone: "success" },
           ] : [
-            { label: "Turmas ofertadas", value: turmasIniciais.length, tone: "info" },
+            { label: "Turmas ofertadas", value: turmasFiltradas.length, tone: "info" },
             { label: "Vagas abertas", value: 28, tone: "success" },
-            { label: "Lotadas", value: 1, tone: "warning" },
+            { label: "Lista de espera", value: turmas.filter((t) => t.listaEspera).length, tone: "warning" },
             { label: "Conflitos detectados", value: 0, tone: "success" },
           ]} />
           {isSec ? (
@@ -82,15 +98,34 @@ function Page() {
           ) : (
             <ActionBar searchPlaceholder="Buscar turma..." primaryLabel="Nova turma" onPrimary={() => setWizard(0)} />
           )}
+          {!isSec && (
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-5">
+              <Input className="h-10" value={filtroPeriodo} onChange={(e) => setFiltroPeriodo(e.target.value)} placeholder="Período letivo" />
+              <Input className="h-10" value={filtroCurso} onChange={(e) => setFiltroCurso(e.target.value)} placeholder="Curso" />
+              <Input className="h-10" value={filtroDisciplina} onChange={(e) => setFiltroDisciplina(e.target.value)} placeholder="Disciplina" />
+              <Input className="h-10" value={filtroProfessor} onChange={(e) => setFiltroProfessor(e.target.value)} placeholder="Professor" />
+              <div className="flex gap-2">
+                {(["", "Aberta", "Lotada", "Cancelada", "Inativa"] as const).map((status) => (
+                  <Button key={status || "todos"} type="button" size="sm" variant={filtroStatus === status ? "default" : "outline"} onClick={() => setFiltroStatus(status)}>
+                    {status || "Todas"}
+                  </Button>
+                ))}
+              </div>
+            </div>
+          )}
           <DataTable
             columns={[
               { key: "codigo", header: "Disciplina" },
               { key: "disciplina", header: "Nome" },
               { key: "turma", header: "Turma" }, { key: "prof", header: "Professor" },
               { key: "sala", header: "Sala" }, { key: "horario", header: "Horário" },
+              { key: "modalidade", header: "Modalidade" },
+              { key: "listaEspera", header: "Espera", render: (r) => (
+                <StatusBadge tone={r.listaEspera ? "info" : "neutral"}>{r.listaEspera ? "Habilitada" : "Desabilitada"}</StatusBadge>
+              )},
               { key: "vagas", header: "Vagas" },
               { key: "status", header: "Status", render: (r) => (
-                <StatusBadge tone={r.status === "Aberta" ? "success" : r.status === "Lotada" ? "warning" : "danger"}>{r.status}</StatusBadge>
+                <StatusBadge tone={r.status === "Aberta" ? "success" : r.status === "Lotada" ? "warning" : r.status === "Inativa" ? "neutral" : "danger"}>{r.status}</StatusBadge>
               )},
               { key: "acoes", header: "", align: "right", render: (r) => (
                 isSec
@@ -98,7 +133,7 @@ function Page() {
                   : <RowActionButton onClick={() => setSelected(r)}>Detalhes</RowActionButton>
               )},
             ]}
-            rows={turmasIniciais}
+            rows={isSec ? turmas : turmasFiltradas}
           />
         </div>
       )}
@@ -116,7 +151,7 @@ function Page() {
           <div className="rounded-xl border bg-card p-6 shadow-card">
             <SectionTitle title="Publicação da oferta 2025.2" subtitle="Após publicada, as turmas ficam visíveis para os estudantes na matrícula." />
             <ul className="mt-4 space-y-2 text-[13px] text-foreground">
-              <li>✓ {turmasIniciais.length} turmas conferidas</li>
+              <li>✓ {turmas.length} turmas conferidas</li>
               <li>✓ Todas com sala alocada</li>
               <li>✓ Sem conflitos de horário</li>
               <li className={publicada ? "text-success" : "text-muted-foreground"}>
@@ -148,10 +183,25 @@ function Page() {
                 <Field label="Sala" value={selected.sala} />
                 <Field label="Horário" value={selected.horario} />
                 <Field label="Vagas" value={selected.vagas} />
+                <Field label="Modalidade" value={selected.modalidade} />
+                <Field label="Lista de espera" value={selected.listaEspera ? "Habilitada" : "Desabilitada"} />
               </div>
-              <div className="mt-6 flex gap-2">
-                <Button variant="outline" className="flex-1" onClick={() => { setEditTurma(selected); setSelected(null); }}>Editar</Button>
-                <Button variant="destructive" className="flex-1" onClick={() => { toast.success(`Turma ${selected.codigo} cancelada. Estudantes notificados.`); setSelected(null); }}>Cancelar turma</Button>
+              <div className="mt-6 grid grid-cols-3 gap-2">
+                <Button variant="outline" onClick={() => { setEditTurma(selected); setSelected(null); }}>Editar</Button>
+                <Button variant="outline" onClick={() => {
+                  setTurmas((atual) => atual.map((t) => t.id === selected.id ? { ...t, status: "Inativa" } : t));
+                  toast.success(`Turma ${selected.codigo} inativada.`);
+                  setSelected(null);
+                }}>
+                  <PowerOff className="mr-1 h-4 w-4" /> Inativar
+                </Button>
+                <Button variant="destructive" onClick={() => {
+                  setTurmas((atual) => atual.map((t) => t.id === selected.id ? { ...t, status: "Cancelada" } : t));
+                  toast.success(`Turma ${selected.codigo} cancelada. Estudantes notificados.`);
+                  setSelected(null);
+                }}>
+                  <Ban className="mr-1 h-4 w-4" /> Cancelar
+                </Button>
               </div>
               <ValidationCallout className="mt-4" tone="info">Cancelar gera notificação aos {parseInt(selected.vagas)} estudantes matriculados.</ValidationCallout>
             </>
@@ -159,18 +209,34 @@ function Page() {
         </SheetContent>
       </Sheet>
 
-      <EditarTurmaDialog turma={editTurma} onClose={() => setEditTurma(null)} />
+      <EditarTurmaDialog
+        turma={editTurma}
+        onSave={(turmaAtualizada) => setTurmas((atual) => atual.map((turma) => turma.id === turmaAtualizada.id ? turmaAtualizada : turma))}
+        onClose={() => setEditTurma(null)}
+      />
     </AppShell>
   );
 }
 
-function EditarTurmaDialog({ turma, onClose }: { turma: Turma | null; onClose: () => void }) {
+function EditarTurmaDialog({ turma, onSave, onClose }: { turma: Turma | null; onSave: (turma: Turma) => void; onClose: () => void }) {
   const [prof, setProf] = useState("");
   const [sala, setSala] = useState("");
   const [horario, setHorario] = useState("");
   const [vagas, setVagas] = useState("");
+  const [modalidade, setModalidade] = useState<Turma["modalidade"]>("Presencial");
+  const [listaEspera, setListaEspera] = useState(false);
+  useEffect(() => {
+    if (!turma) return;
+    setProf(turma.prof);
+    setSala(turma.sala);
+    setHorario(turma.horario);
+    setVagas(turma.vagas);
+    setModalidade(turma.modalidade);
+    setListaEspera(turma.listaEspera);
+  }, [turma]);
+
   return (
-    <Dialog open={!!turma} onOpenChange={(o) => { if (!o) onClose(); else if (turma) { setProf(turma.prof); setSala(turma.sala); setHorario(turma.horario); setVagas(turma.vagas); } }}>
+    <Dialog open={!!turma} onOpenChange={(o) => { if (!o) onClose(); }}>
       <DialogContent>
         {turma && (
           <>
@@ -183,11 +249,28 @@ function EditarTurmaDialog({ turma, onClose }: { turma: Turma | null; onClose: (
               <FormField label="Sala"><Input className="h-10" value={sala} onChange={(e) => setSala(e.target.value)} /></FormField>
               <FormField label="Horário"><Input className="h-10" value={horario} onChange={(e) => setHorario(e.target.value)} /></FormField>
               <FormField label="Vagas (ocupadas/total)" full><Input className="h-10" value={vagas} onChange={(e) => setVagas(e.target.value)} /></FormField>
+              <FormField label="Modalidade" full>
+                <div className="flex flex-wrap gap-2">
+                  {(["Presencial", "Remoto", "Híbrido", "EAD"] as const).map((opcao) => (
+                    <Button key={opcao} type="button" size="sm" variant={modalidade === opcao ? "default" : "outline"} onClick={() => setModalidade(opcao)}>{opcao}</Button>
+                  ))}
+                </div>
+              </FormField>
+              <FormField label="Lista de espera" full>
+                <div className="flex gap-2">
+                  <Button type="button" size="sm" variant={listaEspera ? "default" : "outline"} onClick={() => setListaEspera(true)}>Habilitada</Button>
+                  <Button type="button" size="sm" variant={!listaEspera ? "default" : "outline"} onClick={() => setListaEspera(false)}>Desabilitada</Button>
+                </div>
+              </FormField>
             </div>
             <ValidationCallout tone="info">Alterações geram notificação aos estudantes matriculados.</ValidationCallout>
             <DialogFooter>
               <Button variant="outline" onClick={onClose}>Cancelar</Button>
-              <Button onClick={() => { toast.success(`Turma ${turma.codigo} atualizada.`); onClose(); }}>Salvar alterações</Button>
+              <Button onClick={() => {
+                onSave({ ...turma, prof, sala, horario, vagas, modalidade, listaEspera });
+                toast.success(`Turma ${turma.codigo} atualizada.`);
+                onClose();
+              }}>Salvar alterações</Button>
             </DialogFooter>
           </>
         )}
@@ -328,6 +411,8 @@ const wizSteps = [
 ];
 
 function NovaTurmaWizard({ step, onStep, onCancel }: { step: 0 | 1 | 2; onStep: (s: 0 | 1 | 2) => void; onCancel: () => void }) {
+  const [modalidade, setModalidade] = useState<Turma["modalidade"]>("Presencial");
+  const [listaEspera, setListaEspera] = useState(false);
   return (
     <div className="space-y-5">
       <Button variant="ghost" size="sm" onClick={onCancel}><ArrowLeft className="mr-1 h-4 w-4" /> Cancelar</Button>
@@ -350,6 +435,19 @@ function NovaTurmaWizard({ step, onStep, onCancel }: { step: 0 | 1 | 2; onStep: 
               <FormField label="Sala" required><Input className="h-10" placeholder="B-203" /></FormField>
               <FormField label="Horário" required full><Input className="h-10" placeholder="Seg/Qua 08:00-10:00" /></FormField>
               <FormField label="Capacidade" required><Input type="number" className="h-10" defaultValue={30} /></FormField>
+              <FormField label="Modalidade" full>
+                <div className="flex flex-wrap gap-2">
+                  {(["Presencial", "Remoto", "Híbrido", "EAD"] as const).map((opcao) => (
+                    <Button key={opcao} type="button" size="sm" variant={modalidade === opcao ? "default" : "outline"} onClick={() => setModalidade(opcao)}>{opcao}</Button>
+                  ))}
+                </div>
+              </FormField>
+              <FormField label="Lista de espera" full>
+                <div className="flex gap-2">
+                  <Button type="button" size="sm" variant={listaEspera ? "default" : "outline"} onClick={() => setListaEspera(true)}>Habilitada</Button>
+                  <Button type="button" size="sm" variant={!listaEspera ? "default" : "outline"} onClick={() => setListaEspera(false)}>Desabilitada</Button>
+                </div>
+              </FormField>
             </div>
             <ValidationCallout className="mt-4" tone="info">Sem conflito de horário detectado para professor e sala.</ValidationCallout>
           </>
@@ -357,7 +455,7 @@ function NovaTurmaWizard({ step, onStep, onCancel }: { step: 0 | 1 | 2; onStep: 
         {step === 2 && (
           <>
             <SectionTitle title="Revisão" />
-            <p className="mt-3 text-[13px] text-muted-foreground">Confirme a oferta da turma. Após confirmar, ela ficará visível na matrícula.</p>
+            <p className="mt-3 text-[13px] text-muted-foreground">Modalidade {modalidade}; lista de espera {listaEspera ? "habilitada" : "desabilitada"}.</p>
           </>
         )}
         <div className="mt-4 flex justify-end gap-2">

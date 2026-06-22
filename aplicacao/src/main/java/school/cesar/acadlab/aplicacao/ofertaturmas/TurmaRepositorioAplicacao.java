@@ -4,4 +4,6 @@ import java.util.Optional;
 public interface TurmaRepositorioAplicacao {
     Optional<TurmaResumo> buscarPorId(int id);
     List<TurmaResumo> listarPorPeriodo(int periodoLetivoId);
+    List<TurmaResumo> listarComFiltros(Integer periodoLetivoId, Integer cursoId,
+            Integer disciplinaId, Integer professorId, String status);
 }

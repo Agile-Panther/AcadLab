@@ -364,14 +364,41 @@ Cada integrante deve implementar o padrão de projeto designado em ao menos uma 
 ---
 
 #### US06 — Consultar turmas ofertadas
-*Como Coordenador Acadêmico, quero consultar a lista de turmas ofertadas em um período letivo com filtros por disciplina, professor e sala, para ter visão completa da grade e identificar conflitos ou lacunas na oferta.*
+*Como Coordenador Acadêmico, quero consultar e filtrar turmas ofertadas por período letivo, curso, disciplina, professor e situação, para acompanhar e gerenciar a oferta acadêmica.*
+
+**RN 10 — Consulta de turmas combina filtros acadêmicos**
+
+| | |
+|---|---|
+| Título | Consulta de turmas combina filtros acadêmicos |
+| Descrição | A consulta de turmas deve permitir filtros combinados por período letivo, curso, disciplina, professor e situação da turma. |
+| Consultas | Pesquisar turmas por período letivo e aplicar os filtros opcionais de curso, disciplina, professor e situação, considerando apenas turmas compatíveis com todos os filtros informados. |
+| Complexidade | Média |
+
+**RN 11 — Filtro por curso usa disciplinas da matriz curricular**
+
+| | |
+|---|---|
+| Título | Filtro por curso usa disciplinas da matriz curricular |
+| Descrição | Ao filtrar por curso, a consulta deve retornar apenas turmas de disciplinas vinculadas à matriz curricular do curso informado. |
+| Consultas | Consultar a matriz curricular ativa do curso e cruzar suas disciplinas com as turmas ofertadas no período letivo. |
+| Complexidade | Alta |
 
 ---
 
-#### US07 — Cancelar turma ofertada
-*Como Coordenador Acadêmico, quero cancelar uma turma ofertada, para encerrar a oferta em casos de impossibilidade de realização antes do início do período letivo.*
+#### US07 — Cancelar ou inativar turma ofertada
+*Como Coordenador Acadêmico, quero cancelar ou inativar uma turma ofertada, para corrigir ofertas que não serão mais disponibilizadas aos estudantes.*
 
-**RN 10 — Turma com matrículas confirmadas exige remanejamento antes do cancelamento**
+**RN 12 — Turma cancelada ou inativada deixa de ser ofertada aos estudantes**
+
+| | |
+|---|---|
+| Título | Turma cancelada ou inativada deixa de ser ofertada aos estudantes |
+| Descrição | Uma turma cancelada ou inativada não pode aparecer como opção disponível para novas matrículas, ajustes ou lista de espera. |
+| Consultas | Verificar a situação atual da turma antes de exibi-la nos fluxos de matrícula e antes de permitir novas operações acadêmicas. |
+| Complexidade | Média |
+
+**RN 13 — Turma com matrículas confirmadas exige remanejamento antes do cancelamento**
 
 | | |
 |---|---|
@@ -380,13 +407,45 @@ Cada integrante deve implementar o padrão de projeto designado em ao menos uma 
 | Consultas | Verificar se existem matrículas com status confirmado na turma antes de permitir o cancelamento. |
 | Complexidade | Alta |
 
-**RN 11 — Cancelamento de turma registra notificação para estudantes afetados**
+**RN 14 — Cancelamento ou inativação registra notificação para estudantes afetados**
 
 | | |
 |---|---|
-| Título | Cancelamento de turma registra notificação para estudantes afetados |
-| Descrição | O cancelamento de uma turma que possui estudantes matriculados ou em lista de espera deve registrar notificação no sistema para todos os estudantes afetados. |
-| Consultas | Consultar todos os estudantes com matrícula ou lista de espera na turma cancelada para gerar as notificações. |
+| Título | Cancelamento ou inativação registra notificação para estudantes afetados |
+| Descrição | O cancelamento ou a inativação de uma turma que possui estudantes matriculados ou em lista de espera deve registrar notificação no sistema para todos os estudantes afetados. |
+| Consultas | Consultar todos os estudantes com matrícula ou lista de espera na turma cancelada ou inativada para gerar as notificações. |
+| Complexidade | Média |
+
+---
+
+#### US08 — Definir modalidade e lista de espera da turma
+*Como Coordenador Acadêmico, quero definir a modalidade e habilitar ou desabilitar lista de espera da turma, para configurar corretamente as condições de oferta da disciplina.*
+
+**RN 15 — Modalidade da turma deve ser informada e válida**
+
+| | |
+|---|---|
+| Título | Modalidade da turma deve ser informada e válida |
+| Descrição | Toda turma ofertada deve possuir uma modalidade válida entre presencial, remoto, híbrido ou EAD. |
+| Consultas | Validar a modalidade informada antes de criar ou atualizar a turma. |
+| Complexidade | Baixa |
+
+**RN 16 — Lista de espera só pode ser desabilitada sem estudantes pendentes**
+
+| | |
+|---|---|
+| Título | Lista de espera só pode ser desabilitada sem estudantes pendentes |
+| Descrição | A lista de espera não pode ser desabilitada quando houver estudantes aguardando vaga na turma. |
+| Consultas | Consultar a lista de espera da turma antes de permitir a desabilitação. |
+| Complexidade | Média |
+
+**RN 17 — Configurações opcionais da turma devem usar decoradores**
+
+| | |
+|---|---|
+| Título | Configurações opcionais da turma devem usar decoradores |
+| Descrição | Modalidade EAD e lista de espera devem ser aplicadas como comportamentos opcionais da turma, preservando a classe base e o padrão Decorator adotado na F-03. |
+| Consultas | Verificar a modalidade e a flag de lista de espera para montar a turma com os decoradores correspondentes. |
 | Complexidade | Média |
 
 ### Protótipos da Interface com o Usuário

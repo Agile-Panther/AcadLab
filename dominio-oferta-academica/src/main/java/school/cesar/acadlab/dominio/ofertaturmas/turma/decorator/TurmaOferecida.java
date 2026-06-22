@@ -18,6 +18,7 @@ public interface TurmaOferecida {
     SalaId getSalaId();
     ModalidadeTurma getModalidade();
     int getCapacidade();
+    boolean isListaEsperaHabilitada();
     StatusTurma getStatus();
     List<HorarioAula> getHorarios();
 }

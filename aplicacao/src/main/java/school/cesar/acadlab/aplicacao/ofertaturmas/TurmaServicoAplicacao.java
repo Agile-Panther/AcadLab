@@ -10,4 +10,8 @@ public class TurmaServicoAplicacao {
     }
     public Optional<TurmaResumo> buscarPorId(int id) { return repositorio.buscarPorId(id); }
     public List<TurmaResumo> listarPorPeriodo(int periodoLetivoId) { return repositorio.listarPorPeriodo(periodoLetivoId); }
+    public List<TurmaResumo> listarComFiltros(Integer periodoLetivoId, Integer cursoId,
+            Integer disciplinaId, Integer professorId, String status) {
+        return repositorio.listarComFiltros(periodoLetivoId, cursoId, disciplinaId, professorId, status);
+    }
 }

@@ -12,6 +12,9 @@ import school.cesar.acadlab.dominio.ofertaturmas.turma.ModalidadeTurma;
 import school.cesar.acadlab.dominio.ofertaturmas.turma.Turma;
 import school.cesar.acadlab.dominio.ofertaturmas.turma.TurmaId;
 import school.cesar.acadlab.dominio.ofertaturmas.turma.TurmaRepositorio;
+import school.cesar.acadlab.dominio.ofertaturmas.turma.decorator.TurmaComListaEspera;
+import school.cesar.acadlab.dominio.ofertaturmas.turma.decorator.TurmaOferecida;
+import school.cesar.acadlab.dominio.ofertaturmas.turma.decorator.TurmaOnline;
 
 public class OfertaTurmaServico {
     private final TurmaRepositorio turmaRepositorio;
@@ -38,6 +41,24 @@ public class OfertaTurmaServico {
         var turma = new Turma(id, periodoLetivoId, disciplinaId, modalidade, capacidade);
         turmaRepositorio.salvar(turma);
         return turma;
+    }
+
+    public void alterarModalidade(TurmaId turmaId, ModalidadeTurma modalidade) {
+        notNull(turmaId, "O id da turma não pode ser nulo");
+        var turma = turmaRepositorio.obter(turmaId);
+        turma.alterarModalidade(modalidade);
+        turmaRepositorio.salvar(turma);
+    }
+
+    public void configurarListaEspera(TurmaId turmaId, boolean habilitada, int estudantesPendentes) {
+        notNull(turmaId, "O id da turma não pode ser nulo");
+        var turma = turmaRepositorio.obter(turmaId);
+        if (habilitada) {
+            turma.habilitarListaEspera();
+        } else {
+            turma.desabilitarListaEspera(estudantesPendentes);
+        }
+        turmaRepositorio.salvar(turma);
     }
 
     // US04 - RN3: professor deve estar ativo; RN6: conflito de horário verificado aqui
@@ -104,5 +125,24 @@ public class OfertaTurmaServico {
         var turma = turmaRepositorio.obter(turmaId);
         turma.cancelar();
         turmaRepositorio.salvar(turma);
+    }
+
+    public void inativar(TurmaId turmaId) {
+        notNull(turmaId, "O id da turma não pode ser nulo");
+        var turma = turmaRepositorio.obter(turmaId);
+        turma.inativar();
+        turmaRepositorio.salvar(turma);
+    }
+
+    public TurmaOferecida construirOfertaDecorada(Turma turma) {
+        notNull(turma, "A turma não pode ser nula");
+        TurmaOferecida oferta = turma;
+        if (turma.getModalidade() == ModalidadeTurma.EAD) {
+            oferta = new TurmaOnline(oferta);
+        }
+        if (turma.isListaEsperaHabilitada()) {
+            oferta = new TurmaComListaEspera(oferta);
+        }
+        return oferta;
     }
 }

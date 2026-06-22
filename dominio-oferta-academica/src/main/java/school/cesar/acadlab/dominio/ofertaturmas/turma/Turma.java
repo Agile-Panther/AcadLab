@@ -16,8 +16,9 @@ public class Turma implements TurmaOferecida {
     private final DisciplinaId disciplinaId;
     private ProfessorId professorId;
     private SalaId salaId;
-    private final ModalidadeTurma modalidade;
+    private ModalidadeTurma modalidade;
     private final int capacidade;
+    private boolean listaEsperaHabilitada;
     private final List<HorarioAula> horarios = new ArrayList<>();
     private StatusTurma status;
 
@@ -35,6 +36,7 @@ public class Turma implements TurmaOferecida {
         this.disciplinaId = disciplinaId;
         this.modalidade = modalidade;
         this.capacidade = capacidade;
+        this.listaEsperaHabilitada = false;
         this.status = StatusTurma.PLANEJADA;
     }
 
@@ -63,6 +65,9 @@ public class Turma implements TurmaOferecida {
 
     // US03 - ofertar turma (pré-condições de professor, sala e horário devem estar satisfeitas)
     public TurmaOfertadaEvento ofertar() {
+        if (status == StatusTurma.CANCELADA || status == StatusTurma.INATIVA) {
+            throw new IllegalStateException("turma cancelada ou inativa não pode ser ofertada");
+        }
         if (professorId == null) throw new IllegalStateException("Professor não vinculado à turma");
         if (salaId == null) throw new IllegalStateException("Sala não vinculada à turma");
         if (horarios.isEmpty()) throw new IllegalStateException("Nenhum horário definido para a turma");
@@ -76,16 +81,47 @@ public class Turma implements TurmaOferecida {
         if (status == StatusTurma.CANCELADA) {
             throw new IllegalStateException("A turma já está cancelada");
         }
+        if (status == StatusTurma.INATIVA) {
+            throw new IllegalStateException("A turma inativa não pode ser cancelada");
+        }
         this.status = StatusTurma.CANCELADA;
         return new TurmaCanceladaEvento(this);
     }
 
+    public TurmaInativadaEvento inativar() {
+        if (status == StatusTurma.INATIVA) {
+            throw new IllegalStateException("A turma já está inativa");
+        }
+        if (status == StatusTurma.CANCELADA) {
+            throw new IllegalStateException("A turma cancelada não pode ser inativada");
+        }
+        this.status = StatusTurma.INATIVA;
+        return new TurmaInativadaEvento(this);
+    }
+
+    public void alterarModalidade(ModalidadeTurma modalidade) {
+        notNull(modalidade, "A modalidade não pode ser nula");
+        this.modalidade = modalidade;
+    }
+
+    public void habilitarListaEspera() {
+        this.listaEsperaHabilitada = true;
+    }
+
+    public void desabilitarListaEspera(int estudantesPendentes) {
+        if (estudantesPendentes > 0) {
+            throw new IllegalStateException("lista de espera possui estudantes pendentes");
+        }
+        this.listaEsperaHabilitada = false;
+    }
+
     public static Turma reconstituir(TurmaId id, PeriodoLetivoId periodoLetivoId, DisciplinaId disciplinaId,
             ProfessorId professorId, SalaId salaId, ModalidadeTurma modalidade,
-            int capacidade, StatusTurma status, List<HorarioAula> horarios) {
+            int capacidade, boolean listaEsperaHabilitada, StatusTurma status, List<HorarioAula> horarios) {
         var turma = new Turma(id, periodoLetivoId, disciplinaId, modalidade, capacidade);
         turma.professorId = professorId;
         turma.salaId = salaId;
+        turma.listaEsperaHabilitada = listaEsperaHabilitada;
         turma.status = status;
         turma.horarios.addAll(horarios);
         return turma;
@@ -98,6 +134,7 @@ public class Turma implements TurmaOferecida {
     public SalaId getSalaId() { return salaId; }
     public ModalidadeTurma getModalidade() { return modalidade; }
     public int getCapacidade() { return capacidade; }
+    public boolean isListaEsperaHabilitada() { return listaEsperaHabilitada; }
     public StatusTurma getStatus() { return status; }
     public List<HorarioAula> getHorarios() { return Collections.unmodifiableList(horarios); }
 
@@ -130,5 +167,9 @@ public class Turma implements TurmaOferecida {
 
     public static class TurmaCanceladaEvento extends TurmaEvento {
         private TurmaCanceladaEvento(Turma turma) { super(turma); }
+    }
+
+    public static class TurmaInativadaEvento extends TurmaEvento {
+        private TurmaInativadaEvento(Turma turma) { super(turma); }
     }
 }

@@ -81,6 +81,53 @@ class TurmaTest {
     }
 
     @Test
+    void inativar_deveMudarStatusParaInativa() {
+        var turma = criarTurma();
+
+        var evento = turma.inativar();
+
+        assertNotNull(evento);
+        assertEquals(StatusTurma.INATIVA, turma.getStatus());
+    }
+
+    @Test
+    void ofertar_turmaInativa_deveLancarExcecao() {
+        var turma = criarTurma();
+        turma.inativar();
+
+        assertThrows(IllegalStateException.class, turma::ofertar);
+    }
+
+    @Test
+    void alterarModalidade_comModalidadeValida_deveAtualizarTurma() {
+        var turma = criarTurma();
+
+        turma.alterarModalidade(ModalidadeTurma.EAD);
+
+        assertEquals(ModalidadeTurma.EAD, turma.getModalidade());
+    }
+
+    @Test
+    void configurarListaEspera_deveHabilitarEDesabilitarSemPendencias() {
+        var turma = criarTurma();
+
+        turma.habilitarListaEspera();
+        assertTrue(turma.isListaEsperaHabilitada());
+
+        turma.desabilitarListaEspera(0);
+        assertFalse(turma.isListaEsperaHabilitada());
+    }
+
+    @Test
+    void desabilitarListaEspera_comEstudantesPendentes_deveLancarExcecao() {
+        var turma = criarTurma();
+        turma.habilitarListaEspera();
+
+        assertThrows(IllegalStateException.class, () -> turma.desabilitarListaEspera(1));
+        assertTrue(turma.isListaEsperaHabilitada());
+    }
+
+    @Test
     void horarioAula_conflitaCom_comMesmoDiaEHorarioSobreposto_deveRetornarTrue() {
         var h1 = new HorarioAula(DayOfWeek.MONDAY, LocalTime.of(8, 0), LocalTime.of(10, 0));
         var h2 = new HorarioAula(DayOfWeek.MONDAY, LocalTime.of(9, 0), LocalTime.of(11, 0));

@@ -40,11 +40,11 @@ INSERT INTO janela_academica (periodo_letivo_id, tipo, data_inicio, data_fim) VA
   (1, 'REVISAO_NOTAS',   '2025-11-01', '2026-12-31');
 
 -- ─── TURMAS ──────────────────────────────────────────────────────────────────
-INSERT INTO turma (id, periodo_letivo_id, disciplina_id, professor_id, sala_id, modalidade, capacidade, status) VALUES
-  (1, 1, 101, 1, 1, 'PRESENCIAL', 40, 'OFERTADA'),
-  (2, 1, 201, 2, 2, 'PRESENCIAL', 30, 'OFERTADA'),
-  (3, 1, 301, 3, 3, 'HIBRIDO',   45, 'OFERTADA'),
-  (4, 1, 401, 1, 4, 'EAD',       60, 'OFERTADA')
+INSERT INTO turma (id, periodo_letivo_id, disciplina_id, professor_id, sala_id, modalidade, capacidade, lista_espera_habilitada, status) VALUES
+  (1, 1, 101, 1, 1, 'PRESENCIAL', 40, false, 'OFERTADA'),
+  (2, 1, 201, 2, 2, 'PRESENCIAL', 30, true,  'OFERTADA'),
+  (3, 1, 301, 3, 3, 'HIBRIDO',    45, false, 'OFERTADA'),
+  (4, 1, 401, 1, 4, 'EAD',        60, true,  'OFERTADA')
 ON CONFLICT (id) DO NOTHING;
 
 -- horários semanais de cada turma

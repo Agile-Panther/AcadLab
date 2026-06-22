@@ -3,7 +3,11 @@ package school.cesar.acadlab.dominio.ofertaturmas.turma;
 import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.Test;
 import school.cesar.acadlab.dominio.ofertaturmas.DisciplinaId;
+import school.cesar.acadlab.dominio.ofertaturmas.OfertaTurmaServico;
 import school.cesar.acadlab.dominio.ofertaturmas.PeriodoLetivoId;
+import school.cesar.acadlab.dominio.ofertaturmas.ProfessorRepositorioTest;
+import school.cesar.acadlab.dominio.ofertaturmas.SalaRepositorioTest;
+import school.cesar.acadlab.dominio.ofertaturmas.TurmaRepositorioTest;
 import school.cesar.acadlab.dominio.ofertaturmas.turma.decorator.EstudanteId;
 import school.cesar.acadlab.dominio.ofertaturmas.turma.decorator.TurmaComListaEspera;
 import school.cesar.acadlab.dominio.ofertaturmas.turma.decorator.TurmaOnline;
@@ -72,5 +76,16 @@ class TurmaDecoradorTest {
         var decorada = new TurmaOnline(criarTurmaEAD());
         decorada.definirLinkAcesso("https://meet.google.com/abc");
         assertEquals("https://meet.google.com/abc", decorada.getLinkAcesso());
+    }
+
+    @Test
+    void construirOfertaDecorada_comListaEsperaHabilitada_deveAplicarDecorator() {
+        var servico = new OfertaTurmaServico(new TurmaRepositorioTest(), new SalaRepositorioTest(), new ProfessorRepositorioTest());
+        var turma = criarTurmaPresencial();
+        turma.habilitarListaEspera();
+
+        var decorada = servico.construirOfertaDecorada(turma);
+
+        assertInstanceOf(TurmaComListaEspera.class, decorada);
     }
 }

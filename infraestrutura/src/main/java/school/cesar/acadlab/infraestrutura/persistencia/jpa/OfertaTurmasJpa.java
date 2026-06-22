@@ -3,8 +3,11 @@ package school.cesar.acadlab.infraestrutura.persistencia.jpa;
 import java.time.DayOfWeek;
 import java.time.LocalTime;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
+import java.util.Set;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -29,6 +32,7 @@ import school.cesar.acadlab.aplicacao.ofertaturmas.SalaRepositorioAplicacao;
 import school.cesar.acadlab.aplicacao.ofertaturmas.SalaResumo;
 import school.cesar.acadlab.aplicacao.ofertaturmas.TurmaRepositorioAplicacao;
 import school.cesar.acadlab.aplicacao.ofertaturmas.TurmaResumo;
+import school.cesar.acadlab.dominio.curriculo.StatusMatriz;
 import school.cesar.acadlab.dominio.ofertaturmas.DisciplinaId;
 import school.cesar.acadlab.dominio.ofertaturmas.PeriodoLetivoId;
 import school.cesar.acadlab.dominio.ofertaturmas.professor.Professor;
@@ -76,6 +80,7 @@ class TurmaJpa {
     ModalidadeTurma modalidade;
 
     int capacidade;
+    boolean listaEsperaHabilitada;
 
     @Enumerated(EnumType.STRING)
     StatusTurma status;
@@ -205,6 +210,7 @@ class ProfessorRepositorioImpl implements ProfessorRepositorio, ProfessorReposit
 @Repository
 class TurmaRepositorioImpl implements TurmaRepositorio, TurmaRepositorioAplicacao {
     @Autowired TurmaJpaRepository repository;
+    @Autowired MatrizCurricularJpaRepository matrizRepository;
 
     @Override public TurmaId proximoId() { return new TurmaId(repository.proximoId()); }
 
@@ -217,6 +223,7 @@ class TurmaRepositorioImpl implements TurmaRepositorio, TurmaRepositorioAplicaca
         jpa.salaId = turma.getSalaId() != null ? turma.getSalaId().getId() : null;
         jpa.modalidade = turma.getModalidade();
         jpa.capacidade = turma.getCapacidade();
+        jpa.listaEsperaHabilitada = turma.isListaEsperaHabilitada();
         jpa.status = turma.getStatus();
         jpa.horarios.clear();
         for (var h : turma.getHorarios()) {
@@ -262,6 +269,23 @@ class TurmaRepositorioImpl implements TurmaRepositorio, TurmaRepositorioAplicaca
         return repository.findByPeriodoLetivoId(periodoLetivoId).stream().map(this::toResumo).toList();
     }
 
+    @Override public List<TurmaResumo> listarComFiltros(Integer periodoLetivoId, Integer cursoId,
+            Integer disciplinaId, Integer professorId, String status) {
+        var disciplinasDoCurso = disciplinasDaMatrizAtiva(cursoId);
+        var statusFiltro = status == null || status.isBlank()
+                ? null
+                : StatusTurma.valueOf(status.toUpperCase(Locale.ROOT));
+
+        return repository.findAll().stream()
+                .filter(t -> periodoLetivoId == null || t.periodoLetivoId == periodoLetivoId)
+                .filter(t -> cursoId == null || disciplinasDoCurso.contains(t.disciplinaId))
+                .filter(t -> disciplinaId == null || t.disciplinaId == disciplinaId)
+                .filter(t -> professorId == null || professorId.equals(t.professorId))
+                .filter(t -> statusFiltro == null || t.status == statusFiltro)
+                .map(this::toResumo)
+                .toList();
+    }
+
     private Turma toDomain(TurmaJpa jpa) {
         var horarios = jpa.horarios.stream()
                 .map(h -> new HorarioAula(h.diaSemana, h.horaInicio, h.horaFim))
@@ -274,6 +298,7 @@ class TurmaRepositorioImpl implements TurmaRepositorio, TurmaRepositorioAplicaca
                 jpa.salaId != null ? new SalaId(jpa.salaId) : null,
                 jpa.modalidade,
                 jpa.capacidade,
+                jpa.listaEsperaHabilitada,
                 jpa.status,
                 horarios);
     }
@@ -281,6 +306,19 @@ class TurmaRepositorioImpl implements TurmaRepositorio, TurmaRepositorioAplicaca
     private TurmaResumo toResumo(TurmaJpa jpa) {
         return new TurmaResumo(jpa.id, jpa.periodoLetivoId, jpa.disciplinaId,
                 jpa.professorId, jpa.salaId,
-                jpa.modalidade.name(), jpa.capacidade, jpa.status.name());
+                jpa.modalidade.name(), jpa.capacidade,
+                jpa.listaEsperaHabilitada, jpa.status.name());
+    }
+
+    private Set<Integer> disciplinasDaMatrizAtiva(Integer cursoId) {
+        if (cursoId == null) {
+            return Set.of();
+        }
+        var disciplinas = new HashSet<Integer>();
+        matrizRepository.findByCursoId(cursoId).stream()
+                .filter(m -> m.status == StatusMatriz.ATIVA)
+                .flatMap(m -> m.itens.stream())
+                .forEach(i -> disciplinas.add(i.disciplinaId));
+        return disciplinas;
     }
 }

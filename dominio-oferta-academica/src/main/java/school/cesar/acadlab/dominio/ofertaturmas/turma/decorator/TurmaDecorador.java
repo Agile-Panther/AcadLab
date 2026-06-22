@@ -26,6 +26,7 @@ public abstract class TurmaDecorador implements TurmaOferecida {
     @Override public SalaId getSalaId() { return turma.getSalaId(); }
     @Override public ModalidadeTurma getModalidade() { return turma.getModalidade(); }
     @Override public int getCapacidade() { return turma.getCapacidade(); }
+    @Override public boolean isListaEsperaHabilitada() { return turma.isListaEsperaHabilitada(); }
     @Override public StatusTurma getStatus() { return turma.getStatus(); }
     @Override public List<HorarioAula> getHorarios() { return turma.getHorarios(); }
 }
