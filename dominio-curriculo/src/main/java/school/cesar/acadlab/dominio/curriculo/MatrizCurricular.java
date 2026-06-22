@@ -83,6 +83,28 @@ public class MatrizCurricular {
         itens.add(new ItemMatriz(disciplinaId, tipo, cargaHoraria, creditos));
     }
 
+    public void editarDisciplina(DisciplinaId disciplinaId, TipoDisciplina tipo, int cargaHoraria, int creditos) {
+        notNull(disciplinaId, "DisciplinaId não pode ser nulo");
+        notNull(tipo, "TipoDisciplina não pode ser nulo");
+
+        if (status == StatusMatriz.ATIVA) {
+            throw new IllegalStateException("não é possível alterar matriz ativa");
+        }
+
+        int indice = -1;
+        for (int i = 0; i < itens.size(); i++) {
+            if (itens.get(i).getDisciplinaId().equals(disciplinaId)) {
+                indice = i;
+                break;
+            }
+        }
+        if (indice < 0) {
+            throw new IllegalArgumentException("disciplina não está na matriz curricular");
+        }
+
+        itens.set(indice, new ItemMatriz(disciplinaId, tipo, cargaHoraria, creditos));
+    }
+
     public void removerDisciplina(DisciplinaId disciplinaId, ConsultaTurmasPorta porta) {
         notNull(disciplinaId, "DisciplinaId não pode ser nulo");
         notNull(porta, "ConsultaTurmasPorta não pode ser nulo");

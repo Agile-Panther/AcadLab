@@ -14,9 +14,9 @@ import javax.sql.DataSource;
  * O auto-configure do Flyway está desabilitado (spring.flyway.enabled=false) para evitar
  * que o Flyway rode antes das tabelas existirem.
  *
- * @Lazy(false) garante a criação eager deste bean mesmo com
- * spring.main.lazy-initialization=true — caso contrário o @PostConstruct nunca rodaria
- * e o seed não seria aplicado.
+ * {@code @Lazy(false)} força a inicialização eager deste bean: como a aplicação roda com
+ * {@code spring.main.lazy-initialization=true} e nada depende do FlywayConfig, sem isso o
+ * {@code @PostConstruct} nunca seria chamado e as migrações (seed) jamais rodariam.
  */
 @Component
 @Lazy(false)

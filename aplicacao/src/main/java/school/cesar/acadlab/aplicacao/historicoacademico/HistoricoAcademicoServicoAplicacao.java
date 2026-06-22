@@ -1,6 +1,7 @@
 package school.cesar.acadlab.aplicacao.historicoacademico;
 
 import static org.apache.commons.lang3.Validate.notNull;
+import java.util.List;
 import java.util.Optional;
 
 public class HistoricoAcademicoServicoAplicacao {
@@ -18,5 +19,9 @@ public class HistoricoAcademicoServicoAplicacao {
 
     public Optional<HistoricoAcademicoResumo> buscarPorEstudante(int estudanteId) {
         return repositorio.buscarPorEstudante(estudanteId);
+    }
+
+    public List<HistoricoAcademicoResumo> buscarTodos() {
+        return repositorio.buscarTodos();
     }
 }

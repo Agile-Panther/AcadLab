@@ -22,9 +22,11 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.Table;
 import school.cesar.acadlab.aplicacao.historicoacademico.AcompanhamentoResumo;
 import school.cesar.acadlab.aplicacao.historicoacademico.AproveitamentoResumo;
+import school.cesar.acadlab.aplicacao.historicoacademico.EntradaAuditoriaResumo;
 import school.cesar.acadlab.aplicacao.historicoacademico.HistoricoAcademicoRepositorioAplicacao;
 import school.cesar.acadlab.aplicacao.historicoacademico.HistoricoAcademicoResumo;
 import school.cesar.acadlab.aplicacao.historicoacademico.RegistroDisciplinaResumo;
+import school.cesar.acadlab.aplicacao.historicoacademico.RetificacaoResumo;
 import school.cesar.acadlab.dominio.historicoacademico.historico.AcompanhamentoAcademico;
 import school.cesar.acadlab.dominio.historicoacademico.historico.AcompanhamentoId;
 import school.cesar.acadlab.dominio.historicoacademico.historico.Aproveitamento;
@@ -45,6 +47,8 @@ import school.cesar.acadlab.dominio.historicoacademico.historico.SecretariaId;
 import school.cesar.acadlab.dominio.historicoacademico.historico.SituacaoAcademica;
 import school.cesar.acadlab.dominio.historicoacademico.historico.SituacaoDiscente;
 import school.cesar.acadlab.dominio.historicoacademico.historico.TurmaId;
+import school.cesar.acadlab.dominio.historicoacademico.historico.ConsultaPeriodoEncerradoPorta;
+import school.cesar.acadlab.dominio.periodoletivo.StatusPeriodoLetivo;
 
 @Entity
 @Table(name = "HISTORICO_ACADEMICO")
@@ -215,6 +219,11 @@ class HistoricoAcademicoRepositorioImpl implements HistoricoAcademicoRepositorio
         return repository.findByEstudanteId(estudanteId).map(this::toResumo);
     }
 
+    @Override
+    public List<HistoricoAcademicoResumo> buscarTodos() {
+        return repository.findAll().stream().map(this::toResumo).toList();
+    }
+
     private HistoricoAcademicoJpa toJpa(HistoricoAcademico h) {
         var jpa = repository.findById(h.getId().getId()).orElseGet(HistoricoAcademicoJpa::new);
         jpa.id = h.getId().getId();
@@ -350,9 +359,41 @@ class HistoricoAcademicoRepositorioImpl implements HistoricoAcademicoRepositorio
                 .map(a -> new AcompanhamentoResumo(a.acompanhamentoId, a.observacao, a.data))
                 .toList();
 
+        var retificacoes = jpa.retificacoes.stream()
+                .map(r -> new RetificacaoResumo(
+                        r.retificacaoId, r.registroId,
+                        r.situacaoAnterior.name(), r.novaSituacao.name(),
+                        r.responsavelId, r.justificativa, r.data))
+                .toList();
+
+        var trilhaAuditoria = jpa.trilhaAuditoria.stream()
+                .map(e -> new EntradaAuditoriaResumo(
+                        e.situacaoAnterior.name(), e.novaSituacao.name(),
+                        e.responsavelId, e.justificativa, e.data))
+                .toList();
+
         return new HistoricoAcademicoResumo(
                 jpa.id, jpa.estudanteId, jpa.matrizCurricularId,
                 jpa.situacaoDiscente.name(),
-                registros, aproveitamentos, acompanhamentos);
+                registros, aproveitamentos, acompanhamentos,
+                retificacoes, trilhaAuditoria);
+    }
+}
+
+// RN-10: consulta somente-leitura ao status do Período Letivo (F-02), sem alterar
+// aquela feature (reutiliza a entidade PeriodoLetivoJpa do mesmo pacote).
+interface PeriodoEncerradoConsultaRepository extends JpaRepository<PeriodoLetivoJpa, Integer> {
+    boolean existsByIdAndStatus(int id, StatusPeriodoLetivo status);
+}
+
+@Repository
+class ConsultaPeriodoEncerradoAdapter implements ConsultaPeriodoEncerradoPorta {
+
+    @Autowired
+    PeriodoEncerradoConsultaRepository repository;
+
+    @Override
+    public boolean estaEncerrado(PeriodoLetivoId periodoLetivoId) {
+        return repository.existsByIdAndStatus(periodoLetivoId.getId(), StatusPeriodoLetivo.ENCERRADO);
     }
 }

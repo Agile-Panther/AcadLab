@@ -23,6 +23,9 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.Table;
+import school.cesar.acadlab.aplicacao.curriculo.MatrizCurricularDetalhe;
+import school.cesar.acadlab.aplicacao.curriculo.MatrizCurricularDetalhe.DependenciaDetalhe;
+import school.cesar.acadlab.aplicacao.curriculo.MatrizCurricularDetalhe.ItemDetalhe;
 import school.cesar.acadlab.aplicacao.curriculo.MatrizCurricularRepositorioAplicacao;
 import school.cesar.acadlab.aplicacao.curriculo.MatrizCurricularResumo;
 import school.cesar.acadlab.dominio.curriculo.CursoId;
@@ -106,12 +109,22 @@ interface MatrizCurricularJpaRepository extends JpaRepository<MatrizCurricularJp
     boolean existsByCursoIdAndStatus(int cursoId, StatusMatriz status);
 }
 
+// RN-9: consulta somente-leitura à oferta de turmas (F-03) para verificar se uma
+// disciplina possui turma vinculada em qualquer período letivo, sem alterar o
+// código daquela feature (reutiliza a entidade TurmaJpa do mesmo pacote).
+interface TurmaConsultaCurriculoRepository extends JpaRepository<TurmaJpa, Integer> {
+    boolean existsByDisciplinaId(int disciplinaId);
+}
+
 @Repository
 class MatrizCurricularRepositorioImpl implements MatrizCurricularRepositorio,
         MatrizCurricularRepositorioAplicacao, ConsultaMatrizAtivaPorta, ConsultaTurmasPorta {
 
     @Autowired
     MatrizCurricularJpaRepository repository;
+
+    @Autowired
+    TurmaConsultaCurriculoRepository turmaConsulta;
 
     @Override
     public MatrizCurricularId proximaMatrizId() {
@@ -149,14 +162,19 @@ class MatrizCurricularRepositorioImpl implements MatrizCurricularRepositorio,
     }
 
     @Override
+    public Optional<MatrizCurricularDetalhe> buscarDetalhePorId(int id) {
+        return repository.findById(id).map(this::toDetalhe);
+    }
+
+    @Override
     public boolean existeMatrizAtivaParaCurso(CursoId cursoId) {
         return repository.existsByCursoIdAndStatus(cursoId.getValor(), StatusMatriz.ATIVA);
     }
 
     @Override
     public boolean existeTurmaParaDisciplina(DisciplinaId disciplinaId) {
-        // TODO: conectar ao dominio-oferta-academica quando implementado
-        return false;
+        // RN-9: bloqueia remoção se a disciplina tiver turma em qualquer período letivo.
+        return turmaConsulta.existsByDisciplinaId(disciplinaId.getValor());
     }
 
     private MatrizCurricularJpa toJpa(MatrizCurricular m) {
@@ -242,5 +260,31 @@ class MatrizCurricularRepositorioImpl implements MatrizCurricularRepositorio,
                 jpa.cursoId,
                 jpa.nome,
                 jpa.status.name());
+    }
+
+    private MatrizCurricularDetalhe toDetalhe(MatrizCurricularJpa jpa) {
+        List<ItemDetalhe> itens = jpa.itens.stream()
+                .map(i -> new ItemDetalhe(i.disciplinaId, i.tipo.name(), i.cargaHoraria, i.creditos))
+                .toList();
+
+        List<DependenciaDetalhe> preRequisitos = jpa.preRequisitos.stream()
+                .map(pr -> new DependenciaDetalhe(pr.disciplinaId, pr.preRequisitoId))
+                .toList();
+
+        List<DependenciaDetalhe> correquisitos = jpa.correquisitos.stream()
+                .map(cq -> new DependenciaDetalhe(cq.disciplinaId, cq.correquisitoId))
+                .toList();
+
+        return new MatrizCurricularDetalhe(
+                jpa.id,
+                jpa.cursoId,
+                jpa.nome,
+                jpa.cargaHorariaMinima,
+                jpa.creditosExigidos,
+                jpa.maximoTrancamentos,
+                jpa.status.name(),
+                itens,
+                preRequisitos,
+                correquisitos);
     }
 }
