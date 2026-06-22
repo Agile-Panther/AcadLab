@@ -8,11 +8,14 @@ import java.time.LocalDate;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
 
+import school.cesar.acadlab.aplicacao.gestaopedagogica.DiarioTurmaDetalhadoResumo;
 import school.cesar.acadlab.aplicacao.gestaopedagogica.DiarioTurmaResumo;
 import school.cesar.acadlab.aplicacao.gestaopedagogica.DiarioTurmaServicoAplicacao;
 import school.cesar.acadlab.dominio.gestaopedagogica.DiarioTurmaServico;
@@ -33,9 +36,25 @@ class DiarioTurmaControlador {
     @Autowired
     private DiarioTurmaServicoAplicacao servicoAplicacao;
 
+    @RequestMapping(method = GET, path = "")
+    List<DiarioTurmaResumo> pesquisarTodos() {
+        return servicoAplicacao.pesquisarTodos();
+    }
+
+    @RequestMapping(method = GET, path = "professor/{professorId}")
+    List<DiarioTurmaResumo> pesquisarPorProfessor(@PathVariable int professorId) {
+        return servicoAplicacao.pesquisarPorProfessor(professorId);
+    }
+
     @RequestMapping(method = GET, path = "turma/{turmaId}")
     List<DiarioTurmaResumo> pesquisarPorTurma(@PathVariable int turmaId) {
         return servicoAplicacao.pesquisarPorTurma(turmaId);
+    }
+
+    @RequestMapping(method = GET, path = "{id}")
+    DiarioTurmaDetalhadoResumo buscarDetalhado(@PathVariable int id) {
+        return servicoAplicacao.buscarDetalhado(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
     }
 
     @RequestMapping(method = POST)

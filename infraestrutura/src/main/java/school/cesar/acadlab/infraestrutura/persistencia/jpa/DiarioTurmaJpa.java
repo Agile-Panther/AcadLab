@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,6 +28,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.MapKeyColumn;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+import school.cesar.acadlab.aplicacao.gestaopedagogica.DiarioTurmaDetalhadoResumo;
 import school.cesar.acadlab.aplicacao.gestaopedagogica.DiarioTurmaResumo;
 import school.cesar.acadlab.aplicacao.gestaopedagogica.DiarioTurmaRepositorioAplicacao;
 import school.cesar.acadlab.dominio.gestaopedagogica.diario.Avaliacao;
@@ -139,6 +141,7 @@ class ResultadoEstudanteJpa {
 
 interface DiarioTurmaJpaRepository extends JpaRepository<DiarioTurmaJpa, Integer> {
     List<DiarioTurmaJpa> findByTurmaId(int turmaId);
+    List<DiarioTurmaJpa> findByProfessorResponsavelId(int professorId);
 
     @Query("SELECT COALESCE(MAX(d.id), 0) + 1 FROM DiarioTurmaJpa d")
     int proximoId();
@@ -203,6 +206,25 @@ class DiarioTurmaRepositorioImpl implements DiarioTurmaRepositorio, DiarioTurmaR
         return diarioRepository.findByTurmaId(turmaId).stream()
                 .map(this::toResumo)
                 .toList();
+    }
+
+    @Override
+    public List<DiarioTurmaResumo> pesquisarPorProfessor(int professorId) {
+        return diarioRepository.findByProfessorResponsavelId(professorId).stream()
+                .map(this::toResumo)
+                .toList();
+    }
+
+    @Override
+    public List<DiarioTurmaResumo> pesquisarTodos() {
+        return diarioRepository.findAll().stream()
+                .map(this::toResumo)
+                .toList();
+    }
+
+    @Override
+    public Optional<DiarioTurmaDetalhadoResumo> buscarDetalhado(int id) {
+        return diarioRepository.findById(id).map(this::toDetalhado);
     }
 
     private DiarioTurmaJpa toJpa(DiarioTurma diario) {
@@ -327,6 +349,35 @@ class DiarioTurmaRepositorioImpl implements DiarioTurmaRepositorio, DiarioTurmaR
         return new DiarioTurmaResumo(
                 jpa.id, jpa.turmaId, jpa.periodoLetivoId, jpa.professorResponsavelId,
                 jpa.dataInicioPeriodo, jpa.dataFimPeriodo,
-                jpa.mediaMinima, jpa.frequenciaMinima, jpa.status.name());
+                jpa.mediaMinima, jpa.frequenciaMinima, jpa.status.name(),
+                jpa.aulas.size(), jpa.estudantesAtivos.size(), jpa.avaliacoes.size());
+    }
+
+    private DiarioTurmaDetalhadoResumo toDetalhado(DiarioTurmaJpa jpa) {
+        var aulas = jpa.aulas.stream()
+                .map(a -> new DiarioTurmaDetalhadoResumo.AulaResumo(
+                        a.id, a.professorId, a.data, a.conteudo, a.corrigido))
+                .toList();
+        var avaliacoes = jpa.avaliacoes.stream()
+                .map(a -> new DiarioTurmaDetalhadoResumo.AvaliacaoResumo(
+                        a.id, a.nome, a.peso, a.prazo))
+                .toList();
+        var frequencias = jpa.frequencias.stream()
+                .map(f -> new DiarioTurmaDetalhadoResumo.FrequenciaResumo(
+                        f.aulaId, f.estudanteId, f.presente))
+                .toList();
+        var resultados = jpa.resultados.stream()
+                .map(r -> new DiarioTurmaDetalhadoResumo.ResultadoResumo(
+                        r.estudanteId,
+                        r.situacao != null ? r.situacao.name() : null,
+                        r.fechado, r.revisaoSolicitada, r.notaRecuperacao,
+                        new HashMap<>(r.notas)))
+                .toList();
+        return new DiarioTurmaDetalhadoResumo(
+                jpa.id, jpa.turmaId, jpa.periodoLetivoId, jpa.professorResponsavelId,
+                jpa.dataInicioPeriodo, jpa.dataFimPeriodo,
+                jpa.mediaMinima, jpa.frequenciaMinima, jpa.status.name(),
+                aulas, avaliacoes, frequencias, resultados,
+                new HashSet<>(jpa.estudantesAtivos));
     }
 }

@@ -11,5 +11,8 @@ public record DiarioTurmaResumo(
         LocalDate dataFimPeriodo,
         double mediaMinima,
         double frequenciaMinima,
-        String status) {
+        String status,
+        int aulasCount,
+        int estudantesCount,
+        int avaliacoesCount) {
 }

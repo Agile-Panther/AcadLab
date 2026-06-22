@@ -98,6 +98,56 @@ export interface DiarioTurmaResumo {
   mediaMinima: number;
   frequenciaMinima: number;
   status: string;
+  aulasCount: number;
+  estudantesCount: number;
+  avaliacoesCount: number;
+}
+
+export interface AulaResumo {
+  id: number;
+  professorId: number;
+  data: string;
+  conteudo: string;
+  corrigido: boolean;
+}
+
+export interface AvaliacaoResumo {
+  id: number;
+  nome: string;
+  peso: number;
+  prazo: string;
+}
+
+export interface FrequenciaResumo {
+  aulaId: number;
+  estudanteId: number;
+  presente: boolean;
+}
+
+export interface ResultadoResumo {
+  estudanteId: number;
+  situacao: string | null;
+  fechado: boolean;
+  revisaoSolicitada: boolean;
+  notaRecuperacao: number | null;
+  notas: Record<string, number>;
+}
+
+export interface DiarioTurmaDetalhadoResumo {
+  id: number;
+  turmaId: number;
+  periodoLetivoId: number;
+  professorResponsavelId: number;
+  dataInicioPeriodo: string;
+  dataFimPeriodo: string;
+  mediaMinima: number;
+  frequenciaMinima: number;
+  status: string;
+  aulas: AulaResumo[];
+  avaliacoes: AvaliacaoResumo[];
+  frequencias: FrequenciaResumo[];
+  resultados: ResultadoResumo[];
+  estudantesAtivos: number[];
 }
 
 export interface RegistroDisciplinaResumo {
@@ -251,7 +301,36 @@ export const api = {
   },
   diarios: {
     getByTurma: (turmaId: number) =>
-      get<DiarioTurmaResumo>(`diarios/turma/${turmaId}`),
+      get<DiarioTurmaResumo[]>(`diarios/turma/${turmaId}`).then(r => r ?? []),
+    getByProfessor: (professorId: number) =>
+      get<DiarioTurmaResumo[]>(`diarios/professor/${professorId}`).then(r => r ?? []),
+    getTodos: () =>
+      get<DiarioTurmaResumo[]>(`diarios`).then(r => r ?? []),
+    getDetalhado: (id: number) =>
+      get<DiarioTurmaDetalhadoResumo>(`diarios/${id}`),
+    cadastrar: (body: {
+      turmaId: number; periodoLetivoId: number; professorResponsavelId: number;
+      dataInicioPeriodo: string; dataFimPeriodo: string;
+      mediaMinima: number; frequenciaMinima: number;
+    }) => post<void>(`diarios`, body),
+    registrarAula: (id: number, body: { professorId: number; data: string; conteudo: string }) =>
+      post<number>(`diarios/${id}/aulas`, body),
+    corrigirAula: (id: number, aulaId: number, body: { professorId: number; novoConteudo: string }) =>
+      put<void>(`diarios/${id}/aulas/${aulaId}`, body),
+    registrarFrequencia: (id: number, body: { professorId: number; aulaId: number; estudanteId: number; presente: boolean }) =>
+      post<void>(`diarios/${id}/frequencias`, body),
+    adicionarEstudante: (id: number, estudanteId: number) =>
+      post<void>(`diarios/${id}/estudantes/${estudanteId}`),
+    adicionarAvaliacao: (id: number, body: { nome: string; peso: number; prazo: string }) =>
+      post<number>(`diarios/${id}/avaliacoes`, body),
+    lancarNota: (id: number, estudanteId: number, avaliacaoId: number, nota: number) =>
+      post<void>(`diarios/${id}/estudantes/${estudanteId}/notas/${avaliacaoId}`, { nota }),
+    fecharResultado: (id: number, estudanteId: number) =>
+      post<void>(`diarios/${id}/estudantes/${estudanteId}/fechar`),
+    solicitarRevisao: (id: number, estudanteId: number, body: { hoje: string; fimJanelaRevisao: string }) =>
+      post<void>(`diarios/${id}/estudantes/${estudanteId}/revisao`, body),
+    lancarRecuperacao: (id: number, estudanteId: number, body: { nota: number; hoje: string }) =>
+      post<void>(`diarios/${id}/estudantes/${estudanteId}/recuperacao`, body),
   },
   historico: {
     getByEstudante: (estudanteId: number) =>
