@@ -8,11 +8,12 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import {
-  useAtividadesEstudante, useSaldoEstudante, useCategorias, useAtividadesPendentes,
+  useAtividadesEstudante, useCategorias, useAtividadesPendentes, useAtividadesPorStatus,
   useSubmeter, useDeferir, useIndeferir, useSolicitarRevisao, useCancelar,
   EXIGENCIA_TOTAL_HORAS,
   type AtividadeComplementarResumo, type CategoriaHorasResumo, type StatusAtividade,
@@ -22,6 +23,12 @@ import {
   validarJustificativaIndeferimento,
   validarSubmissaoAtividade,
 } from "@/lib/atividade-form";
+import {
+  calcularIndicadoresCoordenacao,
+  calcularIndicadoresEstudante,
+  calcularSaldoPorCategoria,
+} from "@/lib/atividade-indicadores";
+import { filtrarAtividades } from "@/lib/atividade-filtros";
 
 export const Route = createFileRoute("/atividades-complementares")({
   head: () => ({ meta: [{ title: "Atividades Complementares — AcadLab" }] }),
@@ -47,21 +54,24 @@ function Page() {
   ]);
   const [view, setView] = useState<View>({ kind: "list" });
   const [ver, setVer] = useState<AtividadeComplementarResumo | null>(null);
+  const [busca, setBusca] = useState("");
+  const [categoriaFiltro, setCategoriaFiltro] = useState<number | null>(null);
+  const [statusFiltro, setStatusFiltro] = useState<StatusAtividade | null>(null);
 
   const atividadesQuery = useAtividadesEstudante();
-  const saldoQuery = useSaldoEstudante();
   const categoriasQuery = useCategorias();
   const atividades = atividadesQuery.data ?? [];
-  const saldo = saldoQuery.data ?? {};
   const categorias = categoriasQuery.data ?? [];
   const cancelar = useCancelar();
 
-  const horasValidadas = atividades.filter((a) => a.status === "DEFERIDA")
-    .reduce((s, a) => s + a.horasAprovadas, 0);
-  const horasEmAnalise = atividades.filter((a) => a.status === "PENDENTE" || a.status === "REVISAO_SOLICITADA")
-    .reduce((s, a) => s + a.horasSubmetidas, 0);
-  const horasIndeferidas = atividades.filter((a) => a.status === "INDEFERIDA")
-    .reduce((s, a) => s + a.horasSubmetidas, 0);
+  const saldo = calcularSaldoPorCategoria(atividades);
+  const { horasValidadas, horasEmAnalise, horasIndeferidas } =
+    calcularIndicadoresEstudante(atividades);
+  const atividadesFiltradas = filtrarAtividades(atividades, {
+    busca,
+    categoriaId: categoriaFiltro,
+    status: statusFiltro,
+  });
   const nomeCategoria = (id: number) => categorias.find((c) => c.id === id)?.nome ?? `Categoria #${id}`;
 
   const subtitle = perfil === "coordenacao"
@@ -98,7 +108,31 @@ function Page() {
             </div>
           </div>
 
-          <ActionBar searchPlaceholder="Buscar atividade..." primaryLabel="Submeter atividade" onPrimary={() => setView({ kind: "wizard", step: 0 })} />
+          <ActionBar
+            searchPlaceholder="Buscar protocolo ou descrição..."
+            onSearch={setBusca}
+            showFilters={false}
+            filters={(
+              <>
+                <Select value={categoriaFiltro == null ? "todas" : String(categoriaFiltro)} onValueChange={(valor) => setCategoriaFiltro(valor === "todas" ? null : Number(valor))}>
+                  <SelectTrigger className="h-10 w-full sm:w-56"><SelectValue placeholder="Categoria" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="todas">Todas as categorias</SelectItem>
+                    {categorias.map((categoria) => <SelectItem key={categoria.id} value={String(categoria.id)}>{categoria.nome}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+                <Select value={statusFiltro ?? "todos"} onValueChange={(valor) => setStatusFiltro(valor === "todos" ? null : valor as StatusAtividade)}>
+                  <SelectTrigger className="h-10 w-full sm:w-48"><SelectValue placeholder="Status" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="todos">Todos os status</SelectItem>
+                    {Object.entries(rotuloStatus).map(([status, rotulo]) => <SelectItem key={status} value={status}>{rotulo}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </>
+            )}
+            primaryLabel="Submeter atividade"
+            onPrimary={() => setView({ kind: "wizard", step: 0 })}
+          />
           <DataTable
             columns={[
               { key: "id", header: "Protocolo", render: (r) => `AC-${r.id}` },
@@ -116,7 +150,7 @@ function Page() {
                     : <RowActionButton tone="neutral" onClick={() => setVer(r)}>Ver</RowActionButton>
               )},
             ]}
-            rows={atividades}
+            rows={atividadesFiltradas}
           />
         </div>
       )}
@@ -282,8 +316,15 @@ function Revisao({ id, onBack }: { id: string; onBack: () => void }) {
 
 function CoordView() {
   const pendentesQuery = useAtividadesPendentes();
+  const deferidasQuery = useAtividadesPorStatus("DEFERIDA");
+  const indeferidasQuery = useAtividadesPorStatus("INDEFERIDA");
   const categoriasQuery = useCategorias();
   const fila = pendentesQuery.data ?? [];
+  const indicadores = calcularIndicadoresCoordenacao(
+    fila,
+    deferidasQuery.data ?? [],
+    indeferidasQuery.data ?? [],
+  );
   const categorias = categoriasQuery.data ?? [];
   const nomeCategoria = (id: number) => categorias.find((c) => c.id === id)?.nome ?? `Categoria #${id}`;
   const deferir = useDeferir();
@@ -291,6 +332,13 @@ function CoordView() {
   const [atividadeEmAnalise, setAtividadeEmAnalise] = useState<AtividadeComplementarResumo | null>(null);
   const [horasAprovadas, setHorasAprovadas] = useState(0);
   const [justificativa, setJustificativa] = useState("");
+  const [busca, setBusca] = useState("");
+  const [categoriaFiltro, setCategoriaFiltro] = useState<number | null>(null);
+  const filaFiltrada = filtrarAtividades(fila, {
+    busca,
+    categoriaId: categoriaFiltro,
+    status: null,
+  });
 
   const fecharAnalise = () => {
     setAtividadeEmAnalise(null);
@@ -307,12 +355,26 @@ function CoordView() {
   return (
     <div className="space-y-5">
       <StatsRow stats={[
-        { label: "Aguardando validação", value: fila.length, tone: "warning" },
-        { label: "Deferidas (mês)", value: 64, tone: "success" },
-        { label: "Indeferidas (mês)", value: 12, tone: "danger" },
-        { label: "Estudantes ativos", value: 312, tone: "info" },
+        { label: "Aguardando validação", value: indicadores.aguardandoValidacao, tone: "warning" },
+        { label: "Horas aguardando", value: indicadores.horasAguardando, tone: "info" },
+        { label: "Deferidas", value: indicadores.deferidas, tone: "success" },
+        { label: "Indeferidas", value: indicadores.indeferidas, tone: "danger" },
       ]} />
       <SectionTitle title="Fila de validação" subtitle="Atividades complementares submetidas aguardando análise." />
+      <ActionBar
+        searchPlaceholder="Buscar protocolo, descrição ou estudante..."
+        onSearch={setBusca}
+        showFilters={false}
+        filters={(
+          <Select value={categoriaFiltro == null ? "todas" : String(categoriaFiltro)} onValueChange={(valor) => setCategoriaFiltro(valor === "todas" ? null : Number(valor))}>
+            <SelectTrigger className="h-10 w-full sm:w-56"><SelectValue placeholder="Categoria" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="todas">Todas as categorias</SelectItem>
+              {categorias.map((categoria) => <SelectItem key={categoria.id} value={String(categoria.id)}>{categoria.nome}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        )}
+      />
       <DataTable
         columns={[
           { key: "id", header: "Protocolo", render: (r) => `AC-${r.id}` },
@@ -326,7 +388,7 @@ function CoordView() {
             </div>
           )},
         ]}
-        rows={fila}
+        rows={filaFiltrada}
       />
       <Dialog open={atividadeEmAnalise != null} onOpenChange={(aberto) => !aberto && fecharAnalise()}>
         <DialogContent className="max-w-2xl">

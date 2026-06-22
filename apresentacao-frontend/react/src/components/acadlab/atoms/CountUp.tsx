@@ -24,7 +24,8 @@ export function CountUp({
   const started = useRef(false);
 
   useEffect(() => {
-    if (!ref.current || started.current) return;
+    if (!ref.current) return;
+    started.current = false;
     const node = ref.current;
     const io = new IntersectionObserver(
       (entries) => {
