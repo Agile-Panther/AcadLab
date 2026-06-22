@@ -1,21 +1,31 @@
 import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import {
   AppShell, SectionTitle, StatsRow, DataTable, StatusBadge, RowActionButton,
-  ActionBar, FormField, ValidationCallout, Stepper, TabsRow,
+  ActionBar, FormField, ValidationCallout, Stepper, TabsRow, ProgressRow,
   useProfileSwitcher,
 } from "@/components/acadlab";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
-import { ArrowLeft, Send, MapPin } from "lucide-react";
+import { ArrowLeft, Send, MapPin, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
+import { api, type DiarioTurmaDetalhadoResumo, type ResultadoResumo } from "@/lib/api";
 
 export const Route = createFileRoute("/oferta-turmas")({
   head: () => ({ meta: [{ title: "Oferta de Turmas — AcadLab" }] }),
   component: Page,
 });
+
+// ─── Constantes professor (F05) ───────────────────────────────────────────────
+
+const PROFESSOR_ID = 1;
+const AULAS_TOTAL_PADRAO = 30;
+
+// ─── Tipos e dados mock (Coord / Secretaria) ──────────────────────────────────
 
 type Turma = {
   id: string; codigo: string; disciplina: string; turma: string; prof: string;
@@ -39,32 +49,52 @@ const tabsSec = [
   { value: "salas", label: "Mapa de salas" },
   { value: "publicar", label: "Publicação da oferta" },
 ];
+const subTabsProf = [
+  { value: "overview", label: "Visão geral" },
+  { value: "aulas", label: "Aulas" },
+  { value: "freq", label: "Frequência" },
+  { value: "aval", label: "Avaliações & Notas" },
+  { value: "fechar", label: "Fechamento" },
+];
+
+// ─── Page ─────────────────────────────────────────────────────────────────────
 
 function Page() {
   const { active: perfil } = useProfileSwitcher([
     { value: "coordenacao", label: "Coordenação Acadêmica", description: "Planeja e abre turmas" },
     { value: "secretaria", label: "Secretaria Acadêmica", description: "Aloca salas e publica oferta" },
+    { value: "professor", label: "Professor", description: "Lança aulas, frequência e notas" },
   ]);
-  const isSec = perfil === "secretaria";
+
+  const isProf = perfil === "professor";
+  const isSec  = perfil === "secretaria";
+
   const [tab, setTab] = useState("turmas");
   const [selected, setSelected] = useState<Turma | null>(null);
   const [wizard, setWizard] = useState<null | 0 | 1 | 2>(null);
   const [publicada, setPublicada] = useState(false);
   const [editTurma, setEditTurma] = useState<Turma | null>(null);
-  const validTabs = (isSec ? tabsSec : tabsCoord).map((t) => t.value);
-  if (!validTabs.includes(tab)) {
-    setTab("turmas");
-  }
 
-  const subtitle = isSec
+  const validTabs = (isSec ? tabsSec : tabsCoord).map((t) => t.value);
+  if (!isProf && !validTabs.includes(tab)) setTab("turmas");
+
+  const subtitle = isProf
+    ? "Professor: Carlos Lima — 2025.2"
+    : isSec
     ? "Visão Secretaria · Alocação e publicação"
     : "Coordenador — Período 2025.2";
 
   return (
     <AppShell title="Planejamento e Oferta de Turmas" subtitle={subtitle}>
-      <TabsRow items={isSec ? tabsSec : tabsCoord} value={tab} onChange={setTab} className="mb-5" />
+      {!isProf && (
+        <TabsRow items={isSec ? tabsSec : tabsCoord} value={tab} onChange={setTab} className="mb-5" />
+      )}
 
-      {tab === "turmas" && !wizard && (
+      {/* ── Visão Professor (F05) ── */}
+      {isProf && <ProfessorView />}
+
+      {/* ── Visão Coordenação / Secretaria ── */}
+      {!isProf && tab === "turmas" && !wizard && (
         <div className="space-y-5">
           <StatsRow stats={isSec ? [
             { label: "Sem sala", value: 1, tone: "danger" },
@@ -94,7 +124,7 @@ function Page() {
               )},
               { key: "acoes", header: "", align: "right", render: (r) => (
                 isSec
-                  ? <RowActionButton onClick={() => { toast.success(`Sala ${r.sala} confirmada para ${r.codigo}.`); }}><MapPin className="mr-1 h-3 w-3 inline" /> Alocar sala</RowActionButton>
+                  ? <RowActionButton onClick={() => toast.success(`Sala ${r.sala} confirmada para ${r.codigo}.`)}><MapPin className="mr-1 h-3 w-3 inline" /> Alocar sala</RowActionButton>
                   : <RowActionButton onClick={() => setSelected(r)}>Detalhes</RowActionButton>
               )},
             ]}
@@ -103,15 +133,14 @@ function Page() {
         </div>
       )}
 
-      {tab === "turmas" && wizard !== null && (
+      {!isProf && tab === "turmas" && wizard !== null && (
         <NovaTurmaWizard step={wizard} onStep={setWizard} onCancel={() => setWizard(null)} />
       )}
 
-      {tab === "salas" && <SalasTab />}
+      {!isProf && tab === "salas" && <SalasTab />}
+      {!isProf && tab === "profs" && !isSec && <ProfsTab />}
 
-      {tab === "profs" && !isSec && <ProfsTab />}
-
-      {tab === "publicar" && isSec && (
+      {!isProf && tab === "publicar" && isSec && (
         <div className="space-y-4">
           <div className="rounded-xl border bg-card p-6 shadow-card">
             <SectionTitle title="Publicação da oferta 2025.2" subtitle="Após publicada, as turmas ficam visíveis para os estudantes na matrícula." />
@@ -139,9 +168,7 @@ function Page() {
         <SheetContent className="w-[480px] sm:max-w-md">
           {selected && (
             <>
-              <SheetHeader>
-                <SheetTitle>{selected.codigo} — {selected.disciplina}</SheetTitle>
-              </SheetHeader>
+              <SheetHeader><SheetTitle>{selected.codigo} — {selected.disciplina}</SheetTitle></SheetHeader>
               <div className="mt-5 space-y-3 text-[13px]">
                 <Field label="Turma" value={selected.turma} />
                 <Field label="Professor" value={selected.prof} />
@@ -164,11 +191,482 @@ function Page() {
   );
 }
 
+// ─── Visão Professor (F05) ────────────────────────────────────────────────────
+
+function ProfessorView() {
+  const [selectedId, setSelectedId] = useState<number | null>(null);
+  const [subTab, setSubTab] = useState("overview");
+
+  const { data: diarios = [] } = useQuery({
+    queryKey: ["diarios", "professor", PROFESSOR_ID],
+    queryFn: () => api.diarios.getByProfessor(PROFESSOR_ID),
+  });
+
+  const { data: diarioDetalhado } = useQuery({
+    queryKey: ["diarios", String(selectedId)],
+    queryFn: () => api.diarios.getDetalhado(selectedId!),
+    enabled: selectedId !== null,
+  });
+
+  const diarioSel = diarios.find((d) => d.id === selectedId);
+
+  if (!selectedId || !diarioSel) {
+    return (
+      <div className="space-y-5">
+        <StatsRow stats={[
+          { label: "Minhas turmas", value: diarios.length, tone: "info" },
+          { label: "Estudantes", value: diarios.reduce((s, d) => s + d.estudantesCount, 0), tone: "info" },
+          { label: "Fechadas", value: diarios.filter((d) => d.status === "FECHADO").length, tone: "success" },
+          { label: "Em andamento", value: diarios.filter((d) => d.status !== "FECHADO").length, tone: "warning" },
+        ]} />
+        <DataTable
+          columns={[
+            { key: "codigo", header: "Código", render: (r) => `T${r.turmaId}` },
+            { key: "disciplina", header: "Disciplina", render: (r) => `Turma ${r.turmaId}` },
+            { key: "matriculados", header: "Alunos", align: "right", render: (r) => r.estudantesCount },
+            { key: "aulas", header: "Aulas", render: (r) => `${r.aulasCount}/${AULAS_TOTAL_PADRAO}` },
+            { key: "status", header: "Status", render: (r) => (
+              <StatusBadge tone={r.status === "FECHADO" ? "success" : "warning"}>
+                {r.status === "FECHADO" ? "Fechada" : "Em andamento"}
+              </StatusBadge>
+            )},
+            { key: "acoes", header: "", align: "right", render: (r) => (
+              <RowActionButton onClick={() => { setSelectedId(r.id); setSubTab("overview"); }}>Abrir diário</RowActionButton>
+            )},
+          ]}
+          rows={diarios}
+        />
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-5">
+      <Button variant="ghost" size="sm" onClick={() => setSelectedId(null)}>
+        <ArrowLeft className="mr-1 h-4 w-4" /> Minhas turmas
+      </Button>
+      <SectionTitle
+        title={`T${diarioSel.turmaId} — Turma ${diarioSel.turmaId}`}
+        subtitle={`${diarioSel.estudantesCount} estudantes · ${diarioSel.aulasCount}/${AULAS_TOTAL_PADRAO} aulas registradas`}
+      />
+      <TabsRow items={subTabsProf} value={subTab} onChange={setSubTab} />
+      {subTab === "overview" && <OverviewProf diario={diarioDetalhado ?? null} />}
+      {subTab === "aulas"    && <AulasProf diarioId={selectedId} diario={diarioDetalhado ?? null} />}
+      {subTab === "freq"     && <FrequenciaProf diarioId={selectedId} diario={diarioDetalhado ?? null} />}
+      {subTab === "aval"     && <AvaliacoesProf diarioId={selectedId} diario={diarioDetalhado ?? null} />}
+      {subTab === "fechar"   && <FecharProf diarioId={selectedId} diario={diarioDetalhado ?? null} aulasTotal={AULAS_TOTAL_PADRAO} />}
+    </div>
+  );
+}
+
+// ── Visão geral ───────────────────────────────────────────────────────────────
+
+function OverviewProf({ diario }: { diario: DiarioTurmaDetalhadoResumo | null }) {
+  const aulasCount      = diario?.aulas.length ?? 0;
+  const avaliacoesCount = diario?.avaliacoes.length ?? 0;
+  const pesoTotal       = diario?.avaliacoes.reduce((s, a) => s + a.peso, 0) ?? 0;
+  const totalAulas      = Math.max(diario?.aulas.length ?? 0, 1);
+  const totalEstudantes = Math.max(diario?.estudantesAtivos.length ?? 0, 1);
+  const totalPresencas  = diario?.frequencias.filter((f) => f.presente).length ?? 0;
+  const freqMedia       = diario
+    ? Math.round((totalPresencas / (totalAulas * totalEstudantes)) * 100)
+    : 0;
+
+  return (
+    <div className="grid gap-4 lg:grid-cols-3">
+      <div className="lg:col-span-2 rounded-xl border bg-card p-5 shadow-card">
+        <SectionTitle title="Progresso do período" />
+        <div className="mt-3 space-y-3">
+          <ProgressRow label="Aulas ministradas" current={aulasCount} total={AULAS_TOTAL_PADRAO} unit="" tone="info" />
+          <ProgressRow label="Frequência média da turma" current={freqMedia} total={100} unit="%" tone={freqMedia >= 75 ? "success" : "warning"} />
+          <ProgressRow label="Notas lançadas" current={avaliacoesCount} total={Math.max(avaliacoesCount, 3)} unit="aval" tone={pesoTotal >= 100 ? "success" : "warning"} />
+        </div>
+      </div>
+      <div className="rounded-xl border bg-card p-5 shadow-card">
+        <SectionTitle title="Pendências" />
+        <ul className="mt-3 space-y-2 text-[13px]">
+          {diario && pesoTotal < 100 && (
+            <li className="text-warning">• Peso total das avaliações: {pesoTotal}% (falta {100 - pesoTotal}%)</li>
+          )}
+          {diario && diario.estudantesAtivos.length === 0 && (
+            <li className="text-warning">• Nenhum estudante adicionado ao diário</li>
+          )}
+          {diario && pesoTotal >= 100 && diario.estudantesAtivos.length > 0 && (
+            <li className="text-muted-foreground">• Sem pendências críticas</li>
+          )}
+          {!diario && <li className="text-muted-foreground">• Carregando pendências...</li>}
+        </ul>
+      </div>
+    </div>
+  );
+}
+
+// ── Aulas ─────────────────────────────────────────────────────────────────────
+
+type AulaRow = { id?: number; data: string; conteudo: string; presentes: number };
+
+function AulasProf({ diarioId, diario }: { diarioId: number; diario: DiarioTurmaDetalhadoResumo | null }) {
+  const queryClient = useQueryClient();
+  const [dataAula, setDataAula] = useState("");
+  const [conteudo, setConteudo] = useState("");
+  const [editAula, setEditAula] = useState<AulaRow | null>(null);
+
+  const aulas: AulaRow[] = (diario?.aulas ?? []).map((a) => ({
+    id: a.id,
+    data: a.data,
+    conteudo: a.conteudo,
+    presentes: diario?.frequencias.filter((f) => f.aulaId === a.id && f.presente).length ?? 0,
+  }));
+
+  const registrarMutation = useMutation({
+    mutationFn: () => api.diarios.registrarAula(diarioId, { professorId: PROFESSOR_ID, data: dataAula, conteudo }),
+    onSuccess: () => {
+      toast.success("Aula registrada e enviada para conferência.");
+      queryClient.invalidateQueries({ queryKey: ["diarios", String(diarioId)] });
+      queryClient.invalidateQueries({ queryKey: ["diarios", "professor", PROFESSOR_ID] });
+      setDataAula(""); setConteudo("");
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const corrigirMutation = useMutation({
+    mutationFn: ({ aulaId, novoConteudo }: { aulaId: number; novoConteudo: string }) =>
+      api.diarios.corrigirAula(diarioId, aulaId, { professorId: PROFESSOR_ID, novoConteudo }),
+    onSuccess: () => {
+      toast.success("Aula atualizada.");
+      queryClient.invalidateQueries({ queryKey: ["diarios", String(diarioId)] });
+      setEditAula(null);
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  return (
+    <div className="space-y-4">
+      <div className="rounded-xl border bg-card p-5 shadow-card">
+        <SectionTitle title="Registrar nova aula" />
+        <div className="mt-3 grid grid-cols-3 gap-3">
+          <FormField label="Data" required>
+            <Input type="date" className="h-10" value={dataAula} onChange={(e) => setDataAula(e.target.value)} />
+          </FormField>
+          <FormField label="Conteúdo" required full>
+            <Input className="h-10" placeholder="Ex.: Análise de complexidade O(n log n)" value={conteudo} onChange={(e) => setConteudo(e.target.value)} />
+          </FormField>
+        </div>
+        <div className="mt-3 flex justify-end">
+          <Button onClick={() => registrarMutation.mutate()} disabled={!dataAula || !conteudo || registrarMutation.isPending}>
+            Registrar aula
+          </Button>
+        </div>
+      </div>
+      <DataTable
+        columns={[
+          { key: "data", header: "Data" },
+          { key: "conteudo", header: "Conteúdo" },
+          { key: "presentes", header: "Presentes", align: "right" },
+          { key: "acoes", header: "", align: "right", render: (r: AulaRow) => (
+            <RowActionButton onClick={() => setEditAula(r)}>Editar</RowActionButton>
+          )},
+        ]}
+        rows={aulas}
+      />
+      <EditarAulaDialogProf
+        aula={editAula}
+        onClose={() => setEditAula(null)}
+        onSave={(orig, novoConteudo) => {
+          if (orig.id !== undefined) corrigirMutation.mutate({ aulaId: orig.id, novoConteudo });
+          else { toast.error("Aula sem identificador — não foi possível editar."); setEditAula(null); }
+        }}
+      />
+    </div>
+  );
+}
+
+function EditarAulaDialogProf({ aula, onClose, onSave }: {
+  aula: AulaRow | null;
+  onClose: () => void;
+  onSave: (orig: AulaRow, novoConteudo: string) => void;
+}) {
+  const [conteudo, setConteudo] = useState("");
+  return (
+    <Dialog open={!!aula} onOpenChange={(o) => { if (!o) onClose(); else if (aula) setConteudo(aula.conteudo); }}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Editar aula</DialogTitle>
+          <DialogDescription>Corrija o conteúdo registrado para o diário.</DialogDescription>
+        </DialogHeader>
+        <FormField label="Conteúdo" full>
+          <Textarea rows={3} value={conteudo} onChange={(e) => setConteudo(e.target.value)} />
+        </FormField>
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>Cancelar</Button>
+          <Button onClick={() => aula && onSave(aula, conteudo)}>Salvar alterações</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// ── Frequência ────────────────────────────────────────────────────────────────
+
+function FrequenciaProf({ diarioId, diario }: { diarioId: number; diario: DiarioTurmaDetalhadoResumo | null }) {
+  const queryClient = useQueryClient();
+  const aulas      = diario?.aulas ?? [];
+  const estudantes = diario?.estudantesAtivos ?? [];
+  const aulaAtual  = aulas[aulas.length - 1];
+
+  const freqMutation = useMutation({
+    mutationFn: ({ estudanteId, presente }: { estudanteId: number; presente: boolean }) => {
+      if (!aulaAtual) return Promise.reject(new Error("Nenhuma aula registrada"));
+      return api.diarios.registrarFrequencia(diarioId, {
+        professorId: PROFESSOR_ID,
+        aulaId: aulaAtual.id,
+        estudanteId,
+        presente,
+      });
+    },
+    onSuccess: (_data, vars) => {
+      const msg = vars.presente
+        ? `Estudante ${vars.estudanteId} marcado(a) como presente.`
+        : `Estudante ${vars.estudanteId} marcado(a) como falta.`;
+      vars.presente ? toast.success(msg) : toast.error(msg);
+      queryClient.invalidateQueries({ queryKey: ["diarios", String(diarioId)] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const rows = estudantes.map((eId) => {
+    const presencas = diario?.frequencias.filter((f) => f.estudanteId === eId && f.presente).length ?? 0;
+    const pct = aulas.length > 0 ? Math.round((presencas / aulas.length) * 100) : 0;
+    return { estudanteId: eId, nome: `Estudante ${eId}`, freq: `${pct}%` };
+  });
+
+  return (
+    <div className="rounded-xl border bg-card p-5 shadow-card">
+      <SectionTitle
+        title={`Chamada — Aula de ${aulaAtual ? aulaAtual.data : "—"}`}
+        subtitle="Marque presença ou falta para cada estudante."
+      />
+      <DataTable className="mt-3"
+        columns={[
+          { key: "nome", header: "Estudante" },
+          { key: "freq", header: "% Frequência", align: "right" },
+          { key: "marcar", header: "Marcar", align: "right", render: (r) => (
+            <div className="flex justify-end gap-1.5">
+              <RowActionButton onClick={() => freqMutation.mutate({ estudanteId: r.estudanteId, presente: true })}>Presente</RowActionButton>
+              <RowActionButton tone="danger" onClick={() => freqMutation.mutate({ estudanteId: r.estudanteId, presente: false })}>Falta</RowActionButton>
+            </div>
+          )},
+        ]}
+        rows={rows}
+      />
+      <div className="mt-4 flex justify-end">
+        <Button onClick={() => toast.success("Chamada salva com sucesso.")}>Salvar chamada</Button>
+      </div>
+    </div>
+  );
+}
+
+// ── Avaliações & Notas ────────────────────────────────────────────────────────
+
+type AvaliacaoRow = { id: number; nome: string; peso: string; prazo: string; status: string };
+
+function AvaliacoesProf({ diarioId, diario }: { diarioId: number; diario: DiarioTurmaDetalhadoResumo | null }) {
+  const [lancando, setLancando] = useState<AvaliacaoRow | null>(null);
+
+  const avaliacoes: AvaliacaoRow[] = (diario?.avaliacoes ?? []).map((a) => {
+    const temNota = diario?.resultados.some((r) => r.notas[String(a.id)] !== undefined) ?? false;
+    return { id: a.id, nome: a.nome, peso: `${a.peso}%`, prazo: a.prazo, status: temNota ? "Notas lançadas" : "Pendente" };
+  });
+
+  const pesoTotal = diario?.avaliacoes.reduce((s, a) => s + a.peso, 0) ?? 0;
+
+  return (
+    <div className="space-y-4">
+      <DataTable
+        columns={[
+          { key: "nome", header: "Avaliação" },
+          { key: "peso", header: "Peso", align: "right" },
+          { key: "prazo", header: "Prazo" },
+          { key: "status", header: "Status", render: (r: AvaliacaoRow) => (
+            <StatusBadge tone={r.status === "Notas lançadas" ? "success" : "warning"}>{r.status}</StatusBadge>
+          )},
+          { key: "acoes", header: "", align: "right", render: (r: AvaliacaoRow) => (
+            <RowActionButton onClick={() => setLancando(r)}>
+              {r.status === "Notas lançadas" ? "Revisar notas" : "Lançar notas"}
+            </RowActionButton>
+          )},
+        ]}
+        rows={avaliacoes}
+      />
+      <ValidationCallout tone="info">
+        Soma dos pesos: {pesoTotal}% {pesoTotal === 100 ? "✓" : `(falta ${100 - pesoTotal}%)`}
+      </ValidationCallout>
+      <LancarNotasDialogProf
+        aval={lancando}
+        diarioId={diarioId}
+        estudantesAtivos={diario?.estudantesAtivos ?? []}
+        resultados={diario?.resultados ?? []}
+        onClose={() => setLancando(null)}
+      />
+    </div>
+  );
+}
+
+function LancarNotasDialogProf({ aval, diarioId, estudantesAtivos, resultados, onClose }: {
+  aval: AvaliacaoRow | null;
+  diarioId: number;
+  estudantesAtivos: number[];
+  resultados: ResultadoResumo[];
+  onClose: () => void;
+}) {
+  const queryClient = useQueryClient();
+  const [notas, setNotas] = useState<Record<string, string>>({});
+
+  const lancarMutation = useMutation({
+    mutationFn: async () => {
+      if (!aval) return;
+      await Promise.all(
+        Object.entries(notas)
+          .filter(([, v]) => v !== "")
+          .map(([estudanteId, nota]) =>
+            api.diarios.lancarNota(diarioId, Number(estudanteId), aval.id, Number(nota))
+          )
+      );
+    },
+    onSuccess: () => {
+      const qtd = Object.values(notas).filter((v) => v !== "").length;
+      toast.success(`Notas de ${aval?.nome} lançadas (${qtd}/${estudantesAtivos.length}).`);
+      queryClient.invalidateQueries({ queryKey: ["diarios", String(diarioId)] });
+      setNotas({}); onClose();
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  return (
+    <Dialog open={!!aval} onOpenChange={(o) => { if (!o) { setNotas({}); onClose(); } }}>
+      <DialogContent className="max-w-xl">
+        {aval && (
+          <>
+            <DialogHeader>
+              <DialogTitle>Lançar notas — {aval.nome}</DialogTitle>
+              <DialogDescription>Peso {aval.peso} · Prazo {aval.prazo}</DialogDescription>
+            </DialogHeader>
+            <div className="space-y-2 max-h-[360px] overflow-y-auto pr-2">
+              {estudantesAtivos.map((eId) => {
+                const notaExistente = resultados.find((r) => r.estudanteId === eId)?.notas[String(aval.id)];
+                return (
+                  <div key={eId} className="flex items-center justify-between gap-3 border-b py-2">
+                    <span className="text-[13px] text-foreground">Estudante {eId}</span>
+                    <Input
+                      type="number" step="0.1" min="0" max="10" className="h-9 w-24"
+                      placeholder={notaExistente !== undefined ? String(notaExistente) : "0,0"}
+                      value={notas[String(eId)] ?? ""}
+                      onChange={(e) => setNotas({ ...notas, [String(eId)]: e.target.value })}
+                    />
+                  </div>
+                );
+              })}
+            </div>
+            <ValidationCallout tone="info">Notas de 0,0 a 10,0. Valores em branco serão considerados pendentes.</ValidationCallout>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => { setNotas({}); onClose(); }}>Cancelar</Button>
+              <Button onClick={() => lancarMutation.mutate()} disabled={lancarMutation.isPending}>Salvar notas</Button>
+            </DialogFooter>
+          </>
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// ── Fechamento ────────────────────────────────────────────────────────────────
+
+function FecharProf({ diarioId, diario, aulasTotal }: {
+  diarioId: number;
+  diario: DiarioTurmaDetalhadoResumo | null;
+  aulasTotal: number;
+}) {
+  const queryClient = useQueryClient();
+  const aulasCount = diario?.aulas.length ?? 0;
+  const podeFechar = aulasCount >= aulasTotal;
+
+  const fecharMutation = useMutation({
+    mutationFn: async () => {
+      for (const eId of diario?.estudantesAtivos ?? []) {
+        await api.diarios.fecharResultado(diarioId, eId);
+      }
+    },
+    onSuccess: () => {
+      toast.success("Resultado final fechado e enviado à Secretaria.");
+      queryClient.invalidateQueries({ queryKey: ["diarios", String(diarioId)] });
+      queryClient.invalidateQueries({ queryKey: ["diarios", "professor", PROFESSOR_ID] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const situacaoLabel = (s: string | null) => {
+    if (!s) return "Pendente";
+    if (s === "APROVADO") return "Aprovado";
+    if (s === "RECUPERACAO") return "Recuperação";
+    return "Reprovado";
+  };
+
+  const resultadosRows = (diario?.resultados ?? []).map((r) => {
+    const avs = diario?.avaliacoes ?? [];
+    const somaPonderada = avs.reduce((sum, av) => {
+      const nota = r.notas[String(av.id)];
+      return nota !== undefined ? sum + nota * av.peso : sum;
+    }, 0);
+    const somaPesos = avs.reduce((sum, av) => r.notas[String(av.id)] !== undefined ? sum + av.peso : sum, 0);
+    const media = somaPesos > 0 ? Math.round((somaPonderada / somaPesos) * 10) / 10 : 0;
+    const totalAulas = Math.max(diario?.aulas.length ?? 0, 1);
+    const presencas  = diario?.frequencias.filter((f) => f.estudanteId === r.estudanteId && f.presente).length ?? 0;
+    const freq = `${Math.round((presencas / totalAulas) * 100)}%`;
+    return { nome: `Estudante ${r.estudanteId}`, media, freq, situacao: situacaoLabel(r.situacao) };
+  });
+
+  return (
+    <div className="space-y-4">
+      {!podeFechar && (
+        <ValidationCallout tone="error">
+          Fechamento bloqueado: ainda há {aulasTotal - aulasCount} aulas ou avaliações pendentes.
+        </ValidationCallout>
+      )}
+      <DataTable
+        columns={[
+          { key: "nome", header: "Estudante" },
+          { key: "media", header: "Média", align: "right" },
+          { key: "freq", header: "Freq.", align: "right" },
+          { key: "situacao", header: "Situação", render: (r) => (
+            <StatusBadge tone={r.situacao === "Aprovado" ? "success" : r.situacao === "Recuperação" ? "warning" : "danger"}>
+              {r.situacao}
+            </StatusBadge>
+          )},
+        ]}
+        rows={resultadosRows}
+      />
+      <div className="rounded-xl border bg-card p-4 shadow-card">
+        <FormField label="Observação do fechamento" full>
+          <Textarea rows={3} />
+        </FormField>
+        <div className="mt-3 flex justify-end gap-2">
+          <Button variant="outline" onClick={() => toast.success("Rascunho do fechamento salvo.")}>Salvar rascunho</Button>
+          <Button disabled={!podeFechar || fecharMutation.isPending} onClick={() => fecharMutation.mutate()}>
+            <CheckCircle2 className="mr-2 h-4 w-4" /> Fechar resultado final
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Componentes Coord / Secretaria (inalterados) ─────────────────────────────
+
 function EditarTurmaDialog({ turma, onClose }: { turma: Turma | null; onClose: () => void }) {
-  const [prof, setProf] = useState("");
-  const [sala, setSala] = useState("");
+  const [prof, setProf]     = useState("");
+  const [sala, setSala]     = useState("");
   const [horario, setHorario] = useState("");
-  const [vagas, setVagas] = useState("");
+  const [vagas, setVagas]   = useState("");
   return (
     <Dialog open={!!turma} onOpenChange={(o) => { if (!o) onClose(); else if (turma) { setProf(turma.prof); setSala(turma.sala); setHorario(turma.horario); setVagas(turma.vagas); } }}>
       <DialogContent>
@@ -204,15 +702,14 @@ function SalasTab() {
     { cod: "Lab-IA", predio: "Bloco C", cap: 25, tipo: "Laboratório", status: "Ativa" },
     { cod: "B-401", predio: "Bloco B", cap: 60, tipo: "Auditório", status: "Inativa" },
   ]);
-  const [edit, setEdit] = useState<Sala | null>(null);
-  const [cap, setCap] = useState(0);
-  const [tipo, setTipo] = useState("");
+  const [edit, setEdit]   = useState<Sala | null>(null);
+  const [cap, setCap]     = useState(0);
+  const [tipo, setTipo]   = useState("");
   const [status, setStatus] = useState<"Ativa" | "Inativa">("Ativa");
   const salvar = () => {
     if (!edit) return;
     setSalas((p) => p.map((s) => s.cod === edit.cod ? { ...s, cap, tipo, status } : s));
-    toast.success(`Sala ${edit.cod} atualizada.`);
-    setEdit(null);
+    toast.success(`Sala ${edit.cod} atualizada.`); setEdit(null);
   };
   return (
     <>
@@ -260,18 +757,17 @@ type Prof = { nome: string; depto: string; turmas: number; status: "Ativo" | "In
 function ProfsTab() {
   const [profs, setProfs] = useState<Prof[]>([
     { nome: "Carlos Lima", depto: "Computação", turmas: 3, status: "Ativo", email: "carlos@univ.edu" },
-    { nome: "Ana Souza", depto: "Computação", turmas: 2, status: "Ativo", email: "ana@univ.edu" },
-    { nome: "Lia Mendes", depto: "IA", turmas: 2, status: "Ativo", email: "lia@univ.edu" },
+    { nome: "Ana Souza",   depto: "Computação", turmas: 2, status: "Ativo", email: "ana@univ.edu" },
+    { nome: "Lia Mendes",  depto: "IA",         turmas: 2, status: "Ativo", email: "lia@univ.edu" },
   ]);
-  const [edit, setEdit] = useState<Prof | null>(null);
-  const [depto, setDepto] = useState("");
-  const [email, setEmail] = useState("");
+  const [edit, setEdit]     = useState<Prof | null>(null);
+  const [depto, setDepto]   = useState("");
+  const [email, setEmail]   = useState("");
   const [status, setStatus] = useState<"Ativo" | "Inativo">("Ativo");
   const salvar = () => {
     if (!edit) return;
     setProfs((p) => p.map((x) => x.nome === edit.nome ? { ...x, depto, email, status } : x));
-    toast.success(`Cadastro de ${edit.nome} atualizado.`);
-    setEdit(null);
+    toast.success(`Cadastro de ${edit.nome} atualizado.`); setEdit(null);
   };
   return (
     <>
@@ -324,7 +820,9 @@ function Field({ label, value }: { label: string; value: string }) {
 }
 
 const wizSteps = [
-  { key: "disc", label: "Disciplina" }, { key: "prof", label: "Professor & Sala" }, { key: "conf", label: "Confirmar" },
+  { key: "disc", label: "Disciplina" },
+  { key: "prof", label: "Professor & Sala" },
+  { key: "conf", label: "Confirmar" },
 ];
 
 function NovaTurmaWizard({ step, onStep, onCancel }: { step: 0 | 1 | 2; onStep: (s: 0 | 1 | 2) => void; onCancel: () => void }) {
