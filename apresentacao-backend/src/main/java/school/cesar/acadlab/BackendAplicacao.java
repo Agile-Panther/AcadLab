@@ -65,6 +65,8 @@ import school.cesar.acadlab.dominio.apoiopsicopedagogico.TriagemServico;
 import school.cesar.acadlab.dominio.apoiopsicopedagogico.caso.CasoRepositorio;
 import school.cesar.acadlab.dominio.apoiopsicopedagogico.solicitacao.SolicitacaoApoioRepositorio;
 import school.cesar.acadlab.dominio.atividadescomplementares.AtividadeComplementarServico;
+import school.cesar.acadlab.dominio.atividadescomplementares.NotificacaoAtividadeObservador;
+import school.cesar.acadlab.dominio.evento.RegistroNotificacoes;
 import school.cesar.acadlab.dominio.atividadescomplementares.VerificadorCertificadoDuplicado;
 import school.cesar.acadlab.dominio.atividadescomplementares.VerificadorContabilizacaoIntegralizacao;
 import school.cesar.acadlab.dominio.atividadescomplementares.VerificadorLimiteCategoria;
@@ -159,6 +161,14 @@ public class BackendAplicacao {
     CategoriaHorasServicoAplicacao categoriaHorasServicoAplicacao(
             CategoriaHorasRepositorioAplicacao repositorio) {
         return new CategoriaHorasServicoAplicacao(repositorio);
+    }
+
+    @Bean
+    NotificacaoAtividadeObservador notificacaoAtividadeObservador(
+            EventoBarramento barramento, RegistroNotificacoes registroNotificacoes) {
+        var observador = new NotificacaoAtividadeObservador(registroNotificacoes);
+        barramento.adicionar(observador);
+        return observador;
     }
 
     @Bean
