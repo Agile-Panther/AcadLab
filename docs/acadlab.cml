@@ -596,7 +596,10 @@ BoundedContext ApoioPsicopedagogicoContext implements ApoioPsicopedagogicoSubdom
     }
 }
 
-/* MOBILIDADE ACADÊMICA CONTEXT — F-12 (Vinicius) · Strategy */
+/* MOBILIDADE ACADÊMICA CONTEXT — F-12 (Vinicius)
+   O padrão Strategy de Vinicius é realizado no contexto de Matrícula
+   (EstrategiaMatricula: ValidacaoRegular/ValidacaoExcecao); a mobilidade não
+   duplica esse padrão — orquestra o ciclo de vida via MobilidadeAcademicaServico. */
 
 BoundedContext MobilidadeAcademicaContext implements ServicosAcademicosSubdomain {
     domainVisionStatement "Programa de mobilidade internacional ou nacional do estudante: solicitação, plano de estudos com equivalências e registro de resultados externos"
