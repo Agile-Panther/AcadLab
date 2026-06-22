@@ -522,6 +522,9 @@ BoundedContext PermanenciaAcademicaContext implements PermanenciaSubdomain {
             void deferir(int inscricaoId);
             void indeferir(int inscricaoId, String motivo);
         }
+        // Observer concreto (NotificacaoInscricaoObservador): registrado no barramento,
+        // reage aos eventos de inscrição (deferir/indeferir/recurso) notificando o
+        // estudante via RegistroNotificacoes do contexto Compartilhado.
     }
 
     Aggregate Beneficio {
