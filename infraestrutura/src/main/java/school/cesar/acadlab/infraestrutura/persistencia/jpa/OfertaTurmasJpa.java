@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
@@ -121,7 +122,9 @@ class SalaRepositorioImpl implements SalaRepositorio, SalaRepositorioAplicacao {
 
     @Override public SalaId proximoId() { return new SalaId(repository.proximoId()); }
 
-    @Override public void salvar(Sala sala) {
+    @Override
+    @Transactional
+    public void salvar(Sala sala) {
         var jpa = repository.findById(sala.getId().getId()).orElseGet(SalaJpa::new);
         jpa.id = sala.getId().getId();
         jpa.nome = sala.getNome();
@@ -165,7 +168,9 @@ class ProfessorRepositorioImpl implements ProfessorRepositorio, ProfessorReposit
 
     @Override public ProfessorId proximoId() { return new ProfessorId(repository.proximoId()); }
 
-    @Override public void salvar(Professor professor) {
+    @Override
+    @Transactional
+    public void salvar(Professor professor) {
         var jpa = repository.findById(professor.getId().getId()).orElseGet(ProfessorJpa::new);
         jpa.id = professor.getId().getId();
         jpa.nome = professor.getNome();
@@ -208,7 +213,9 @@ class TurmaRepositorioImpl implements TurmaRepositorio, TurmaRepositorioAplicaca
 
     @Override public TurmaId proximoId() { return new TurmaId(repository.proximoId()); }
 
-    @Override public void salvar(Turma turma) {
+    @Override
+    @Transactional
+    public void salvar(Turma turma) {
         var jpa = repository.findById(turma.getId().getId()).orElseGet(TurmaJpa::new);
         jpa.id = turma.getId().getId();
         jpa.periodoLetivoId = turma.getPeriodoLetivoId().getId();

@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
@@ -116,6 +117,7 @@ class CobrancaRepositorioImpl implements CobrancaRepositorio, CobrancaRepositori
     }
 
     @Override
+    @Transactional
     public void salvar(Cobranca cobranca) {
         repositorio.save(toJpa(cobranca));
     }

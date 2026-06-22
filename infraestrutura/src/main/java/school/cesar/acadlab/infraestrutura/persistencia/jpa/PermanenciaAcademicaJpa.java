@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -127,6 +128,7 @@ class PermanenciaAcademicaRepositorioImpl
     public EditalId proximoEditalId() { return new EditalId(editalRepo.proximoId()); }
 
     @Override
+    @Transactional
     public void salvar(Edital edital) { editalRepo.save(toJpa(edital)); }
 
     @Override
@@ -157,6 +159,7 @@ class PermanenciaAcademicaRepositorioImpl
     public InscricaoId proximoInscricaoId() { return new InscricaoId(inscricaoRepo.proximoId()); }
 
     @Override
+    @Transactional
     public void salvar(Inscricao inscricao) { inscricaoRepo.save(toJpa(inscricao)); }
 
     @Override
@@ -189,6 +192,7 @@ class PermanenciaAcademicaRepositorioImpl
     public BeneficioId proximoBeneficioId() { return new BeneficioId(beneficioRepo.proximoId()); }
 
     @Override
+    @Transactional
     public void salvar(Beneficio beneficio) { beneficioRepo.save(toJpa(beneficio)); }
 
     @Override

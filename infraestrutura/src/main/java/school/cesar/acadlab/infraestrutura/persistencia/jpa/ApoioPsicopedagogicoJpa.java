@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
@@ -143,6 +144,7 @@ class ApoioPsicopedagogicoRepositorioImpl
     public CasoId proximoId() { return new CasoId(casoRepo.proximoId()); }
 
     @Override
+    @Transactional
     public void salvar(Caso caso) { casoRepo.save(toJpa(caso)); }
 
     @Override
@@ -179,6 +181,7 @@ class ApoioPsicopedagogicoRepositorioImpl
     }
 
     @Override
+    @Transactional
     public void salvar(SolicitacaoApoio solicitacao) { solicitacaoRepo.save(toJpa(solicitacao)); }
 
     @Override
@@ -196,6 +199,7 @@ class ApoioPsicopedagogicoRepositorioImpl
     }
 
     @Override
+    @Transactional
     public void salvar(AcaoPermanencia acao) { acaoRepo.save(toJpa(acao)); }
 
     @Override
