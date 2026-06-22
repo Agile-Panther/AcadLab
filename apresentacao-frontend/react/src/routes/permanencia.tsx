@@ -163,6 +163,7 @@ function Page() {
                     </div>
                     <StatusBadge tone={editalAberto(e) ? "success" : "neutral"}>{editalLabel(e)}</StatusBadge>
                   </div>
+                  {e.descricao && <p className="mt-2 text-[13px] text-muted-foreground line-clamp-2">{e.descricao}</p>}
                   <div className="mt-3 flex items-center gap-4 text-[12px] text-muted-foreground">
                     <span>{e.vagas} vagas</span>
                     <span className="flex items-center gap-1"><Calendar className="h-3.5 w-3.5" /> até {formatData(e.prazoInscricaoFim)}</span>
@@ -204,6 +205,12 @@ function Page() {
           <div className="space-y-4">
             <Button variant="ghost" size="sm" onClick={() => setView({ kind: "overview" })}><ArrowLeft className="mr-1 h-4 w-4" /> Voltar</Button>
             <SectionTitle title={`EDT-${e.id} — ${e.programa}`} subtitle={`${e.vagas} vagas · inscrições até ${formatData(e.prazoInscricaoFim)}`} />
+            {e.descricao && (
+              <div className="rounded-xl border bg-card p-5 shadow-card">
+                <h3 className="font-semibold">Sobre o programa</h3>
+                <p className="mt-2 text-[13px] text-muted-foreground">{e.descricao}</p>
+              </div>
+            )}
             <div className="rounded-xl border bg-card p-5 shadow-card">
               <h3 className="font-semibold">Prazos do edital</h3>
               <div className="mt-3 grid gap-2 text-[13px] text-muted-foreground sm:grid-cols-2">
@@ -363,7 +370,7 @@ function AssistenciaView({ editais, editalNome, loading }: {
 
   const [showAdd, setShowAdd] = useState(false);
   const [form, setForm] = useState({
-    programa: "", vagas: 0,
+    programa: "", descricao: "", vagas: 0,
     prazoInscricaoInicio: "", prazoInscricaoFim: "",
     prazoRecursoInicio: "", prazoRecursoFim: "",
   });
@@ -373,6 +380,7 @@ function AssistenciaView({ editais, editalNome, loading }: {
     e.preventDefault();
     criar.mutate({
       programa: form.programa,
+      descricao: form.descricao || null,
       vagas: form.vagas,
       prazoInscricaoInicio: form.prazoInscricaoInicio,
       prazoInscricaoFim: form.prazoInscricaoFim,
@@ -382,7 +390,7 @@ function AssistenciaView({ editais, editalNome, loading }: {
     }, {
       onSuccess: () => {
         setShowAdd(false);
-        setForm({ programa: "", vagas: 0, prazoInscricaoInicio: "", prazoInscricaoFim: "", prazoRecursoInicio: "", prazoRecursoFim: "" });
+        setForm({ programa: "", descricao: "", vagas: 0, prazoInscricaoInicio: "", prazoInscricaoFim: "", prazoRecursoInicio: "", prazoRecursoFim: "" });
         toast.success("Edital publicado com sucesso!");
       },
       onError: notifyError,
@@ -406,6 +414,12 @@ function AssistenciaView({ editais, editalNome, loading }: {
       <div className="space-y-4">
         <Button variant="ghost" size="sm" onClick={() => setDetailEdital(null)}><ArrowLeft className="mr-1 h-4 w-4" /> Voltar</Button>
         <SectionTitle title={`EDT-${detailEdital.id} — ${detailEdital.programa}`} subtitle={`${detailEdital.vagas} vagas · inscrições até ${formatData(detailEdital.prazoInscricaoFim)}`} />
+        {detailEdital.descricao && (
+          <div className="rounded-xl border bg-card p-5 shadow-card">
+            <h3 className="font-semibold">Sobre o programa</h3>
+            <p className="mt-2 text-[13px] text-muted-foreground">{detailEdital.descricao}</p>
+          </div>
+        )}
         <div className="rounded-xl border bg-card p-5 shadow-card">
           <h3 className="font-semibold">Prazos</h3>
           <div className="mt-3 grid gap-2 text-[13px] text-muted-foreground sm:grid-cols-2">
@@ -449,6 +463,7 @@ function AssistenciaView({ editais, editalNome, loading }: {
             <FormField label="Fim inscrições" required><Input type="date" value={form.prazoInscricaoFim} onChange={(e) => setForm({ ...form, prazoInscricaoFim: e.target.value })} required /></FormField>
             <FormField label="Início recursos" required><Input type="date" value={form.prazoRecursoInicio} onChange={(e) => setForm({ ...form, prazoRecursoInicio: e.target.value })} required /></FormField>
             <FormField label="Fim recursos" required><Input type="date" value={form.prazoRecursoFim} onChange={(e) => setForm({ ...form, prazoRecursoFim: e.target.value })} required /></FormField>
+            <FormField label="Descrição" full className="md:col-span-3"><Textarea rows={3} placeholder="Descreva o programa, critérios e informações relevantes para os estudantes." value={form.descricao} onChange={(e) => setForm({ ...form, descricao: e.target.value })} /></FormField>
           </div>
           <div className="mt-4 flex justify-end gap-2">
             <Button type="button" variant="outline" onClick={() => setShowAdd(false)}>Cancelar</Button>

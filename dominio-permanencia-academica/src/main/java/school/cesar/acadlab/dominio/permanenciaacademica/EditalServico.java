@@ -18,7 +18,7 @@ public class EditalServico {
     }
 
     // US01 — RN1: não pode existir mais de um edital com inscrições abertas para o mesmo programa
-    public EditalId criar(String programa, int vagas,
+    public EditalId criar(String programa, String descricao, int vagas,
                           LocalDate prazoInscricaoInicio, LocalDate prazoInscricaoFim,
                           LocalDate prazoRecursoInicio, LocalDate prazoRecursoFim,
                           LocalDate prazoRenovacao) {
@@ -32,7 +32,7 @@ public class EditalServico {
         }
 
         var id = editalRepositorio.proximoEditalId();
-        var edital = new Edital(id, programa, vagas, prazoInscricaoInicio, prazoInscricaoFim,
+        var edital = new Edital(id, programa, descricao, vagas, prazoInscricaoInicio, prazoInscricaoFim,
                 prazoRecursoInicio, prazoRecursoFim, prazoRenovacao);
         editalRepositorio.salvar(edital);
         return id;

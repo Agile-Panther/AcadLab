@@ -57,7 +57,7 @@ class PermanenciaAcademicaControlador {
     @RequestMapping(method = POST, path = "editais")
     int criarEdital(@RequestBody CriarEditalRequest request) {
         return editalServico.criar(
-                request.programa(), request.vagas(),
+                request.programa(), request.descricao(), request.vagas(),
                 request.prazoInscricaoInicio(), request.prazoInscricaoFim(),
                 request.prazoRecursoInicio(), request.prazoRecursoFim(),
                 request.prazoRenovacao()).getValor();
@@ -147,7 +147,7 @@ class PermanenciaAcademicaControlador {
 
     /* ===== Records ===== */
 
-    record CriarEditalRequest(String programa, int vagas,
+    record CriarEditalRequest(String programa, String descricao, int vagas,
                                LocalDate prazoInscricaoInicio, LocalDate prazoInscricaoFim,
                                LocalDate prazoRecursoInicio, LocalDate prazoRecursoFim,
                                LocalDate prazoRenovacao) {}

@@ -28,12 +28,13 @@ class FlywayConfig {
 
     @PostConstruct
     void migrate() {
-        Flyway.configure()
+        var flyway = Flyway.configure()
                 .dataSource(dataSource)
                 .locations("classpath:db/migration")
                 .baselineOnMigrate(true)
                 .baselineVersion("0")
-                .load()
-                .migrate();
+                .load();
+        flyway.repair();
+        flyway.migrate();
     }
 }

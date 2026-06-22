@@ -1,6 +1,7 @@
 package school.cesar.acadlab.infraestrutura.persistencia.jpa;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -90,6 +91,19 @@ class AtividadeComplementarVerificadoresJpaTest {
         var verificador = (VerificadorContabilizacaoIntegralizacao) adapter;
 
         assertTrue(verificador.foiContabilizada(new AtividadeComplementarId(7)));
+    }
+
+    @Test
+    void incluiDadosEnviadosNoResumoDaFila() {
+        var atividade = atividade(7, 3, StatusAtividade.PENDENTE, 20, 0);
+        atividade.dataRealizacao = LocalDate.of(2026, 6, 20);
+        atividade.identificadorCertificado = "certificado.pdf";
+        when(atividadeRepository.findByStatus(StatusAtividade.PENDENTE)).thenReturn(List.of(atividade));
+
+        var resumo = adapter.pesquisarPorStatus("PENDENTE").get(0);
+
+        assertEquals(LocalDate.of(2026, 6, 20), resumo.dataRealizacao());
+        assertEquals("certificado.pdf", resumo.identificadorCertificado());
     }
 
     private static AtividadeComplementarJpa atividade(

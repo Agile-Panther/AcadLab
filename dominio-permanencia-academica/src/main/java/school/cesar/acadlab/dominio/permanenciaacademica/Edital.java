@@ -8,6 +8,7 @@ import java.time.LocalDate;
 public class Edital {
     private final EditalId id;
     private final String programa;
+    private final String descricao;
     private final int vagas;
     private final LocalDate prazoInscricaoInicio;
     private final LocalDate prazoInscricaoFim;
@@ -16,7 +17,7 @@ public class Edital {
     private final LocalDate prazoRenovacao;
     private StatusEdital status;
 
-    public Edital(EditalId id, String programa, int vagas,
+    public Edital(EditalId id, String programa, String descricao, int vagas,
                   LocalDate prazoInscricaoInicio, LocalDate prazoInscricaoFim,
                   LocalDate prazoRecursoInicio, LocalDate prazoRecursoFim,
                   LocalDate prazoRenovacao) {
@@ -29,8 +30,10 @@ public class Edital {
         notNull(prazoRecursoInicio, "O início do prazo de recurso não pode ser nulo");
         notNull(prazoRecursoFim, "O fim do prazo de recurso não pode ser nulo");
         // prazoRenovacao é opcional (nem todo programa prevê renovação) — pode ser nulo.
+        // descricao é opcional — pode ser nulo.
         this.id = id;
         this.programa = programa;
+        this.descricao = descricao;
         this.vagas = vagas;
         this.prazoInscricaoInicio = prazoInscricaoInicio;
         this.prazoInscricaoFim = prazoInscricaoFim;
@@ -40,12 +43,13 @@ public class Edital {
         this.status = StatusEdital.INSCRICOES_ABERTAS;
     }
 
-    private Edital(EditalId id, String programa, int vagas,
+    private Edital(EditalId id, String programa, String descricao, int vagas,
                    LocalDate prazoInscricaoInicio, LocalDate prazoInscricaoFim,
                    LocalDate prazoRecursoInicio, LocalDate prazoRecursoFim,
                    LocalDate prazoRenovacao, StatusEdital status) {
         this.id = id;
         this.programa = programa;
+        this.descricao = descricao;
         this.vagas = vagas;
         this.prazoInscricaoInicio = prazoInscricaoInicio;
         this.prazoInscricaoFim = prazoInscricaoFim;
@@ -55,11 +59,11 @@ public class Edital {
         this.status = status;
     }
 
-    public static Edital reconstituir(EditalId id, String programa, int vagas,
+    public static Edital reconstituir(EditalId id, String programa, String descricao, int vagas,
                                       LocalDate prazoInscricaoInicio, LocalDate prazoInscricaoFim,
                                       LocalDate prazoRecursoInicio, LocalDate prazoRecursoFim,
                                       LocalDate prazoRenovacao, StatusEdital status) {
-        return new Edital(id, programa, vagas, prazoInscricaoInicio, prazoInscricaoFim,
+        return new Edital(id, programa, descricao, vagas, prazoInscricaoInicio, prazoInscricaoFim,
                 prazoRecursoInicio, prazoRecursoFim, prazoRenovacao, status);
     }
 
@@ -84,6 +88,7 @@ public class Edital {
 
     public EditalId getId() { return id; }
     public String getPrograma() { return programa; }
+    public String getDescricao() { return descricao; }
     public int getVagas() { return vagas; }
     public LocalDate getPrazoInscricaoInicio() { return prazoInscricaoInicio; }
     public LocalDate getPrazoInscricaoFim() { return prazoInscricaoFim; }

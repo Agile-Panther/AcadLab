@@ -26,7 +26,7 @@ public class InscreverFuncionalidade {
 
     private EditalId criarEditalAberto() {
         var id = ctx.repositorio.proximoEditalId();
-        var edital = Edital.reconstituir(id, "Bolsa Permanência", 5,
+        var edital = Edital.reconstituir(id, "Bolsa Permanência", null, 5,
                 LocalDate.now().minusDays(1), LocalDate.now().plusDays(10),
                 LocalDate.now().plusDays(11), LocalDate.now().plusDays(20),
                 LocalDate.now().plusDays(180), StatusEdital.INSCRICOES_ABERTAS);
@@ -63,7 +63,7 @@ public class InscreverFuncionalidade {
     @Dado("existe um edital cujo prazo de inscrição já encerrou")
     public void edital_com_prazo_encerrado() {
         var id = ctx.repositorio.proximoEditalId();
-        var edital = Edital.reconstituir(id, "Auxílio Transporte", 5,
+        var edital = Edital.reconstituir(id, "Auxílio Transporte", null, 5,
                 LocalDate.now().minusDays(10), LocalDate.now().minusDays(1),
                 LocalDate.now(), LocalDate.now().plusDays(10),
                 LocalDate.now().plusDays(180), StatusEdital.INSCRICOES_ABERTAS);

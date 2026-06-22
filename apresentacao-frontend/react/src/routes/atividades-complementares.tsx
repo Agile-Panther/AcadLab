@@ -17,7 +17,11 @@ import {
   EXIGENCIA_TOTAL_HORAS,
   type AtividadeComplementarResumo, type CategoriaHorasResumo, type StatusAtividade,
 } from "@/lib/atividades";
-import { validarSubmissaoAtividade } from "@/lib/atividade-form";
+import {
+  validarHorasAprovadas,
+  validarJustificativaIndeferimento,
+  validarSubmissaoAtividade,
+} from "@/lib/atividade-form";
 
 export const Route = createFileRoute("/atividades-complementares")({
   head: () => ({ meta: [{ title: "Atividades Complementares — AcadLab" }] }),
@@ -284,6 +288,21 @@ function CoordView() {
   const nomeCategoria = (id: number) => categorias.find((c) => c.id === id)?.nome ?? `Categoria #${id}`;
   const deferir = useDeferir();
   const indeferir = useIndeferir();
+  const [atividadeEmAnalise, setAtividadeEmAnalise] = useState<AtividadeComplementarResumo | null>(null);
+  const [horasAprovadas, setHorasAprovadas] = useState(0);
+  const [justificativa, setJustificativa] = useState("");
+
+  const fecharAnalise = () => {
+    setAtividadeEmAnalise(null);
+    setHorasAprovadas(0);
+    setJustificativa("");
+  };
+
+  const abrirAnalise = (atividade: AtividadeComplementarResumo) => {
+    setAtividadeEmAnalise(atividade);
+    setHorasAprovadas(atividade.horasSubmetidas);
+    setJustificativa("");
+  };
 
   return (
     <div className="space-y-5">
@@ -303,13 +322,127 @@ function CoordView() {
           { key: "status", header: "Status", render: (r) => <StatusBadge tone="warning">Em análise</StatusBadge> },
           { key: "acoes", header: "", align: "right", render: (r) => (
             <div className="flex justify-end gap-2">
-              <RowActionButton onClick={() => indeferir.mutate({ id: r.id, justificativa: "Indeferida pela coordenação." }, { onSuccess: () => toast.success(`Atividade AC-${r.id} indeferida.`) })}>Indeferir</RowActionButton>
-              <RowActionButton tone="info" onClick={() => deferir.mutate({ id: r.id, horasAprovadas: r.horasSubmetidas }, { onSuccess: () => toast.success(`Atividade AC-${r.id} validada.`) })}>Validar</RowActionButton>
+              <RowActionButton tone="info" onClick={() => abrirAnalise(r)}>Validar</RowActionButton>
             </div>
           )},
         ]}
         rows={fila}
       />
+      <Dialog open={atividadeEmAnalise != null} onOpenChange={(aberto) => !aberto && fecharAnalise()}>
+        <DialogContent className="max-w-2xl">
+          {atividadeEmAnalise && (
+            <>
+              <DialogHeader>
+                <DialogTitle>Analisar atividade AC-{atividadeEmAnalise.id}</DialogTitle>
+                <DialogDescription>
+                  Confira os dados enviados pelo estudante antes de registrar a decisão.
+                </DialogDescription>
+              </DialogHeader>
+
+              <div className="grid grid-cols-2 gap-x-6 gap-y-3 text-[13px]">
+                <div>
+                  <p className="text-muted-foreground">Estudante</p>
+                  <p className="font-medium">Estudante #{atividadeEmAnalise.estudanteId}</p>
+                </div>
+                <div>
+                  <p className="text-muted-foreground">Categoria</p>
+                  <p className="font-medium">{nomeCategoria(atividadeEmAnalise.categoriaId)}</p>
+                </div>
+                <div className="col-span-2">
+                  <p className="text-muted-foreground">Descrição</p>
+                  <p className="font-medium whitespace-pre-wrap">{atividadeEmAnalise.descricao}</p>
+                </div>
+                <div>
+                  <p className="text-muted-foreground">Data de realização</p>
+                  <p className="font-medium">
+                    {new Date(`${atividadeEmAnalise.dataRealizacao}T00:00:00`).toLocaleDateString("pt-BR")}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-muted-foreground">Carga horária submetida</p>
+                  <p className="font-medium">{atividadeEmAnalise.horasSubmetidas}h</p>
+                </div>
+                <div className="col-span-2">
+                  <p className="text-muted-foreground">Comprovante</p>
+                  <p className="font-medium break-all">{atividadeEmAnalise.identificadorCertificado}</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4 border-t pt-4">
+                <FormField label="Horas aprovadas" required>
+                  <Input
+                    type="number"
+                    min={1}
+                    max={atividadeEmAnalise.horasSubmetidas}
+                    className="h-10"
+                    value={horasAprovadas || ""}
+                    onChange={(event) => setHorasAprovadas(Number(event.target.value))}
+                  />
+                </FormField>
+                <FormField label="Justificativa para indeferimento">
+                  <Textarea
+                    rows={3}
+                    value={justificativa}
+                    onChange={(event) => setJustificativa(event.target.value)}
+                  />
+                </FormField>
+              </div>
+
+              <DialogFooter>
+                <Button variant="outline" onClick={fecharAnalise}>Cancelar</Button>
+                <Button
+                  variant="outline"
+                  disabled={indeferir.isPending || deferir.isPending}
+                  onClick={() => {
+                    const erro = validarJustificativaIndeferimento(justificativa);
+                    if (erro) {
+                      toast.error(erro);
+                      return;
+                    }
+                    indeferir.mutate(
+                      { id: atividadeEmAnalise.id, justificativa: justificativa.trim() },
+                      {
+                        onSuccess: () => {
+                          toast.success(`Atividade AC-${atividadeEmAnalise.id} indeferida.`);
+                          fecharAnalise();
+                        },
+                        onError: (falha) => toast.error(falha.message),
+                      },
+                    );
+                  }}
+                >
+                  {indeferir.isPending ? "Indeferindo..." : "Indeferir"}
+                </Button>
+                <Button
+                  disabled={deferir.isPending || indeferir.isPending}
+                  onClick={() => {
+                    const erro = validarHorasAprovadas(
+                      horasAprovadas,
+                      atividadeEmAnalise.horasSubmetidas,
+                    );
+                    if (erro) {
+                      toast.error(erro);
+                      return;
+                    }
+                    deferir.mutate(
+                      { id: atividadeEmAnalise.id, horasAprovadas },
+                      {
+                        onSuccess: () => {
+                          toast.success(`Atividade AC-${atividadeEmAnalise.id} validada.`);
+                          fecharAnalise();
+                        },
+                        onError: (falha) => toast.error(falha.message),
+                      },
+                    );
+                  }}
+                >
+                  {deferir.isPending ? "Validando..." : "Deferir"}
+                </Button>
+              </DialogFooter>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

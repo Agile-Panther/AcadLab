@@ -105,7 +105,9 @@ class AtividadeComplementarRepositorioImpl implements
                         jpa.descricao,
                         jpa.horasSubmetidas,
                         jpa.horasAprovadas,
-                        jpa.status.name()))
+                        jpa.status.name(),
+                        jpa.dataRealizacao,
+                        jpa.identificadorCertificado))
                 .toList();
     }
 
@@ -119,7 +121,9 @@ class AtividadeComplementarRepositorioImpl implements
                         jpa.descricao,
                         jpa.horasSubmetidas,
                         jpa.horasAprovadas,
-                        jpa.status.name()))
+                        jpa.status.name(),
+                        jpa.dataRealizacao,
+                        jpa.identificadorCertificado))
                 .toList();
     }
 
