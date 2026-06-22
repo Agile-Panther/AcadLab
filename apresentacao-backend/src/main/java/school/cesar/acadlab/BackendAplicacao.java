@@ -11,6 +11,7 @@ import school.cesar.acadlab.aplicacao.historicoacademico.HistoricoAcademicoServi
 import school.cesar.acadlab.dominio.historicoacademico.ConsultaHistoricoServico;
 import school.cesar.acadlab.dominio.historicoacademico.HistoricoAcademicoServico;
 import school.cesar.acadlab.dominio.historicoacademico.historico.HistoricoAcademicoRepositorio;
+import school.cesar.acadlab.dominio.historicoacademico.historico.ConsultaPeriodoEncerradoPorta;
 import school.cesar.acadlab.aplicacao.apoiopsicopedagogico.ApoioPsicopedagogicoServicoAplicacao;
 import school.cesar.acadlab.aplicacao.atividadescomplementares.AtividadeComplementarRepositorioAplicacao;
 import school.cesar.acadlab.aplicacao.atividadescomplementares.AtividadeComplementarServicoAplicacao;
@@ -307,8 +308,9 @@ public class BackendAplicacao {
     }
 
     @Bean
-    ConsultaHistoricoServico consultaHistoricoServico(HistoricoAcademicoRepositorio repositorio) {
-        return new ConsultaHistoricoServico(repositorio);
+    ConsultaHistoricoServico consultaHistoricoServico(HistoricoAcademicoRepositorio repositorio,
+            ConsultaPeriodoEncerradoPorta consultaPeriodoEncerrado) {
+        return new ConsultaHistoricoServico(repositorio, consultaPeriodoEncerrado);
     }
 
     @Bean
