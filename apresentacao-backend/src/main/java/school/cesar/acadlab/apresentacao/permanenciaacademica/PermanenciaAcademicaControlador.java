@@ -104,6 +104,8 @@ class PermanenciaAcademicaControlador {
         inscricaoServico.deferir(new InscricaoId(id),
                 new AssistenciaEstudantilId(request.assistenciaId()),
                 request.pontuacao());
+        // Estudante aceito → ativa o benefício (bolsa) correspondente à inscrição.
+        beneficioServico.ativarParaInscricao(new InscricaoId(id));
     }
 
     @RequestMapping(method = PUT, path = "inscricoes/{id}/indeferir")
@@ -119,6 +121,11 @@ class PermanenciaAcademicaControlador {
     }
 
     /* ===== Benefícios ===== */
+
+    @RequestMapping(method = GET, path = "beneficios")
+    List<BeneficioResumo> buscarTodosBeneficios() {
+        return servicoAplicacao.buscarTodosBeneficios();
+    }
 
     @RequestMapping(method = GET, path = "estudantes/{estudanteId}/beneficios")
     List<BeneficioResumo> buscarBeneficiosPorEstudante(@PathVariable int estudanteId) {
