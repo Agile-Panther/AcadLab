@@ -22,7 +22,7 @@ Domain AcadLabDomain {
     }
     Subdomain CompartilhadoSubdomain {
         type GENERIC_SUBDOMAIN
-        domainVisionStatement "Primitivos de identidade e eventos de domínio compartilhados entre todos os contextos"
+        domainVisionStatement "Infraestrutura compartilhada de eventos de domínio e notificações (barramento, observadores, registro de notificações). Os identificadores são locais a cada bounded context, não tipos compartilhados."
     }
 }
 
@@ -32,6 +32,11 @@ BoundedContext CompartilhadoContext implements CompartilhadoSubdomain {
     domainVisionStatement "Value objects de identidade e contratos de evento usados por todos os bounded contexts"
 
     Aggregate Compartilhado {
+        // ATENÇÃO: os identificadores abaixo NÃO são tipos compartilhados em código —
+        // cada bounded context define o seu próprio VO local (EstudanteId, DisciplinaId,
+        // PeriodoLetivoId, etc.) com semântica própria, traduzido nas fronteiras (ACL).
+        // Estão listados apenas como convenção de modelagem. O Shared Kernel efetivo é a
+        // infraestrutura de eventos/notificações declarada a seguir.
         ValueObject EstudanteId { int valor }
         ValueObject CursoId { int valor }
         ValueObject MatrizCurricularId { int valor }
@@ -756,7 +761,11 @@ ContextMap AcadLab {
     contains GestaoFinanceiraContext
     contains EstagiosContext
 
-    /* Shared Kernel — CompartilhadoContext com todos */
+    /* Shared Kernel — CompartilhadoContext com todos.
+       O conteúdo efetivamente compartilhado é pequeno e deliberado: a infraestrutura
+       de eventos de domínio (EventoBarramento, EventoObservador, ObservadorDeEvento) e
+       de notificações (Notificacao, RegistroNotificacoes). NÃO há entidades nem
+       identificadores compartilhados — cada contexto mantém seus VOs locais. */
     CompartilhadoContext [SK] <-> [SK] CurriculoContext
     CompartilhadoContext [SK] <-> [SK] OfertaAcademicaContext
     CompartilhadoContext [SK] <-> [SK] MatriculaContext
