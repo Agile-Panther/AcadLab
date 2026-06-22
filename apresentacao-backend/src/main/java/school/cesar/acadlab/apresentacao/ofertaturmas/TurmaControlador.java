@@ -1,5 +1,6 @@
 package school.cesar.acadlab.apresentacao.ofertaturmas;
 
+import static org.springframework.web.bind.annotation.RequestMethod.DELETE;
 import static org.springframework.web.bind.annotation.RequestMethod.GET;
 import static org.springframework.web.bind.annotation.RequestMethod.POST;
 import static org.springframework.web.bind.annotation.RequestMethod.PUT;
@@ -25,6 +26,7 @@ import school.cesar.acadlab.dominio.ofertaturmas.professor.ProfessorId;
 import school.cesar.acadlab.dominio.ofertaturmas.sala.SalaId;
 import school.cesar.acadlab.dominio.ofertaturmas.turma.ModalidadeTurma;
 import school.cesar.acadlab.dominio.ofertaturmas.turma.TurmaId;
+import school.cesar.acadlab.dominio.ofertaturmas.turma.decorator.EstudanteId;
 
 @RestController
 @RequestMapping("backend/turmas")
@@ -83,8 +85,27 @@ class TurmaControlador {
         ofertaTurmaServico.cancelar(new TurmaId(id));
     }
 
+    // Decorator TurmaOnline — define o link de acesso (exige turma EAD)
+    @RequestMapping(method = PUT, path = "/{id}/link-acesso")
+    void definirLinkAcesso(@PathVariable int id, @RequestBody LinkAcessoRequest req) {
+        ofertaTurmaServico.definirLinkAcessoOnline(new TurmaId(id), req.link());
+    }
+
+    // Decorator TurmaComListaEspera — inscreve/remove estudante na lista de espera
+    @RequestMapping(method = POST, path = "/{id}/lista-espera")
+    void entrarListaEspera(@PathVariable int id, @RequestBody ListaEsperaRequest req) {
+        ofertaTurmaServico.entrarListaEspera(new TurmaId(id), new EstudanteId(req.estudanteId()));
+    }
+
+    @RequestMapping(method = DELETE, path = "/{id}/lista-espera/{estudanteId}")
+    void sairListaEspera(@PathVariable int id, @PathVariable int estudanteId) {
+        ofertaTurmaServico.sairListaEspera(new TurmaId(id), new EstudanteId(estudanteId));
+    }
+
     record OfertarTurmaRequest(int periodoLetivoId, int disciplinaId, String modalidade, int capacidade) {}
     record VincularProfessorRequest(int professorId) {}
     record VincularSalaRequest(int salaId) {}
     record AdicionarHorarioRequest(String diaSemana, String horaInicio, String horaFim) {}
+    record LinkAcessoRequest(String link) {}
+    record ListaEsperaRequest(int estudanteId) {}
 }
