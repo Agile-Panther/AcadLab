@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import {
   AppShell, SectionTitle, StatsRow, DataTable, StatusBadge, RowActionButton,
@@ -9,54 +10,105 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ArrowLeft, CheckCircle2, Calendar } from "lucide-react";
 import { toast } from "sonner";
+import { api } from "@/lib/api";
 
 export const Route = createFileRoute("/periodo-letivo")({
   head: () => ({ meta: [{ title: "Período Letivo — AcadLab" }] }),
   component: Page,
 });
 
+const CURSO_ID = 1;
+
 type Periodo = {
   id: string; nome: string; inicio: string; fim: string;
-  status: "Vigente" | "Encerrado" | "Planejado";
+  status: "Vigente" | "Encerrado" | "Planejado" | "Cancelado";
   pendencias: number;
 };
 
 type Janela = { nome: string; inicio: string; fim: string; status: string };
 
-const periodosIniciais: Periodo[] = [
-  { id: "2025.2", nome: "2025.2", inicio: "10/02/2025", fim: "10/07/2025", status: "Vigente", pendencias: 0 },
-  { id: "2026.1", nome: "2026.1", inicio: "10/08/2025", fim: "20/12/2025", status: "Planejado", pendencias: 0 },
-  { id: "2025.1", nome: "2025.1", inicio: "12/08/2024", fim: "20/12/2024", status: "Encerrado", pendencias: 0 },
+type View = { kind: "list" } | { kind: "detail"; id: string } | { kind: "wizard"; step: 0 | 1 | 2 };
+
+function formatDate(iso: string): string {
+  if (!iso) return "—";
+  const [y, m, d] = iso.split("-");
+  return `${d}/${m}/${y}`;
+}
+
+function mapStatus(s: string): Periodo["status"] {
+  if (s === "EM_ANDAMENTO") return "Vigente";
+  if (s === "ENCERRADO") return "Encerrado";
+  if (s === "CANCELADO") return "Cancelado";
+  return "Planejado";
+}
+
+function janelaStatus(inicio: string, fim: string): string {
+  const today = new Date().toISOString().split("T")[0];
+  if (today > fim) return "Encerrada";
+  if (today >= inicio) return "Ativa";
+  return "Planejada";
+}
+
+const DETALHE_JANELAS = [
+  { tipo: "MATRICULA", nome: "Matrícula" },
+  { tipo: "AJUSTE", nome: "Ajuste de matrícula" },
+  { tipo: "TRANCAMENTO", nome: "Trancamento" },
+  { tipo: "LANCAMENTO_NOTAS", nome: "Lançamento de notas" },
+  { tipo: "REVISAO_NOTAS", nome: "Revisão de notas" },
 ];
 
-type View = { kind: "list" } | { kind: "detail"; id: string } | { kind: "wizard"; step: 0 | 1 | 2 };
+const WIZARD_JANELAS = [
+  { tipo: "MATRICULA", label: "Matrícula" },
+  { tipo: "AJUSTE", label: "Ajuste" },
+  { tipo: "TRANCAMENTO", label: "Trancamento" },
+  { tipo: "LANCAMENTO_NOTAS", label: "Lançamento de notas" },
+  { tipo: "REVISAO_NOTAS", label: "Revisão de notas" },
+];
 
 function Page() {
   const { active: perfil } = useProfileSwitcher([
     { value: "secretaria", label: "Secretaria Acadêmica", description: "Cria e encerra períodos letivos" },
     { value: "coordenacao", label: "Coordenação Acadêmica", description: "Acompanha calendário e janelas" },
   ]);
-  const [periodos, setPeriodos] = useState(periodosIniciais);
   const [view, setView] = useState<View>({ kind: "list" });
+  const queryClient = useQueryClient();
 
+  const { data: rawPeriodos = [] } = useQuery({
+    queryKey: ["periodos", CURSO_ID],
+    queryFn: () => api.periodos.listByCurso(CURSO_ID),
+  });
 
-  const encerrar = (id: string) => {
-    setPeriodos((p) => p.map((x) => x.id === id ? { ...x, status: "Encerrado" } : x));
-    toast.success("Período encerrado com sucesso!");
-    setView({ kind: "list" });
-  };
+  const periodos: Periodo[] = rawPeriodos
+    .filter(p => p.status !== "CANCELADO")
+    .map(p => ({
+      id: String(p.id),
+      nome: `${p.ano}.${p.semestre}`,
+      inicio: formatDate(p.dataInicio),
+      fim: formatDate(p.dataFim),
+      status: mapStatus(p.status),
+      pendencias: 0,
+    }));
 
-  const cancelarPeriodo = (id: string, nome: string) => {
-    setPeriodos((p) => p.filter((x) => x.id !== id));
-    toast.success(`Período ${nome} cancelado.`);
-    setView({ kind: "list" });
-  };
+  const encerrarMutation = useMutation({
+    mutationFn: (id: string) => api.periodos.encerrar(Number(id)),
+    onSuccess: () => {
+      toast.success("Período encerrado com sucesso!");
+      queryClient.invalidateQueries({ queryKey: ["periodos", CURSO_ID] });
+      setView({ kind: "list" });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
 
-  const cadastrarPeriodo = (novo: Omit<Periodo, "pendencias">) => {
-    setPeriodos((p) => [...p, { ...novo, pendencias: 0 }]);
-    toast.success(`Período ${novo.nome} cadastrado com sucesso!`);
-    setView({ kind: "list" });
-  };
+  const cancelarMutation = useMutation({
+    mutationFn: ({ id, nome }: { id: string; nome: string }) =>
+      api.periodos.cancelar(Number(id)).then(() => nome),
+    onSuccess: (nome) => {
+      toast.success(`Período ${nome} cancelado.`);
+      queryClient.invalidateQueries({ queryKey: ["periodos", CURSO_ID] });
+      setView({ kind: "list" });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
 
   return (
     <AppShell title="Períodos Letivos" subtitle={perfil === "coordenacao" ? "Visão Coordenação Acadêmica" : "Visão Secretaria Acadêmica"}>
@@ -87,14 +139,17 @@ function Page() {
       )}
 
       {view.kind === "detail" && (() => {
-        const p = periodos.find((x) => x.id === view.id)!;
+        const p = periodos.find((x) => x.id === view.id);
+        const raw = rawPeriodos.find(x => String(x.id) === view.id);
+        if (!p) return null;
         return (
           <Detalhe
             periodo={p}
+            janelasBruta={raw?.janelas ?? []}
             readOnly={perfil !== "secretaria"}
             onBack={() => setView({ kind: "list" })}
-            onEncerrar={() => encerrar(p.id)}
-            onCancelar={() => cancelarPeriodo(p.id, p.nome)}
+            onEncerrar={() => encerrarMutation.mutate(p.id)}
+            onCancelar={() => cancelarMutation.mutate({ id: p.id, nome: p.nome })}
           />
         );
       })()}
@@ -104,23 +159,39 @@ function Page() {
           step={view.step}
           onStep={(s) => setView({ kind: "wizard", step: s })}
           onCancel={() => setView({ kind: "list" })}
-          onCadastrar={cadastrarPeriodo}
+          onCadastrado={(nome) => {
+            toast.success(`Período ${nome} cadastrado com sucesso!`);
+            queryClient.invalidateQueries({ queryKey: ["periodos", CURSO_ID] });
+            setView({ kind: "list" });
+          }}
         />
       )}
     </AppShell>
   );
 }
 
-function Detalhe({ periodo, readOnly, onBack, onEncerrar, onCancelar }: {
-  periodo: Periodo; readOnly?: boolean; onBack: () => void; onEncerrar: () => void; onCancelar: () => void;
+function Detalhe({ periodo, janelasBruta, readOnly, onBack, onEncerrar, onCancelar }: {
+  periodo: Periodo;
+  janelasBruta: { tipo: string; inicio: string; fim: string }[];
+  readOnly?: boolean;
+  onBack: () => void;
+  onEncerrar: () => void;
+  onCancelar: () => void;
 }) {
-  const [janelas, setJanelas] = useState<Janela[]>([
-    { nome: "Matrícula", inicio: "10/02/2025", fim: "20/02/2025", status: "Encerrada" },
-    { nome: "Ajuste de matrícula", inicio: "21/02/2025", fim: "10/03/2025", status: "Encerrada" },
-    { nome: "Trancamento", inicio: "10/02/2025", fim: "10/05/2025", status: "Ativa" },
-    { nome: "Lançamento de notas", inicio: "01/06/2025", fim: "30/06/2025", status: "Planejada" },
-    { nome: "Revisão de notas", inicio: "01/07/2025", fim: "10/07/2025", status: "Planejada" },
-  ]);
+  const [janelas, setJanelas] = useState<Janela[]>(() =>
+    DETALHE_JANELAS.map(({ tipo, nome }) => {
+      const found = janelasBruta.find(j => j.tipo === tipo);
+      if (found) {
+        return {
+          nome,
+          inicio: formatDate(found.inicio),
+          fim: formatDate(found.fim),
+          status: janelaStatus(found.inicio, found.fim),
+        };
+      }
+      return { nome, inicio: "—", fim: "—", status: "Planejada" };
+    })
+  );
   const tone = (s: string) => s === "Ativa" ? "success" : s === "Encerrada" ? "neutral" : "warning";
 
   const toggleJanela = (nome: string, statusAtual: string) => {
@@ -182,20 +253,49 @@ const wizSteps = [
   { key: "conf", label: "Confirmar" },
 ];
 
-function Wizard({ step, onStep, onCancel, onCadastrar }: {
+type JanelaWizardForm = Record<string, { inicio: string; fim: string }>;
+
+function Wizard({ step, onStep, onCancel, onCadastrado }: {
   step: 0 | 1 | 2; onStep: (s: 0 | 1 | 2) => void; onCancel: () => void;
-  onCadastrar: (p: Omit<Periodo, "pendencias">) => void;
+  onCadastrado: (nome: string) => void;
 }) {
   const [form, setForm] = useState({ id: "", curso: "Engenharia de Software", inicio: "", fim: "" });
   const set = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement>) => setForm((p) => ({ ...p, [k]: e.target.value }));
+  const [janelaForm, setJanelaForm] = useState<JanelaWizardForm>({
+    MATRICULA: { inicio: "", fim: "" },
+    AJUSTE: { inicio: "", fim: "" },
+    TRANCAMENTO: { inicio: "", fim: "" },
+    LANCAMENTO_NOTAS: { inicio: "", fim: "" },
+    REVISAO_NOTAS: { inicio: "", fim: "" },
+  });
+
+  const criarMutation = useMutation({
+    mutationFn: async () => {
+      const partes = form.id.split(".");
+      const ano = Number(partes[0]);
+      const semestre = Number(partes[1]);
+      await api.periodos.criar({ cursoId: CURSO_ID, ano, semestre, dataInicio: form.inicio, dataFim: form.fim });
+      const lista = await api.periodos.listByCurso(CURSO_ID);
+      const novo = lista.find(p => p.ano === ano && p.semestre === semestre);
+      if (novo) {
+        for (const { tipo } of WIZARD_JANELAS) {
+          const datas = janelaForm[tipo];
+          if (datas.inicio && datas.fim) {
+            await api.periodos.definirJanela(novo.id, { tipo, inicio: datas.inicio, fim: datas.fim });
+          }
+        }
+      }
+    },
+    onSuccess: () => onCadastrado(form.id),
+    onError: (e: Error) => toast.error(e.message),
+  });
 
   const avancar0 = () => {
-    if (!form.id || !form.inicio || !form.fim) { toast.error("Preencha todos os campos obrigatórios."); return; }
+    if (!form.id || !form.inicio || !form.fim || !/^\d{4}\.[12]$/.test(form.id)) {
+      toast.error("Preencha todos os campos obrigatórios.");
+      return;
+    }
     onStep(1);
-  };
-
-  const cadastrar = () => {
-    onCadastrar({ id: form.id, nome: form.id, inicio: form.inicio, fim: form.fim, status: "Planejado" });
   };
 
   return (
@@ -220,11 +320,15 @@ function Wizard({ step, onStep, onCancel, onCadastrar }: {
         <div className="rounded-xl border bg-card p-6 shadow-card">
           <SectionTitle title="Janelas acadêmicas" subtitle="Defina prazos para cada operação." />
           <div className="mt-4 space-y-3">
-            {["Matrícula", "Ajuste", "Trancamento", "Lançamento de notas", "Revisão de notas"].map((j) => (
-              <div key={j} className="grid grid-cols-3 gap-3">
-                <div className="flex items-center gap-2 text-[13px] font-medium"><Calendar className="h-4 w-4 text-muted-foreground" />{j}</div>
-                <Input type="date" className="h-10" />
-                <Input type="date" className="h-10" />
+            {WIZARD_JANELAS.map(({ tipo, label }) => (
+              <div key={tipo} className="grid grid-cols-3 gap-3">
+                <div className="flex items-center gap-2 text-[13px] font-medium"><Calendar className="h-4 w-4 text-muted-foreground" />{label}</div>
+                <Input type="date" className="h-10"
+                  value={janelaForm[tipo].inicio}
+                  onChange={e => setJanelaForm(prev => ({ ...prev, [tipo]: { ...prev[tipo], inicio: e.target.value } }))} />
+                <Input type="date" className="h-10"
+                  value={janelaForm[tipo].fim}
+                  onChange={e => setJanelaForm(prev => ({ ...prev, [tipo]: { ...prev[tipo], fim: e.target.value } }))} />
               </div>
             ))}
           </div>
@@ -242,7 +346,7 @@ function Wizard({ step, onStep, onCancel, onCadastrar }: {
             <div className="flex justify-between py-2"><span className="text-muted-foreground">Fim</span><span className="font-medium">{form.fim}</span></div>
           </div>
           <ValidationCallout className="mt-4" tone="info">Sem sobreposição detectada com outros períodos do mesmo curso.</ValidationCallout>
-          <div className="mt-4 flex justify-end gap-2"><Button variant="outline" onClick={() => onStep(1)}>Voltar</Button><Button onClick={cadastrar}>Cadastrar período</Button></div>
+          <div className="mt-4 flex justify-end gap-2"><Button variant="outline" onClick={() => onStep(1)}>Voltar</Button><Button onClick={() => criarMutation.mutate()} disabled={criarMutation.isPending}>Cadastrar período</Button></div>
         </div>
       )}
     </div>

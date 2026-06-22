@@ -37,6 +37,13 @@ async function put<T>(path: string, body?: unknown): Promise<T> {
   return (text ? JSON.parse(text) : undefined) as T;
 }
 
+async function del<T>(path: string): Promise<T> {
+  const res = await fetch(`/backend/${path}`, { method: "DELETE" });
+  if (!res.ok) throw new Error(await parseErrorMessage(res));
+  const text = await res.text();
+  return (text ? JSON.parse(text) : undefined) as T;
+}
+
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 export interface PeriodoLetivoResumo {
@@ -277,6 +284,13 @@ export const api = {
       get<PeriodoLetivoResumo[]>(`periodos-letivos/curso/${cursoId}`).then(r => r ?? []),
     criar: (body: { cursoId: number; ano: number; semestre: number; dataInicio: string; dataFim: string }) =>
       post<void>(`periodos-letivos`, body),
+    definirJanela: (id: number, body: { tipo: string; inicio: string; fim: string }) =>
+      post<void>(`periodos-letivos/${id}/janela`, body),
+    iniciar: (id: number) => post<void>(`periodos-letivos/${id}/iniciar`),
+    encerrar: (id: number) => post<void>(`periodos-letivos/${id}/encerrar`),
+    editar: (id: number, body: { dataInicio: string; dataFim: string }) =>
+      put<void>(`periodos-letivos/${id}`, body),
+    cancelar: (id: number) => del<void>(`periodos-letivos/${id}/cancelar`),
   },
   turmas: {
     listByPeriodo: (periodoId: number) =>
