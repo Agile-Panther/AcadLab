@@ -55,6 +55,11 @@ class OportunidadeRepositorioImpl implements OportunidadeRepositorio, Oportunida
     }
 
     @Override
+    public void excluir(int id) {
+        repository.deleteById(id);
+    }
+
+    @Override
     public Optional<Oportunidade> buscarPorId(OportunidadeId id) {
         return repository.findById(id.getValor()).map(this::toDomain);
     }

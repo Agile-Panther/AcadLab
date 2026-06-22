@@ -18,6 +18,8 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.Table;
+import school.cesar.acadlab.aplicacao.estagios.CandidaturaRepositorioAplicacao;
+import school.cesar.acadlab.aplicacao.estagios.CandidaturaResumo;
 import school.cesar.acadlab.aplicacao.estagios.EstagioRepositorioAplicacao;
 import school.cesar.acadlab.aplicacao.estagios.EstagioResumo;
 import school.cesar.acadlab.dominio.estagios.candidatura.Candidatura;
@@ -162,16 +164,32 @@ class CandidaturaJpa {
 interface CandidaturaJpaRepository extends JpaRepository<CandidaturaJpa, Integer> {
     @Query("SELECT COALESCE(MAX(c.id), 0) + 1 FROM CandidaturaJpa c")
     int proximoId();
+
+    List<CandidaturaJpa> findByEstudanteId(int estudanteId);
 }
 
 @Repository
-class CandidaturaRepositorioImpl implements CandidaturaRepositorio {
+class CandidaturaRepositorioImpl implements CandidaturaRepositorio, CandidaturaRepositorioAplicacao {
 
     @Autowired CandidaturaJpaRepository repository;
 
     @Override
     public CandidaturaId proximaCandidaturaId() {
         return new CandidaturaId(repository.proximoId());
+    }
+
+    @Override
+    public List<CandidaturaResumo> listarTodas() {
+        return repository.findAll().stream().map(this::toResumo).toList();
+    }
+
+    @Override
+    public List<CandidaturaResumo> buscarPorEstudante(int estudanteId) {
+        return repository.findByEstudanteId(estudanteId).stream().map(this::toResumo).toList();
+    }
+
+    private CandidaturaResumo toResumo(CandidaturaJpa jpa) {
+        return new CandidaturaResumo(jpa.id, jpa.oportunidadeId, jpa.estudanteId, jpa.status.name());
     }
 
     @Override
